@@ -1,21 +1,9 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { BenchResult, Learning, Prediction } from "@/lib/bench";
 import { number } from "@/lib/bench";
+import { useChartWidth } from "./useChartWidth";
 
-function useWidth() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(760);
-  useEffect(() => {
-    if (!ref.current) return;
-    const observer = new ResizeObserver(([entry]) =>
-      setWidth(Math.max(300, Math.round(entry.contentRect.width))),
-    );
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-  return { ref, width };
-}
 function domain(values: number[]) {
   const minimum = Math.min(...values),
     maximum = Math.max(...values);
@@ -39,8 +27,8 @@ export function PredictionChart({
   feature: number;
   showTraining: boolean;
 }) {
-  const { ref, width } = useWidth();
-  const height = width < 500 ? 285 : 340;
+  const { ref, width } = useChartWidth();
+  const height = width < 500 ? 285 : 300;
   const left = 55,
     right = 20,
     top = 20,
@@ -153,7 +141,7 @@ export function PredictionChart({
             y1={y(xd[0])}
             x2={x(xd[1])}
             y2={y(xd[1])}
-            stroke="#aab3c7"
+            stroke="#738399"
             strokeDasharray="5 5"
           />
         )}
@@ -163,26 +151,43 @@ export function PredictionChart({
             x2={width - right}
             y1={y(0)}
             y2={y(0)}
-            stroke="#a3afc7"
+            stroke="#738399"
             strokeDasharray="5 5"
           />
         )}
-        {points.map(({ point, training }) => (
-          <circle
-            key={`${training}-${point.row}`}
-            cx={x(getX(point))}
-            cy={y(getY(point))}
-            r={width < 500 ? 3 : 3.6}
-            fill={training ? "#31a39a" : "#7281dc"}
-            fillOpacity={training ? 0.42 : 0.64}
-            stroke="white"
-            strokeWidth=".5"
-            onMouseEnter={() => setActive({ point, training })}
-            onClick={() => setActive({ point, training })}
-          >
-            <title>{`样本${point.row}：真实${number(point.actual)}，预测${number(point.prediction)}`}</title>
-          </circle>
-        ))}
+        {points.map(({ point, training }) => {
+          const common = {
+            fill: training ? "#087e75" : "#175bdd",
+            fillOpacity: 0.82,
+            stroke: "white",
+            strokeWidth: 0.6,
+            onMouseEnter: () => setActive({ point, training }),
+            onClick: () => setActive({ point, training }),
+          };
+          return training ? (
+            <circle
+              key={`t-${point.row}`}
+              cx={x(getX(point))}
+              cy={y(getY(point))}
+              r={width < 500 ? 3 : 3.6}
+              {...common}
+            >
+              <title>{`训练样本${point.row}：真实${number(point.actual)}，预测${number(point.prediction)}`}</title>
+            </circle>
+          ) : (
+            <rect
+              key={`v-${point.row}`}
+              x={x(getX(point)) - 3}
+              y={y(getY(point)) - 3}
+              width="6"
+              height="6"
+              rx=".6"
+              {...common}
+            >
+              <title>{`验证样本${point.row}：真实${number(point.actual)}，预测${number(point.prediction)}`}</title>
+            </rect>
+          );
+        })}
         <text x={left} y="12" className="bench-axis-label">
           {yLabel}
         </text>
@@ -207,7 +212,7 @@ export function PredictionChart({
       )}
       <div className="bench-legend">
         <span>
-          <i className="dot" style={{ background: "#7281dc" }} />
+          <i className="dot validation-marker" />
           验证数据（{result.validation_predictions.length}点）
         </span>
         {showTraining && (
@@ -235,8 +240,8 @@ export function LearningChart({
   data: Learning;
   unit: string;
 }) {
-  const { ref, width } = useWidth();
-  const height = width < 500 ? 280 : 330;
+  const { ref, width } = useChartWidth();
+  const height = width < 500 ? 280 : 300;
   const left = 55,
     right = 22,
     top = 24,
@@ -286,7 +291,7 @@ export function LearningChart({
           <g key={key}>
             <path
               d={path(key)}
-              stroke={index ? "#dc997a" : "#39a399"}
+              stroke={index ? "#b84b2c" : "#087e75"}
               strokeWidth="2.5"
               fill="none"
             />
@@ -296,7 +301,7 @@ export function LearningChart({
                 cx={x(p.samples)}
                 cy={y(p[key])}
                 r="4"
-                fill={index ? "#dc997a" : "#39a399"}
+                fill={index ? "#b84b2c" : "#087e75"}
                 stroke="white"
                 strokeWidth="1.5"
               >

@@ -1,13 +1,14 @@
 "use client";
 import { useId, useState } from "react";
 import type { Result, Sweep } from "@/lib/experiment";
+import { useChartWidth } from "./useChartWidth";
 
 export function FitChart({ result }: { result: Result | null }) {
   const id = useId().replace(/:/g, "");
   const [hover, setHover] = useState<number | null>(null);
   const [showTruth, setShowTruth] = useState(true);
-  const width = 760,
-    height = 330,
+  const { ref, width } = useChartWidth();
+  const height = width < 500 ? 260 : 280,
     left = 49,
     right = 23,
     top = 18,
@@ -31,11 +32,11 @@ export function FitChart({ result }: { result: Result | null }) {
     );
   const selected = hover === null ? null : curve[hover];
   return (
-    <div className="fit-chart">
+    <div ref={ref} className="fit-chart">
       <svg
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label="拟合曲线：青绿色为训练点，珊瑚色为验证点，蓝线为模型，灰色虚线为真实函数"
+        aria-label="拟合曲线：绿色圆点为训练样本，橙色方块为验证样本，蓝线为模型，灰色虚线为真实函数"
       >
         <defs>
           <clipPath id={id}>
@@ -86,19 +87,22 @@ export function FitChart({ result }: { result: Result | null }) {
             <path
               d={path("truth")}
               fill="none"
-              stroke="#a9b0bc"
+              stroke="#738399"
               strokeWidth="2"
               strokeDasharray="5 6"
             />
           )}
           {result?.validation.map((p, i) => (
-            <circle
+            <rect
               key={`v${i}`}
-              cx={x(p.x)}
-              cy={y(p.y)}
-              r="3"
-              fill="#e6a08b"
-              fillOpacity=".6"
+              x={x(p.x) - 3}
+              y={y(p.y) - 3}
+              width="6"
+              height="6"
+              rx=".7"
+              fill="#fff3ed"
+              stroke="#b84b2c"
+              strokeWidth="1.3"
             />
           ))}
           {result?.train.map((p, i) => (
@@ -107,7 +111,7 @@ export function FitChart({ result }: { result: Result | null }) {
               cx={x(p.x)}
               cy={y(p.y)}
               r="4.6"
-              fill="#359e94"
+              fill="#087e75"
               fillOpacity=".86"
               stroke="white"
               strokeWidth="1.4"
@@ -116,7 +120,7 @@ export function FitChart({ result }: { result: Result | null }) {
           <path
             d={path("fit")}
             fill="none"
-            stroke="#5163e5"
+            stroke="#175bdd"
             strokeWidth="3"
             strokeLinecap="round"
           />
@@ -127,14 +131,14 @@ export function FitChart({ result }: { result: Result | null }) {
                 x2={x(selected.x)}
                 y1={top}
                 y2={height - bottom}
-                stroke="#5163e5"
+                stroke="#175bdd"
                 strokeDasharray="3 4"
               />
               <circle
                 cx={x(selected.x)}
                 cy={y(selected.fit)}
                 r="5"
-                fill="#5163e5"
+                fill="#175bdd"
                 stroke="white"
                 strokeWidth="2"
               />
@@ -158,7 +162,7 @@ export function FitChart({ result }: { result: Result | null }) {
           width={plotWidth}
           height={plotHeight}
           fill="transparent"
-          onMouseMove={(event) => {
+          onPointerMove={(event) => {
             const bounds = event.currentTarget.getBoundingClientRect();
             setHover(
               Math.max(
@@ -173,7 +177,7 @@ export function FitChart({ result }: { result: Result | null }) {
               ),
             );
           }}
-          onMouseLeave={() => setHover(null)}
+          onPointerLeave={() => setHover(null)}
         />
       </svg>
       {selected && (
@@ -220,88 +224,99 @@ export function ErrorChart({
   data: Sweep;
   current: number;
 }) {
-  const width = 600,
-    height = 160,
-    left = 45,
-    top = 15,
-    pw = 535,
-    ph = 111;
+  const { ref, width } = useChartWidth();
+  const height = 230,
+    left = 60,
+    top = 20,
+    pw = width - left - 18,
+    ph = height - top - 36;
   const values = data.points.flatMap((p) => [p.train_mse, p.validation_mse]);
-  const low =
-    Math.min(...values.map((v) => Math.log10(Math.max(v, 1e-7)))) - 0.15;
-  const high =
-    Math.max(...values.map((v) => Math.log10(Math.max(v, 1e-7)))) + 0.15;
+  const positives = values.filter((value) => value > 0);
+  const zeroFloor = positives.length
+    ? Math.max(Math.min(...positives) / 2, Number.MIN_VALUE)
+    : 1e-16;
+  const logarithm = (value: number) =>
+    Math.log10(value > 0 ? value : zeroFloor);
+  const low = Math.min(...values.map(logarithm)) - 0.15;
+  const high = Math.max(...values.map(logarithm)) + 0.15;
   const x = (degree: number) => left + ((degree - 1) / 14) * pw;
   const y = (value: number) =>
-    top + ((high - Math.log10(Math.max(value, 1e-7))) / (high - low)) * ph;
+    top + ((high - logarithm(value)) / (high - low)) * ph;
   const path = (key: "train_mse" | "validation_mse") =>
     data.points
       .map((p, i) => `${i ? "L" : "M"}${x(p.degree)},${y(p[key])}`)
       .join(" ");
   return (
-    <svg
-      className="error-chart"
-      viewBox={`0 0 ${width} ${height}`}
-      role="img"
-      aria-label="不同模型阶数的训练与验证误差，纵轴为对数尺度"
-    >
-      {[0, 0.5, 1].map((f) => (
-        <g key={f}>
-          <line
-            x1={left}
-            x2={left + pw}
-            y1={top + f * ph}
-            y2={top + f * ph}
-            stroke="#e9ecf2"
-          />
-          <text
-            x={left - 9}
-            y={top + f * ph + 4}
-            textAnchor="end"
-            className="axis-text"
-          >
-            {Math.pow(10, high - f * (high - low)).toPrecision(1)}
-          </text>
-        </g>
-      ))}
-      <line
-        x1={x(current)}
-        x2={x(current)}
-        y1={top}
-        y2={top + ph}
-        stroke="#b9bfea"
-        strokeDasharray="4 4"
-      />
-      <path
-        d={path("train_mse")}
-        stroke="#359e94"
-        strokeWidth="2"
-        fill="none"
-      />
-      <path
-        d={path("validation_mse")}
-        stroke="#e29a6b"
-        strokeWidth="2.5"
-        fill="none"
-      />
-      {data.points.map((p) => (
-        <g key={p.degree}>
-          <circle
-            cx={x(p.degree)}
-            cy={y(p.validation_mse)}
-            r={p.degree === current ? 4 : 2.5}
-            fill="#e29a6b"
-          />
-          <text
-            x={x(p.degree)}
-            y={height - 11}
-            textAnchor="middle"
-            className="axis-text"
-          >
-            {p.degree}
-          </text>
-        </g>
-      ))}
-    </svg>
+    <div ref={ref}>
+      <svg
+        className="error-chart"
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label="不同模型阶数的训练与验证误差，纵轴为对数尺度"
+      >
+        {[0, 0.5, 1].map((f) => (
+          <g key={f}>
+            <line
+              x1={left}
+              x2={left + pw}
+              y1={top + f * ph}
+              y2={top + f * ph}
+              stroke="#e9ecf2"
+            />
+            <text
+              x={left - 9}
+              y={top + f * ph + 4}
+              textAnchor="end"
+              className="axis-text"
+            >
+              {Math.pow(10, high - f * (high - low)).toPrecision(1)}
+            </text>
+          </g>
+        ))}
+        <line
+          x1={x(current)}
+          x2={x(current)}
+          y1={top}
+          y2={top + ph}
+          stroke="#b9bfea"
+          strokeDasharray="4 4"
+        />
+        <path
+          d={path("train_mse")}
+          stroke="#087e75"
+          strokeWidth="2"
+          fill="none"
+        />
+        <path
+          d={path("validation_mse")}
+          stroke="#b84b2c"
+          strokeWidth="2.5"
+          fill="none"
+        />
+        {data.points.map((p) => (
+          <g key={p.degree}>
+            <circle
+              cx={x(p.degree)}
+              cy={y(p.validation_mse)}
+              r={p.degree === current ? 4 : 2.5}
+              fill="#b84b2c"
+            />
+            {(width > 550 || [1, 4, 8, 12, 15].includes(p.degree)) && (
+              <text
+                x={x(p.degree)}
+                y={height - 11}
+                textAnchor="middle"
+                className="axis-text"
+              >
+                {p.degree}
+              </text>
+            )}
+          </g>
+        ))}
+      </svg>
+      {values.includes(0) && (
+        <p className="small-copy muted">零误差显示在对数轴下沿。</p>
+      )}
+    </div>
   );
 }

@@ -35,6 +35,18 @@ import {
 } from "lucide-react";
 import { FitChart, ErrorChart } from "@/components/FitChart";
 import DatasetLab from "@/components/DatasetLab";
+import ExperimentControls from "@/components/ExperimentControls";
+import {
+  LearningMission,
+  ObservationBoard,
+  MetricHelp,
+} from "@/components/LearningGuide";
+import {
+  lessonGuide,
+  recordObservation,
+  type ObservationSet,
+} from "@/lib/learning-guide";
+import { viewFromHash, hashForView } from "@/lib/navigation";
 import {
   api,
   metric,
@@ -51,21 +63,28 @@ import {
 
 type View = "studio" | "path" | "history" | "datasets";
 type Modal = "guide" | "save" | "report" | "final" | "sources" | "quiz" | null;
-const alphaValues = [0.00000001, 0.000001, 0.0001, 0.01, 0.1, 1, 10, 100];
 const alphaLabel = (a: number) =>
   a < 0.001 ? a.toExponential(0).replace("e-", " × 10⁻") : String(a);
 
 export default function Home() {
-  const [view, setView] = useState<View>("studio");
+  const [view, setViewState] = useState<View>("studio");
   const [params, setParams] = useState<Parameters>(scenes[0].defaults);
   const [result, setResult] = useState<Result | null>(null);
-  const [busy, setBusy] = useState(true);
+  const [loading, setBusy] = useState(true);
+  const busy = loading || !result ||
+    (Object.keys(params) as (keyof Parameters)[]).some(
+      key => params[key] !== result.parameters[key],
+    );
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const [records, setRecords] = useState<SavedRecord[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
   const [prediction, setPrediction] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [observations, setObservations] = useState<ObservationSet>({
+    conditionKey: "",
+    items: {},
+  });
   const [quizChoice, setQuizChoice] = useState<number | null>(null);
   const [quizRevealed, setQuizRevealed] = useState(false);
   const [completed, setCompleted] = useState<SceneId[]>([]);
@@ -99,6 +118,35 @@ export default function Home() {
   const scene = scenes.find((s) => s.id === params.scene)!;
   const quiz = quizzes[params.scene];
   const comparison = records.filter((r) => selected.includes(r.id));
+  const guide = lessonGuide(params);
+  const currentCondition =
+    guide.control === "degree"
+      ? `${params.degree}阶模型`
+      : guide.control === "samples"
+        ? `${params.samples}个样本`
+        : `α ${alphaLabel(params.alpha)}`;
+  function setView(next: View) {
+    setViewState(next);
+    if (window.location.hash !== hashForView(next))
+      window.history.pushState(null, "", hashForView(next));
+  }
+  useEffect(() => {
+    const apply = () => {
+      setViewState(viewFromHash(window.location.hash));
+      setMobileMenu(false);
+    };
+    apply();
+    window.addEventListener("popstate", apply);
+    window.addEventListener("hashchange", apply);
+    return () => {
+      window.removeEventListener("popstate", apply);
+      window.removeEventListener("hashchange", apply);
+    };
+  }, []);
+  useEffect(() => {
+    if (result)
+      setObservations((previous) => recordObservation(previous, result));
+  }, [result]);
 
   useEffect(() => {
     api<{ ai_configured: boolean; ai_model: string }>("/health")
@@ -190,6 +238,16 @@ export default function Home() {
   function update<K extends keyof Parameters>(key: K, value: Parameters[K]) {
     setParams((p) => ({ ...p, [key]: value }));
   }
+  function selectGuidedValue(value: number) {
+    update(guide.control, value);
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      document.getElementById("experiment-chart")?.scrollIntoView({
+        block: "start",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant" : "smooth",
+      });
+    }
+  }
   async function askCoach(value = question) {
     if (!result || busy) return;
     const controller = new AbortController();
@@ -234,7 +292,7 @@ export default function Home() {
     try {
       await api("/records", {
         parameters: params,
-        title: title.trim() || `${scene.short} · ${params.degree}阶模型`,
+        title: title.trim() || `${scene.short} · ${currentCondition}`,
         note,
         prediction: prediction === null ? "" : scene.options[prediction],
       });
@@ -301,6 +359,16 @@ export default function Home() {
 
   return (
     <div className="app-shell">
+      <a
+        href="#main-content"
+        className="skip-link"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById("main-content")?.focus();
+        }}
+      >
+        跳到实验内容
+      </a>
       {mobileMenu && (
         <button
           className="sidebar-shade"
@@ -310,15 +378,26 @@ export default function Home() {
       )}
       <aside className={`sidebar ${mobileMenu ? "open" : ""}`}>
         <a href="/" className="brand">
-          <span className="brand-mark">
-            <Activity size={25} />
+          <span className="brand-mark" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 32 32">
+              <circle cx="5" cy="24" r="2" fill="currentColor" />
+              <circle cx="14" cy="11" r="2" fill="currentColor" />
+              <circle cx="25" cy="15" r="2" fill="currentColor" />
+              <path
+                d="M3 25C8 18 10 6 17 10S24 23 29 12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
+            </svg>
           </span>
           <span>
-            看见过拟合<small>FITLAB · LEARNING BY DOING</small>
+            看见过拟合<small>机器学习交互实验</small>
           </span>
         </a>
         <div className="workspace-label">
-          我的学习空间<span>个人版</span>
+          学习导航<span>个人版</span>
         </div>
         <nav className="main-nav" aria-label="主导航">
           <button
@@ -340,7 +419,7 @@ export default function Home() {
             }}
           >
             <Database size={18} />
-            真实数据实验台<span className="nav-count">新</span>
+            真实数据
           </button>
           <button
             className={view === "path" ? "active" : ""}
@@ -368,7 +447,7 @@ export default function Home() {
         </nav>
         <div className="sidebar-divider" />
         <div className="sidebar-label">
-          交互实验<span>FOUNDATIONS</span>
+          交互实验<span>三步建立直觉</span>
         </div>
         <div className="lesson-nav">
           {scenes.map((s) => (
@@ -397,7 +476,7 @@ export default function Home() {
         <div className="sidebar-spacer" />
         <div className="journey-card">
           <div>
-            <span className="tiny-spark">✦</span> 每一步，都看得见
+            <span className="tiny-spark">✦</span> 完成一次，理解一点
           </div>
           <p>从记住概念，到建立直觉。</p>
           <div className="journey-progress">
@@ -413,13 +492,6 @@ export default function Home() {
           方法与数据来源
           <ArrowUpRight size={14} />
         </button>
-        <div className="sidebar-user">
-          <span className="avatar">研</span>
-          <div>
-            探索者<small>保持好奇，亲手验证</small>
-          </div>
-          <span className="user-dot" />
-        </div>
       </aside>
 
       <div className="main-shell">
@@ -440,32 +512,31 @@ export default function Home() {
                 : view === "path"
                   ? "学习路径"
                   : view === "datasets"
-                    ? "真实数据实验台"
+                    ? "真实数据实验"
                     : "实验档案"}
             </strong>
           </div>
           <div className="topbar-right">
             <span className="ai-status">
               <i />
-              {health?.ai_configured ? "Flash 已配置" : "本地实验模式"}
+              {health?.ai_configured ? "AI辅助讲解" : "内置规则讲解"}
             </span>
             <span className="topbar-separator" />
             <button className="text-button" onClick={() => setModal("guide")}>
               <BookOpen size={16} />
               使用指南
             </button>
-            <span className="avatar small">研</span>
           </div>
         </header>
 
-        <main className="content">
+        <main className="content" id="main-content" tabIndex={-1}>
           {view === "datasets" && <DatasetLab onNotify={setToast} />}
           {view === "studio" && (
             <>
               <div className="page-heading">
                 <div>
                   <div className="eyebrow">
-                    <span>交互实验 {scene.number}</span>
+                    <span>学习主题 {scene.number}</span>
                     <span className="eyebrow-sep">/</span>
                     <span>机器学习基础</span>
                   </div>
@@ -480,7 +551,7 @@ export default function Home() {
                     className="button secondary"
                     disabled={!result || busy}
                     onClick={() => {
-                      setTitle(`${scene.short} · ${params.degree}阶模型`);
+                      setTitle(`${scene.short} · ${currentCondition}`);
                       setNote("");
                       setModal("save");
                     }}
@@ -489,7 +560,7 @@ export default function Home() {
                     保存实验
                   </button>
                   <button
-                    className="button primary"
+                    className="button secondary"
                     disabled={!result || busy}
                     onClick={() => setModal("report")}
                   >
@@ -499,25 +570,12 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="task-banner">
-                <span className="task-icon">
-                  <Target size={20} />
-                </span>
-                <div>
-                  <strong>今天的探索任务</strong>
-                  <span>{scene.task}</span>
-                </div>
-                <button
-                  onClick={() =>
-                    document
-                      .getElementById("prediction")
-                      ?.scrollIntoView({ behavior: "smooth", block: "center" })
-                  }
-                >
-                  先做个预测
-                  <ArrowRight size={15} />
-                </button>
-              </div>
+              <LearningMission
+                guide={guide}
+                params={params}
+                observations={observations}
+                onSelect={selectGuidedValue}
+              />
 
               {error && (
                 <div className="error-banner" role="alert">
@@ -534,24 +592,24 @@ export default function Home() {
                 <MetricCard
                   icon={<TrendingDown size={16} />}
                   label="训练误差"
-                  tag="TRAIN MSE"
-                  value={result ? metric(result.metrics.train_mse) : "—"}
+                  tag="MSE"
+                  value={result && !busy ? metric(result.metrics.train_mse) : "—"}
                   color="teal"
-                  caption={`${params.samples} 个样本 · 模型学习的数据`}
+                  caption={`${params.samples} 个样本，用于拟合`}
                 />
                 <MetricCard
                   icon={<Activity size={16} />}
                   label="验证误差"
-                  tag="VALIDATION MSE"
-                  value={result ? metric(result.metrics.validation_mse) : "—"}
+                  tag="MSE"
+                  value={result && !busy ? metric(result.metrics.validation_mse) : "—"}
                   color="coral"
-                  caption="80 个样本 · 帮你选择参数"
+                  caption="80 个样本，用于比较参数"
                 />
                 <MetricCard
                   icon={<Layers3 size={16} />}
                   label="泛化差距"
-                  tag="GENERALIZATION GAP"
-                  value={result ? metric(result.metrics.gap) : "—"}
+                  tag="MSE"
+                  value={result && !busy ? metric(result.metrics.gap) : "—"}
                   color="blue"
                   caption="验证误差 − 训练误差"
                 />
@@ -566,7 +624,7 @@ export default function Home() {
                     />
                   </div>
                   <strong className="diagnosis-value">
-                    {result?.diagnosis.label || "正在计算实验"}
+                    {!busy && result ? result.diagnosis.label : "正在计算实验"}
                   </strong>
                   <p>
                     基于误差的教学提示
@@ -580,15 +638,20 @@ export default function Home() {
                 </div>
               </div>
 
+              <MetricHelp />
               <div className="workspace-grid">
-                <section className="panel chart-panel">
+                <section
+                  className="panel chart-panel"
+                  id="experiment-chart"
+                  aria-busy={busy}
+                >
                   <div className="panel-heading">
                     <div>
                       <h2>
                         <span className="panel-dot" />
                         看见模型如何拟合
                       </h2>
-                      <p>改变右侧参数，观察曲线与误差的变化</p>
+                      <p>调整实验参数，观察曲线与误差的变化</p>
                     </div>
                     <span className="live-badge">
                       {busy ? (
@@ -625,21 +688,6 @@ export default function Home() {
                         : "同一数据 · 比较 1—15 阶"}
                     </span>
                   </div>
-                  {chartTab === "fit" && (
-                    <div className="experiment-presets">
-                      <span>快速对照</span>
-                      {[1, 4, 15].map((degree) => (
-                        <button
-                          key={degree}
-                          className={params.degree === degree ? "selected" : ""}
-                          onClick={() => update("degree", degree)}
-                        >
-                          {degree} 阶模型
-                        </button>
-                      ))}
-                      <small>保持其他条件不变</small>
-                    </div>
-                  )}
                   {chartTab === "fit" ? (
                     <FitChart result={result} />
                   ) : (
@@ -692,120 +740,28 @@ export default function Home() {
                   )}
                   <div className="chart-footer">
                     <span>
-                      <ShieldCheck size={13} />
-                      固定种子 {params.seed} · 独立数据划分
+                      <ShieldCheck size={14} />
+                      {busy && result
+                        ? "正在更新，图形暂为上次结果"
+                        : "数据条件固定，适合逐项比较"}
                     </span>
-                    <span>
-                      {result?.elapsed_ms ?? "—"} ms
-                      <span className="subtle-dot">·</span>合成数据
-                    </span>
+                    <span>合成数据 · 随机种子 {params.seed}</span>
                   </div>
                 </section>
 
-                <section className="panel parameters-panel">
-                  <div className="panel-heading compact">
-                    <h2>
-                      <Settings2 size={17} />
-                      实验参数
-                    </h2>
-                    <button
-                      className="icon-button"
-                      aria-label="重置当前实验参数"
-                      title="重置参数"
-                      onClick={() => setParams({ ...scene.defaults })}
-                    >
-                      <RotateCcw size={16} />
-                    </button>
-                  </div>
-                  <div className="parameter-controls">
-                    <Slider
-                      label="模型复杂度"
-                      tag="多项式阶数"
-                      value={params.degree}
-                      display={`${params.degree}`}
-                      min={1}
-                      max={15}
-                      step={1}
-                      onChange={(v) => update("degree", v)}
-                      left="1 · 简单"
-                      right="15 · 复杂"
-                    />
-                    <div className="degree-preview">
-                      ŷ = w₀ + w₁x + ··· + w{params.degree}x
-                      <sup>{params.degree}</sup>
-                    </div>
-                    <Slider
-                      label="训练样本"
-                      tag="数据量"
-                      value={params.samples}
-                      display={`${params.samples} 个`}
-                      min={12}
-                      max={160}
-                      step={1}
-                      onChange={(v) => update("samples", v)}
-                      left="12"
-                      right="160"
-                    />
-                    <Slider
-                      label="噪声水平"
-                      tag="标准差 σ"
-                      value={params.noise}
-                      display={params.noise.toFixed(2)}
-                      min={0}
-                      max={0.6}
-                      step={0.01}
-                      onChange={(v) => update("noise", v)}
-                      left="0 · 无噪声"
-                      right="0.60"
-                    />
-                    <Slider
-                      label="正则化强度"
-                      tag="Ridge α"
-                      value={Math.max(0, alphaValues.indexOf(params.alpha))}
-                      display={alphaLabel(params.alpha)}
-                      min={0}
-                      max={7}
-                      step={1}
-                      onChange={(v) => update("alpha", alphaValues[v])}
-                      left="弱约束"
-                      right="强约束"
-                    />
-                  </div>
-                  <div className="seed-row">
-                    <span>随机种子</span>
-                    <input
-                      aria-label="随机种子"
-                      type="number"
-                      min="0"
-                      max="999999"
-                      value={params.seed}
-                      onChange={(e) =>
-                        update(
-                          "seed",
-                          Math.max(
-                            0,
-                            Math.min(999999, Number(e.target.value) || 0),
-                          ),
-                        )
-                      }
-                    />
-                    <button
-                      className="icon-button"
-                      aria-label="更换随机种子"
-                      title="更换种子"
-                      onClick={() =>
-                        update("seed", (params.seed + 1) % 1000000)
-                      }
-                    >
-                      <RotateCcw size={14} />
-                    </button>
-                  </div>
-                  <div className="parameter-tip">
-                    <Lightbulb size={15} />
-                    <span>一次只改变一个参数，更容易发现规律。</span>
-                  </div>
-                </section>
+                <ExperimentControls
+                  params={params}
+                  onChange={(key, value) =>
+                    setParams((previous) => ({ ...previous, [key]: value }))
+                  }
+                  onReset={() => setParams({ ...scene.defaults })}
+                />
               </div>
+              <ObservationBoard
+                guide={guide}
+                observations={observations}
+                onSelect={selectGuidedValue}
+              />
 
               <div className="learning-grid">
                 <section className="panel prediction-panel" id="prediction">
@@ -814,7 +770,7 @@ export default function Home() {
                       <Lightbulb size={17} />
                       先预测，再验证
                     </h2>
-                    <span className="section-index">THINK FIRST</span>
+                    <span className="section-index">先想一想</span>
                   </div>
                   <p className="question-text">{scene.question}</p>
                   <div
@@ -893,10 +849,10 @@ export default function Home() {
                       className={`coach-mode ${coach?.mode === "online" ? "online" : ""}`}
                     >
                       {coach?.mode === "online"
-                        ? "Flash 在线"
+                        ? "AI讲解"
                         : coach?.mode === "rules"
-                          ? "规则分析"
-                          : "基于真实指标"}
+                          ? "规则讲解"
+                          : "依据本次计算"}
                     </span>
                   </div>
                   {coach ? (
@@ -930,7 +886,7 @@ export default function Home() {
                         ) : (
                           <Sparkles size={16} />
                         )}{" "}
-                        {coaching ? "正在分析实验…" : "解读当前实验"}
+                        {coaching ? "正在分析实验…" : "解释这次实验"}
                         <ArrowUpRight size={15} />
                       </button>
                     </div>
@@ -1003,7 +959,7 @@ export default function Home() {
             <>
               <div className="page-heading">
                 <div>
-                  <div className="eyebrow">LEARNING PATH</div>
+                  <div className="eyebrow">学习路线</div>
                   <h1>建立你的机器学习直觉</h1>
                   <p>三个小实验，理解模型、数据与约束如何一起影响泛化。</p>
                 </div>
@@ -1016,7 +972,13 @@ export default function Home() {
                 {scenes.map((s, index) => (
                   <section className="panel path-card" key={s.id}>
                     <div className={`path-illustration illustration-${index}`}>
-                      <Activity size={78} strokeWidth={1} />
+                      {index === 0 ? (
+                        <Layers3 size={32} />
+                      ) : index === 1 ? (
+                        <Database size={32} />
+                      ) : (
+                        <Settings2 size={32} />
+                      )}
                       <span>{s.number}</span>
                     </div>
                     <div className="path-card-body">
@@ -1061,7 +1023,7 @@ export default function Home() {
             <>
               <div className="page-heading">
                 <div>
-                  <div className="eyebrow">EXPERIMENT NOTEBOOK</div>
+                  <div className="eyebrow">可回放的实验记录</div>
                   <h1>每一次探索，都有迹可循</h1>
                   <p>回到某次实验，比较不同选择，找到你的证据。</p>
                 </div>
@@ -1497,7 +1459,7 @@ export default function Home() {
                 </span>
                 <h2 id="modal-title">看得见，也能复现</h2>
                 <p className="modal-description">
-                  核心数据为明确标记的合成数据；图表与指标由Python计算，解释基于同一份证据。
+                  基础课使用合成数据，进阶实验使用UCI公开快照；图表与指标由Python计算，解释基于同一份证据。
                 </p>
                 <div className="source-list">
                   <div>
@@ -1527,8 +1489,16 @@ export default function Home() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    后续真实数据扩展 · UCI Wine Quality
+                    葡萄酒质量 · UCI Wine Quality
                     <ArrowUpRight size={15} />
+                  </a>
+                  <a href="https://archive.ics.uci.edu/dataset/9/auto+mpg"
+                    target="_blank" rel="noreferrer">
+                    汽车油耗 · UCI Auto MPG<ArrowUpRight size={15} />
+                  </a>
+                  <a href="https://archive.ics.uci.edu/dataset/165/concrete+compressive+strength"
+                    target="_blank" rel="noreferrer">
+                    混凝土强度 · UCI Concrete Strength<ArrowUpRight size={15} />
                   </a>
                 </div>
               </>
@@ -1566,60 +1536,6 @@ function MetricCard({
       </div>
       <strong className="metric-value">{value}</strong>
       <p>{caption}</p>
-    </div>
-  );
-}
-
-function Slider({
-  label,
-  tag,
-  value,
-  display,
-  min,
-  max,
-  step,
-  onChange,
-  left,
-  right,
-}: {
-  label: string;
-  tag: string;
-  value: number;
-  display: string;
-  min: number;
-  max: number;
-  step: number;
-  onChange: (value: number) => void;
-  left: string;
-  right: string;
-}) {
-  return (
-    <div className="slider-control">
-      <div className="slider-title">
-        <label>
-          {label}
-          <small>{tag}</small>
-        </label>
-        <output>{display}</output>
-      </div>
-      <input
-        type="range"
-        aria-label={label}
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        style={
-          {
-            "--range-fill": `${((value - min) / (max - min)) * 100}%`,
-          } as React.CSSProperties
-        }
-        onChange={(e) => onChange(Number(e.target.value))}
-      />
-      <div className="slider-extents">
-        <span>{left}</span>
-        <span>{right}</span>
-      </div>
     </div>
   );
 }

@@ -33,6 +33,7 @@ import {
   type Stability,
 } from "@/lib/bench";
 import { LearningChart, PredictionChart } from "@/components/BenchCharts";
+import { MetricHelp } from "./LearningGuide";
 
 type Display =
   | "parity"
@@ -66,8 +67,12 @@ export default function DatasetLab({
   const [catalog, setCatalog] = useState<Dataset[]>([]);
   const [params, setParams] = useState<BenchParameters>(initialBench);
   const [result, setResult] = useState<BenchResult | null>(null);
-  const [busy, setBusy] = useState(true),
+  const [loading, setBusy] = useState(true),
     [error, setError] = useState("");
+  const busy = loading || !result ||
+    (Object.keys(params) as (keyof BenchParameters)[]).some(
+      key => params[key] !== result.parameters[key],
+    );
   const [display, setDisplay] = useState<Display>("parity");
   const [feature, setFeature] = useState(0),
     [showTraining, setShowTraining] = useState(false);
@@ -264,12 +269,12 @@ export default function DatasetLab({
           <div className="eyebrow">
             <span>迁移实验</span>
             <span>/</span>
-            <span>PUBLIC DATA LAB</span>
+            <span>真实数据</span>
           </div>
           <h1>
-            把直觉，带到真实数据里<span className="level-badge">进阶探索</span>
+            用真实数据检验你的判断<span className="level-badge">进阶探索</span>
           </h1>
-          <p>同一份数据，换一种模型。用可复核的证据，看看结论是否站得住。</p>
+          <p>先看预测，再比较模型，最后复核结论。</p>
         </div>
         <div className="heading-actions">
           <button
@@ -280,7 +285,7 @@ export default function DatasetLab({
             实验收藏 {journal.length > 0 && `(${journal.length})`}
           </button>
           <button
-            className="button primary"
+            className="button secondary"
             disabled={!result || busy}
             onClick={save}
           >
@@ -386,52 +391,13 @@ export default function DatasetLab({
 
       {selected && (
         <>
-          <div className="bench-protocol">
-            <ShieldCheck size={18} />
-            <div>
-              <strong>先保证比较公平，再谈哪种模型更好。</strong>
-              <p>
-                相同特征的重复记录按组划分，避免跨集合泄漏。预处理只拟合训练数据，测试指标暂不参与选择。
-              </p>
-            </div>
-            <span>
-              60 / 20 / 20 <small>按特征组划分</small>
-            </span>
-          </div>
-          <div
-            className={`metrics-grid bench-metrics ${busy ? "updating" : ""}`}
-          >
-            <BenchMetric
-              label="训练 RMSE"
-              value={result ? number(result.metrics.train_rmse) : "—"}
-              caption={`${result?.split.training ?? "—"} 条训练数据`}
-              unit={selected.unit}
-            />
-            <BenchMetric
-              label="验证 RMSE"
-              value={result ? number(result.metrics.validation_rmse) : "—"}
-              caption={`${result?.split.validation ?? "—"} 条验证数据`}
-              unit={selected.unit}
-            />
-            <BenchMetric
-              label="验证 R²"
-              value={result ? number(result.metrics.validation_r2) : "—"}
-              caption="可为负值；衡量当前验证表现"
-            />
-            <BenchMetric
-              label="泛化差距"
-              value={result ? number(result.metrics.gap) : "—"}
-              caption="验证RMSE − 训练RMSE"
-              unit={selected.unit}
-            />
-          </div>
           <div className="bench-workspace">
             <section className="panel bench-visual-panel">
               <div className="panel-heading">
                 <div>
                   <h2>
                     <span className="panel-dot" />
-                    {selected.title} · 证据画布
+                    {selected.title}：{modelNames[params.model]}
                   </h2>
                   <p>
                     {selected.target}，单位 {selected.unit}
@@ -446,6 +412,56 @@ export default function DatasetLab({
                   )}
                   {busy ? "计算中" : "计算完成"}
                 </span>
+              </div>
+              <div className="bench-guidance">
+                <div>
+                  <strong>
+                    {!comparison
+                      ? "同一批数据上，哪个模型的验证误差更低？"
+                      : !stability
+                        ? "换三次划分，刚才的结论还成立吗？"
+                        : "把误差和波动一起看，解释你的模型选择。"}
+                  </strong>
+                  <p>
+                    {!comparison
+                      ? "先运行一次模型对照，所有模型使用相同的数据条件。"
+                      : !stability
+                        ? "对照已完成。用配对划分检查结果的稳定程度。"
+                        : "复核已完成。AI会依据这些实际结果帮助你梳理发现。"}
+                  </p>
+                </div>
+                <button
+                  className="button primary"
+                  disabled={!result || busy || computing || coaching}
+                  onClick={() => {
+                    if (!comparison) void analyze("compare");
+                    else if (!stability) void analyze("stability");
+                    else {
+                      void askCoach();
+                      document
+                        .querySelector(".bench-coach")
+                        ?.scrollIntoView({
+                          behavior: window.matchMedia(
+                            "(prefers-reduced-motion: reduce)",
+                          ).matches
+                            ? "auto"
+                            : "smooth",
+                          block: "center",
+                        });
+                    }
+                  }}
+                >
+                  {computing
+                    ? "正在计算…"
+                    : coaching
+                      ? "正在讲解…"
+                      : !comparison
+                        ? "比较模型"
+                        : !stability
+                          ? "复核结论"
+                          : "解释本次结果"}
+                  <ArrowRight size={15} />
+                </button>
               </div>
               <div
                 className="bench-display-tabs"
@@ -537,7 +553,7 @@ export default function DatasetLab({
                 <div className="bench-comparison">
                   <div className="bench-analysis-heading">
                     <span>同一划分 · 同一训练占比</span>
-                    <strong>本次验证较优：{comparison.best}</strong>
+                    <strong>本次验证误差最低：{comparison.best}</strong>
                   </div>
                   {comparison.models.map((model) => (
                     <div
@@ -646,12 +662,15 @@ export default function DatasetLab({
                       ? "正在计算当前条件…"
                       : computing
                         ? "正在复核同一组实验条件…"
-                        : "参数已变化，重新计算这份证据。"}
+                        : "条件已改变，请重新运行这一项分析。"}
                   </p>
                   {!busy && !computing && (
                     <button
                       className="button secondary"
-                      onClick={() => void analyze(display)}
+                      onClick={() => {
+                        if (!result) setRetry((value) => value + 1);
+                        else void analyze(display);
+                      }}
                     >
                       计算{displays.find((item) => item.id === display)?.label}
                       <ArrowRight size={14} />
@@ -659,6 +678,43 @@ export default function DatasetLab({
                   )}
                 </div>
               )}
+              <div
+                className={`metrics-grid bench-metrics ${busy ? "updating" : ""}`}
+              >
+                <BenchMetric
+                  label="训练 RMSE"
+                  value={result && !busy ? number(result.metrics.train_rmse) : "—"}
+                  caption={`${result?.split.training ?? "—"} 条训练数据`}
+                  unit={selected.unit}
+                />
+                <BenchMetric
+                  label="验证 RMSE"
+                  value={result && !busy ? number(result.metrics.validation_rmse) : "—"}
+                  caption={`${result?.split.validation ?? "—"} 条验证数据`}
+                  unit={selected.unit}
+                />
+                <BenchMetric
+                  label="验证 R²"
+                  value={result && !busy ? number(result.metrics.validation_r2) : "—"}
+                  caption="可为负值；衡量当前验证表现"
+                />
+                <BenchMetric
+                  label="泛化差距"
+                  value={result && !busy ? number(result.metrics.gap) : "—"}
+                  caption="验证RMSE − 训练RMSE"
+                  unit={selected.unit}
+                />
+              </div>
+              <MetricHelp kind="rmse" unit={selected.unit} />
+              <details className="bench-protocol">
+                <summary>
+                  <ShieldCheck size={15} />
+                  怎样保证这次比较公平？<span>查看数据划分</span>
+                </summary>
+                <p>
+                  相同特征的重复记录按组划分，避免跨集合泄漏；按组分为60%训练池、20%验证、20%测试。预处理只拟合当前训练数据，验证集用于选参。测试接触状态记录在本浏览器。
+                </p>
+              </details>{" "}
               <footer className="chart-footer">
                 <span>
                   快照 {selected.version.slice(0, 8)} · seed {params.seed}
@@ -797,17 +853,17 @@ export default function DatasetLab({
                 <div className="panel-heading compact">
                   <h2>
                     <Sparkles size={17} />
-                    证据核对教练
+                    实验讲解
                   </h2>
                   <span
                     className="coach-mode"
                     title="DeepSeek兼容将xhigh映射为原生high"
                   >
                     {coach?.mode === "online"
-                      ? `Flash · ${coach.reasoning_effort}`
+                      ? "AI讲解"
                       : coach?.mode === "rules"
-                        ? "规则说明"
-                        : "xhigh"}
+                        ? "规则讲解"
+                        : "基于实验"}
                   </span>
                 </div>
                 <div className="bench-coach-body">
@@ -820,9 +876,9 @@ export default function DatasetLab({
                     </>
                   ) : (
                     <>
-                      <h3>这个结论，换个划分还成立吗？</h3>
+                      <h3>先看数字，再解释原因</h3>
                       <p>
-                        教练会核对实际指标，并结合已运行的模型对照和种子复核解释结果。
+                        讲解会结合这次实验的指标、模型对照和划分复核，说明现象与下一步操作。
                       </p>
                     </>
                   )}
@@ -845,7 +901,7 @@ export default function DatasetLab({
                     )}
                   </div>
                   <button
-                    className="button primary full-width"
+                    className="button secondary full-width"
                     disabled={!result || busy || coaching || computing}
                     onClick={() => void askCoach()}
                   >
@@ -855,10 +911,10 @@ export default function DatasetLab({
                       <Sparkles size={15} />
                     )}{" "}
                     {coaching
-                      ? "正在思考与核对…"
+                      ? "正在梳理结果…"
                       : coach
-                        ? "重新核对证据"
-                        : "让AI核对这些证据"}
+                        ? "重新讲解"
+                        : "解释本次结果"}
                   </button>
                 </div>
               </section>

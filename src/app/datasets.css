@@ -1,619 +1,663 @@
 .dataset-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  margin: 25px 0 20px;
+  gap: 12px;
+  margin: 12px 0 16px;
 }
 .dataset-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  column-gap: 11px;
+  align-items: center;
+  min-height: 88px;
   text-align: left;
-  padding: 18px 20px;
-  border: 1px solid #e5e9f2;
-  border-radius: 11px;
+  padding: 12px 15px;
+  border: 1px solid #a6b8ce;
+  border-radius: 8px;
   background: #fff;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s,
-    transform 0.2s;
 }
 .dataset-card:hover {
-  border-color: #b8c4e3;
-  box-shadow: 0 5px 18px #28385c08;
+  background: #f5f9ff;
+  border-color: var(--blue);
 }
 .dataset-card.chosen {
-  border-color: #9ba9df;
-  box-shadow: 0 0 0 2px #8192dc0c;
+  background: #eaf1ff;
+  border-color: var(--blue);
+  box-shadow: inset 0 0 0 1px var(--blue);
 }
 .dataset-card-top {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: #9da8bd;
-  font-size: 10px;
+  grid-column: 1;
+  grid-row: 1/3;
+}
+.dataset-card-top > span:not(.dataset-icon) {
+  display: none;
 }
 .dataset-card-top > svg {
-  margin-left: auto;
-  color: #8393ce;
+  position: absolute;
+  right: 10px;
+  top: 9px;
+  color: var(--blue);
 }
 .dataset-icon {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background: #f1edf7;
-  color: #a28cb9;
-}
-.auto .dataset-icon {
-  background: #ebf4f1;
-  color: #7fa79b;
-}
-.concrete .dataset-icon {
-  background: #f8f0e9;
-  color: #ba9c7c;
+  width: 34px;
+  height: 36px;
+  background: #e4ecf8;
+  border-radius: 7px;
+  color: #3d5e88;
 }
 .dataset-card h2 {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 18px;
+  gap: 8px;
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 16px;
   font-weight: 600;
-  letter-spacing: -0.3px;
-  margin: 13px 0 8px;
+  line-height: 1.5;
+  padding-right: 10px;
 }
 .dataset-card h2 svg {
-  color: #bdc5d5;
+  display: none;
 }
 .dataset-card > p {
-  font-size: 10px;
-  line-height: 1.8;
-  color: #929fb6;
+  display: none;
 }
 .dataset-card-footer {
   display: flex;
   align-items: center;
-  gap: 12px;
-  border-top: 1px solid #eef1f6;
-  padding-top: 13px;
-  margin-top: 17px;
-  font-size: 9px;
-  color: #9da9bf;
+  gap: 11px;
+  flex-wrap: wrap;
+  grid-column: 2;
+  grid-row: 2;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 4px;
 }
 .dataset-card-footer strong {
-  font-size: 16px;
-  font-weight: 500;
-  color: #6e7e9e;
-  font-family: "Segoe UI", sans-serif;
+  font-family: var(--font-number);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
 }
 .dataset-card-footer small {
-  font-size: 9px;
-  color: #a6b1c4;
+  font-family: var(--font-ui);
+  font-size: 12px;
   font-weight: 400;
+  color: var(--muted);
 }
 .dataset-card-footer > span:last-child {
-  margin-left: auto;
-  font-size: 8px;
+  display: none;
 }
-.bench-protocol {
+.bench-guidance {
   display: flex;
   align-items: center;
-  gap: 12px;
-  border: 1px solid #e4eaf4;
-  border-radius: 9px;
-  background: #f0f4fb;
-  padding: 14px 18px;
-  margin-bottom: 19px;
-  color: #8e9fbd;
+  justify-content: space-between;
+  gap: 16px;
+  border-left: 4px solid var(--blue);
+  border-radius: 7px;
+  background: #e5eefc;
+  padding: 13px 16px;
+  margin-bottom: 14px;
 }
-.bench-protocol > svg {
-  flex-shrink: 0;
-  color: #7f98c0;
-}
-.bench-protocol strong {
-  font-size: 11px;
-  color: #7587a7;
-  font-weight: 500;
-}
-.bench-protocol p {
-  font-size: 9px;
-  line-height: 1.8;
-  margin-top: 5px;
-  color: #9ba9be;
-}
-.bench-protocol > span {
-  margin-left: auto;
+.bench-guidance strong {
   font-size: 15px;
-  font-family: "Segoe UI", sans-serif;
-  white-space: nowrap;
-  color: #899ab7;
+  line-height: 1.6;
 }
-.bench-protocol > span small {
-  display: block;
-  text-align: right;
-  font-size: 8px;
-  margin-top: 5px;
-  color: #a6b2c6;
-  font-family: Arial, sans-serif;
+.bench-guidance p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 3px;
+  max-width: 65ch;
+}
+.bench-guidance .button {
+  flex-shrink: 0;
+}
+.bench-protocol {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.bench-protocol summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  min-height: 32px;
+  font-weight: 500;
+  list-style: none;
+}
+.bench-protocol summary > span {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--blue);
+}
+.bench-protocol > p {
+  max-width: 82ch;
+  padding: 11px 14px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  line-height: 1.8;
+  margin-top: 6px;
 }
 .bench-metrics .metric-card {
-  min-height: 108px;
+  min-height: 98px;
 }
 .bench-metrics .metric-value {
-  font-size: 27px;
+  font-size: 29px;
 }
 .bench-metrics .metric-label small {
-  font-size: 9px;
-  display: block;
+  font-size: 12px;
 }
 .bench-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 290px;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 286px;
+  gap: 18px;
+  align-items: start;
 }
 .bench-visual-panel {
-  align-self: start;
+  border-top: 3px solid var(--blue);
 }
 .bench-side {
   display: flex;
   flex-direction: column;
-  gap: 19px;
+  gap: 18px;
 }
 .bench-display-tabs {
   display: flex;
-  gap: 3px;
   flex-wrap: wrap;
-  border-bottom: 1px solid #edf0f6;
-  padding: 0 17px 12px;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  padding: 0 12px;
 }
 .bench-display-tabs button {
-  border-radius: 5px;
-  padding: 7px 10px;
-  font-size: 10px;
-  color: #98a5bd;
+  min-height: 44px;
+  padding: 10px 9px;
+  border-bottom: 3px solid transparent;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
   white-space: nowrap;
+  border-radius: 0;
 }
 .bench-display-tabs button:hover {
-  background: #f6f8fd;
+  background: #f0f5fc;
 }
 .bench-display-tabs button.selected {
-  color: #6e7fcb;
-  background: #eef2fd;
+  border-bottom-color: var(--blue);
+  color: var(--blue);
+  font-weight: 600;
+  background: #edf3ff;
 }
 .bench-chart-options {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 9px;
-  padding: 15px 21px 6px;
-  font-size: 9px;
-  color: #a0acc1;
+  gap: 10px;
   flex-wrap: wrap;
+  padding: 11px 17px 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
 }
-.bench-chart-options > label {
+.bench-chart-options label {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  min-height: 32px;
 }
 .bench-chart-options input {
-  accent-color: #7788d6;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--blue);
 }
 .bench-chart-options select {
-  font-size: 10px;
-  color: #8594b0;
-  border: 1px solid #e3e9f4;
+  padding: 6px 9px;
+  max-width: 185px;
+  border: 1px solid var(--control-border);
   border-radius: 5px;
-  padding: 5px 7px;
-  max-width: 170px;
-  background: #fafbfe;
+  font-size: 14px;
+  color: var(--ink);
+  background: #fff;
+  min-height: 36px;
 }
 .bench-chart {
   position: relative;
   width: 100%;
-  padding: 6px 15px 0;
+  padding: 5px 12px 0;
+  min-width: 0;
 }
 .bench-chart > svg {
   width: 100%;
   display: block;
+  touch-action: pan-y;
 }
-.bench-axis {
-  fill: #92a0b8;
-  font-size: 10px;
-  font-family: Arial, sans-serif;
-}
+.bench-axis,
 .bench-axis-label {
-  fill: #929fb7;
-  font-size: 10px;
+  fill: var(--muted);
+  font-size: 12px;
+  font-family: var(--font-ui);
 }
 .bench-chart-tooltip {
   position: absolute;
-  right: 22px;
-  top: 21px;
-  background: #fff;
-  border: 1px solid #e2e9f5;
-  box-shadow: 0 5px 18px #24375910;
-  padding: 10px 12px;
-  border-radius: 7px;
+  right: 19px;
+  top: 19px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  color: #8a99b4;
-  font-size: 10px;
+  gap: 5px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #adc0d9;
+  border-radius: 6px;
+  box-shadow: 0 3px 14px #162d4515;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.5;
   pointer-events: none;
 }
 .bench-chart-tooltip strong {
-  font-weight: 500;
-  color: #7183ae;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--blue);
   margin-bottom: 3px;
 }
 .bench-legend {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 17px;
+  gap: 13px;
   flex-wrap: wrap;
-  color: #99a7bd;
-  font-size: 9px;
-  padding: 12px 0 20px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  padding: 8px 0 13px;
 }
 .bench-legend > span {
   display: flex;
   align-items: center;
   gap: 5px;
 }
+.bench-legend .validation-marker {
+  border-radius: 1px;
+  background: var(--blue);
+}
 .bench-analysis-empty {
-  min-height: 290px;
+  min-height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 17px;
-  color: #a2afc9;
-  font-size: 11px;
+  gap: 16px;
+  font-size: 14px;
+  color: var(--muted);
+  padding: 25px;
+  text-align: center;
 }
 .bench-loading {
-  padding: 55px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 15px;
-  color: #91a0bc;
-  font-size: 12px;
+  gap: 13px;
+  padding: 45px;
+  font-size: 15px;
+  color: var(--muted);
+}
+.bench-settings {
+  background: #f8fbff;
 }
 .bench-settings-body {
-  padding: 19px 20px 17px;
+  padding: 17px 18px;
 }
 .bench-field-label {
-  font-size: 10px;
-  color: #8a99b3;
   display: block;
-  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 9px;
 }
 .bench-model-buttons {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 .bench-model-buttons button {
-  font-size: 10px;
-  border: 1px solid #e5eaf4;
+  font-size: 13px;
+  line-height: 1.4;
+  min-height: 42px;
+  padding: 9px 3px;
+  border: 1px solid #91a5be;
   border-radius: 5px;
-  padding: 8px 2px;
-  color: #9ba8bf;
   white-space: nowrap;
+  color: var(--muted);
+  background: #fff;
 }
 .bench-model-buttons button.chosen {
-  border-color: #c0caed;
-  color: #6e82c8;
-  background: #f1f4ff;
+  background: var(--blue-soft);
+  border-color: var(--blue);
+  color: var(--blue);
+  font-weight: 600;
 }
 .bench-setting-description {
-  font-size: 9px;
-  line-height: 1.9;
-  color: #a7b2c6;
-  margin: 12px 0 23px;
-  min-height: 33px;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--muted);
+  margin: 11px 0 19px;
+  min-height: 44px;
 }
 .bench-settings .slider-control {
-  margin-bottom: 24px;
+  margin-bottom: 19px;
 }
 .bench-fixed-split {
   display: flex;
-  gap: 7px;
+  align-items: center;
   justify-content: space-between;
-  background: #f8faff;
-  border: 1px solid #edf1f8;
+  gap: 7px;
+  flex-wrap: wrap;
+  background: #eaf1fa;
+  border: 1px solid #bdcde1;
   border-radius: 5px;
-  padding: 10px 8px;
-  font-size: 9px;
-  color: #9aabc6;
-  margin: -4px 0 15px;
+  padding: 9px 10px;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 15px;
 }
 .bench-seed {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #99a8c0;
-  font-size: 10px;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--muted);
 }
 .bench-seed input {
-  border: 1px solid #e3e9f4;
-  background: #fbfcff;
+  width: 90px;
+  min-height: 40px;
+  padding: 6px 9px;
+  border: 1px solid var(--control-border);
   border-radius: 5px;
-  padding: 6px;
-  color: #8a9bb9;
+  font-size: 14px;
+  color: var(--ink);
+  background: #fff;
   text-align: center;
-  width: 80px;
-  font-size: 10px;
 }
 .bench-interventions {
   display: flex;
-  gap: 7px;
   align-items: center;
-  border-top: 1px solid #edf0f6;
-  padding-top: 15px;
-  margin-top: 17px;
+  gap: 6px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--border);
+  padding-top: 13px;
+  margin-top: 16px;
 }
 .bench-interventions > span {
-  font-size: 8px;
-  color: #a6b3c9;
-  margin-right: auto;
+  font-size: 12px;
+  color: var(--muted);
+  width: 100%;
 }
 .bench-interventions > button {
-  font-size: 9px;
-  border: 1px solid #e9edf6;
-  border-radius: 4px;
-  color: #9aa8c4;
-  padding: 5px 7px;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid #a7b9cf;
+  border-radius: 5px;
+  min-height: 34px;
+  flex: 1;
+  background: #fff;
 }
 .bench-interventions > button:hover {
-  background: #f5f7ff;
-}
-.bench-coach .panel-heading h2 svg {
-  color: #9ba3d3;
+  background: var(--blue-soft);
+  border-color: var(--blue);
 }
 .bench-coach-body {
-  padding: 18px 20px 20px;
+  padding: 17px 18px 19px;
 }
 .bench-coach-body h3 {
-  font-size: 14px;
-  color: #7b89ac;
-  font-weight: 500;
-  line-height: 1.8;
-  margin-bottom: 10px;
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 600;
+  margin-bottom: 9px;
 }
 .bench-coach-body > p:not(.bench-coach-text) {
-  font-size: 10px;
-  line-height: 1.9;
-  color: #a1acc1;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--muted);
 }
 .bench-coach-text {
-  font-size: 11px;
-  line-height: 2;
+  font-size: 14px;
+  line-height: 1.9;
   white-space: pre-wrap;
-  color: #8391ad;
-  max-height: 310px;
+  max-height: 350px;
   overflow-y: auto;
+  color: var(--ink);
 }
 .bench-evidence-tags {
   display: flex;
-  gap: 6px;
+  gap: 7px;
   flex-wrap: wrap;
-  margin: 15px 0;
+  margin: 14px 0;
 }
 .bench-evidence-tags > span {
   display: flex;
   align-items: center;
-  gap: 3px;
-  border: 1px solid #e8edf6;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--teal);
+  border: 1px solid #98c2b7;
+  background: #eef8f2;
   border-radius: 4px;
-  padding: 4px 5px;
-  font-size: 8px;
-  color: #99a8c2;
+  padding: 4px 6px;
 }
 .bench-coach-body .button {
-  font-size: 10px;
-  min-height: 34px;
+  font-size: 13px;
+  min-height: 42px;
 }
 .bench-comparison,
 .bench-stability {
-  padding: 21px;
+  padding: 18px;
 }
 .bench-analysis-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  font-size: 10px;
-  line-height: 1.8;
-  color: #9aa8c1;
-  margin-bottom: 21px;
+  gap: 10px;
   flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 20px;
 }
 .bench-analysis-heading strong {
-  font-weight: 500;
-  color: #7f90bd;
-  background: #f2f5fd;
+  font-size: 13px;
+  font-weight: 600;
+  color: #174a94;
+  background: #eaf1fc;
   padding: 6px 9px;
-  border-radius: 5px;
+  border-radius: 4px;
 }
 .bench-model-row {
   display: grid;
-  grid-template-columns: 85px minmax(0, 1fr) 95px;
-  gap: 15px;
+  grid-template-columns: 82px minmax(0, 1fr) 104px;
   align-items: center;
-  margin-bottom: 24px;
+  gap: 14px;
+  margin-bottom: 23px;
 }
 .bench-model-row > div:first-child strong {
-  font-size: 11px;
-  color: #8091ae;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
 }
 .bench-model-row small {
   display: block;
-  font-size: 8px;
-  color: #adb8cb;
-  margin-top: 5px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 4px;
 }
 .bench-bar-track {
-  height: 15px;
-  background: #f4f6fb;
+  height: 17px;
   border-radius: 3px;
+  background: #e6edf7;
   overflow: hidden;
 }
 .bench-bar-track > i {
   display: block;
   height: 100%;
-  background: #b0bce4;
-  border-radius: 3px;
   min-width: 0;
+  background: #3f6fc6;
+  border-radius: 3px;
 }
 .bench-model-row.current .bench-bar-track > i {
-  background: #83b9ab;
+  background: var(--teal);
 }
 .bench-model-row:nth-child(2) .bench-bar-track > i {
-  background: #c9cedc;
+  background: #738399;
 }
 .bench-model-row > span {
-  font-size: 17px;
-  font-family: "Segoe UI", sans-serif;
-  font-weight: 500;
-  color: #8595b1;
   text-align: right;
+  font-family: var(--font-number);
   font-variant-numeric: tabular-nums;
+  font-size: 22px;
+  font-weight: 600;
 }
 .bench-analysis-note {
-  font-size: 10px;
-  line-height: 1.9;
-  color: #a4b0c5;
-  border-top: 1px solid #edf1f7;
-  padding-top: 13px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
   margin-top: 12px;
 }
 .bench-stability .comparison-scroll {
-  padding: 0 0 10px;
+  padding: 0 0 12px;
 }
 .bench-stability table {
-  font-size: 10px;
+  font-size: 14px;
 }
 .bench-stability th {
-  font-size: 9px;
+  font-size: 12px;
 }
 .bench-stability-summary {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin: 15px 0;
 }
 .bench-stability-summary > div {
-  border-radius: 7px;
-  background: #f7f9fd;
-  border: 1px solid #edf1f7;
-  padding: 13px 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #f4f8fd;
 }
 .bench-stability-summary span {
-  font-size: 9px;
-  color: #a4b0c6;
+  font-size: 12px;
+  color: var(--muted);
 }
 .bench-stability-summary strong {
   display: block;
-  font-size: 17px;
-  font-weight: 500;
-  color: #8091b1;
-  font-family: "Segoe UI", sans-serif;
-  margin-top: 8px;
+  font-family: var(--font-number);
+  font-size: 23px;
+  font-weight: 600;
+  margin-top: 6px;
 }
 .bench-stability-summary small {
-  font-size: 10px;
-  color: #a7b2c7;
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 400;
 }
 .bench-test {
-  padding: 21px;
-  margin-top: 21px;
-  background: #f8faff;
+  padding: 18px;
+  margin-top: 20px;
+  background: #edf3fc;
 }
 .bench-test-intro {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 12px;
 }
 .bench-test h3 {
-  font-size: 12px;
-  font-weight: 500;
-  color: #8294b3;
+  font-size: 16px;
+  font-weight: 600;
 }
 .bench-test p {
-  font-size: 10px;
-  line-height: 1.9;
-  color: #a2b0c6;
-  margin-top: 7px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin-top: 5px;
+  max-width: 80ch;
 }
 .bench-test.exposed {
-  background: #fcfaf6;
-  border-color: #eee8dd;
+  background: #fff5e8;
+  border-color: #d8b989;
 }
 .bench-test.exposed h3 {
-  color: #a8997b;
+  color: #7d4b10;
 }
 .bench-test.exposed p {
-  color: #b6aa94;
+  color: #795322;
 }
 .bench-test-action {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding-left: 47px;
-  margin-top: 14px;
+  gap: 13px;
+  padding-left: 48px;
+  margin-top: 13px;
 }
 .bench-test-action > label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  color: #a6b2c6;
-  line-height: 1.8;
+  gap: 7px;
+  min-height: 36px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
 }
 .bench-test-action input {
-  accent-color: #8699ce;
+  width: 17px;
+  height: 17px;
+  accent-color: var(--blue);
 }
 .bench-test-action .button {
-  font-size: 10px;
-  min-height: 33px;
+  font-size: 13px;
 }
 .bench-final-values {
   display: flex;
   align-items: center;
-  gap: 27px;
+  gap: 24px;
   flex-wrap: wrap;
-  padding: 18px 0 0 47px;
-  font-size: 10px;
-  color: #a89d88;
+  padding: 16px 0 0 48px;
+  font-size: 14px;
+  color: #795322;
 }
 .bench-final-values strong {
-  font-family: "Segoe UI", sans-serif;
-  font-size: 19px;
-  font-weight: 500;
-  margin-left: 8px;
-  color: #9d8f74;
+  font-family: var(--font-number);
+  font-size: 23px;
+  font-weight: 600;
+  margin-left: 7px;
 }
 .bench-final-values > small {
   margin-left: auto;
-  font-size: 9px;
+  font-size: 12px;
 }
 .bench-data-details {
-  margin: 19px 0 8px;
-  color: #a2afc7;
-  font-size: 10px;
-  border: 1px solid #e8edf5;
-  border-radius: 8px;
-  background: #fafbfe;
+  margin: 18px 0 8px;
+  border: 1px solid #b9c9df;
+  border-radius: 7px;
+  background: #f8fbff;
+  color: var(--muted);
+  font-size: 13px;
 }
 .bench-data-details summary {
   display: flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
-  padding: 14px 18px;
+  min-height: 46px;
+  padding: 10px 16px;
   list-style: none;
+  cursor: pointer;
+  font-weight: 500;
 }
 .bench-data-details summary > svg:last-child {
   margin-left: auto;
@@ -622,64 +666,76 @@
   transform: rotate(90deg);
 }
 .bench-data-details > div {
-  padding: 0 18px 16px;
-  line-height: 2;
+  padding: 0 16px 16px;
+  line-height: 1.9;
+  max-width: 90ch;
 }
 .bench-data-details a {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  color: #8298c8;
-  margin-right: 20px;
-  margin-top: 8px;
+  gap: 6px;
+  min-height: 36px;
+  margin: 8px 17px 0 0;
+  color: var(--blue);
+  font-size: 13px;
 }
 .bench-journal {
-  margin: 0 0 21px;
+  margin: 0 0 18px;
 }
 .bench-journal-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
   padding: 16px;
 }
 .bench-journal-list > button {
-  text-align: left;
-  border: 1px solid #e8edf6;
-  border-radius: 7px;
-  padding: 13px;
   position: relative;
+  padding: 14px;
+  border: 1px solid #a9bbd2;
+  border-radius: 6px;
+  text-align: left;
+  min-height: 100px;
+}
+.bench-journal-list > button:hover {
+  border-color: var(--blue);
+  background: var(--blue-soft);
 }
 .bench-journal-list strong {
   display: block;
-  font-size: 11px;
-  font-weight: 500;
-  color: #8a9ab7;
-  line-height: 1.7;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+  padding-right: 17px;
 }
 .bench-journal-list span {
   display: block;
-  font-size: 10px;
-  color: #99a9c3;
-  line-height: 1.8;
-  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-top: 7px;
 }
 .bench-journal-list small {
   display: block;
-  font-size: 8px;
-  color: #b0bbce;
-  margin-top: 7px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 5px;
 }
 .bench-journal-list svg {
   position: absolute;
   right: 11px;
-  top: 16px;
-  color: #b6bfd1;
+  top: 15px;
+  color: var(--blue);
 }
 .bench-empty-copy {
-  padding: 23px;
-  color: #a5b1c8;
-  font-size: 11px;
-  line-height: 1.9;
+  padding: 22px;
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+@media (min-width: 1600px) {
+  .bench-workspace {
+    grid-template-columns: minmax(0, 1fr) 306px;
+  }
 }
 @media (max-width: 1250px) {
   .bench-workspace {
@@ -687,270 +743,359 @@
     gap: 15px;
   }
   .dataset-card {
-    padding: 16px;
+    padding: 11px;
+    grid-template-columns: 29px minmax(0, 1fr);
+    column-gap: 8px;
+  }
+  .dataset-icon {
+    width: 28px;
+    height: 31px;
   }
   .dataset-card h2 {
-    font-size: 16px;
+    font-size: 15px;
   }
   .dataset-card-footer {
     gap: 8px;
   }
-  .dataset-card-footer > span:last-child {
-    font-size: 7px;
+  .dataset-card-footer span {
+    font-size: 12px;
   }
   .bench-display-tabs {
-    padding-left: 11px;
-    padding-right: 11px;
-    gap: 1px;
+    padding: 0 9px;
   }
   .bench-display-tabs button {
-    font-size: 9px;
-    padding: 7px 8px;
+    padding: 9px 7px;
+    font-size: 12px;
   }
   .bench-model-row {
-    grid-template-columns: 70px minmax(0, 1fr) 80px;
-    gap: 9px;
+    grid-template-columns: 76px minmax(0, 1fr) 94px;
+    gap: 10px;
   }
-  .bench-analysis-heading {
-    font-size: 9px;
+  .bench-settings-body {
+    padding: 16px;
   }
-  .bench-stability-summary strong {
-    font-size: 15px;
+  .bench-model-buttons {
+    gap: 4px;
+  }
+  .bench-model-buttons button {
+    font-size: 12px;
+  }
+  .bench-coach-body {
+    padding: 16px;
+  }
+  .bench-coach-body h3 {
+    font-size: 17px;
   }
 }
-@media (max-width: 1020px) {
+@media (max-width: 1050px) {
   .bench-workspace {
     grid-template-columns: 1fr;
   }
   .bench-side {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 15px;
     align-items: start;
+    gap: 16px;
+  }
+  .bench-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .bench-metrics .metric-card:nth-child(-n + 2) {
+    border-bottom: 0;
+  }
+  .bench-metrics .metric-card:nth-child(2) {
+    border-right: 1px solid var(--border);
+  }
+  .bench-guidance {
+    align-items: flex-start;
+  }
+  .bench-guidance strong {
+    font-size: 14px;
+  }
+  .bench-guidance .button {
+    font-size: 13px;
   }
   .dataset-cards {
-    gap: 10px;
+    gap: 9px;
   }
   .dataset-card {
-    padding: 14px;
+    display: block;
+    min-height: 82px;
+    padding: 12px;
+  }
+  .dataset-card-top {
+    display: none;
   }
   .dataset-card h2 {
-    font-size: 15px;
-  }
-  .dataset-card > p {
-    font-size: 9px;
+    font-size: 16px;
+    padding-right: 0;
   }
   .dataset-card-footer {
-    flex-wrap: wrap;
-    gap: 7px;
-  }
-  .dataset-card-footer > span:last-child {
-    display: none;
-  }
-  .bench-protocol > span {
-    display: none;
+    margin-top: 6px;
   }
   .bench-journal-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .bench-model-buttons button {
-    font-size: 9px;
-  }
-  .bench-coach-body h3 {
-    font-size: 13px;
+  .bench-stability-summary strong {
+    font-size: 21px;
   }
 }
 @media (max-width: 760px) {
   .dataset-lab .page-heading h1 {
-    font-size: 24px;
-    letter-spacing: -0.7px;
+    font-size: 25px;
   }
   .dataset-cards {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    margin-top: 19px;
+    gap: 7px;
+    margin: 12px 0 14px;
   }
   .dataset-card {
-    padding: 14px 16px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    column-gap: 10px;
-    align-items: center;
-  }
-  .dataset-card-top {
-    grid-column: 1/-1;
-    font-size: 9px;
-  }
-  .dataset-icon {
-    width: 25px;
-    height: 25px;
+    min-height: 82px;
+    padding: 10px 7px;
+    border-radius: 6px;
   }
   .dataset-card h2 {
-    font-size: 17px;
-    margin: 9px 0 5px;
-    gap: 12px;
-    justify-content: flex-start;
-  }
-  .dataset-card > p {
-    font-size: 9px;
-    grid-column: 1;
-    line-height: 1.7;
+    font-size: 14px;
+    justify-content: center;
+    line-height: 1.6;
+    white-space: normal;
+    text-align: center;
   }
   .dataset-card-footer {
-    grid-column: 2;
-    grid-row: 2/4;
-    border: 0;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-items: flex-end;
+    justify-content: center;
+    gap: 3px;
+    text-align: center;
+    font-size: 12px;
   }
   .dataset-card-footer strong {
-    font-size: 17px;
-  }
-  .dataset-card-footer small {
-    font-size: 8px;
+    font-size: 14px;
   }
   .dataset-card-footer > span {
-    font-size: 8px;
-  }
-  .dataset-card h2 svg {
     display: none;
   }
-  .bench-protocol {
+  .dataset-card-footer small {
+    font-size: 12px;
+  }
+  .bench-guidance {
+    flex-direction: column;
+    align-items: stretch;
     padding: 13px;
-    gap: 10px;
-    align-items: flex-start;
+    margin-bottom: 12px;
+    gap: 12px;
   }
-  .bench-protocol > svg {
-    margin-top: 2px;
+  .bench-guidance strong {
+    font-size: 15px;
   }
-  .bench-protocol strong {
-    font-size: 10px;
-    line-height: 1.9;
+  .bench-guidance p {
+    font-size: 14px;
+    line-height: 1.7;
   }
-  .bench-protocol p {
-    font-size: 9px;
+  .bench-guidance .button {
+    align-self: flex-start;
+    min-height: 44px;
+    font-size: 14px;
+  }
+  .bench-protocol summary {
+    min-height: 44px;
+    font-size: 13px;
+  }
+  .bench-protocol summary > span {
+    font-size: 12px;
+  }
+  .bench-protocol > p {
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .bench-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bench-metrics .metric-card {
+    padding: 12px;
+    min-height: 108px;
+  }
+  .bench-metrics .metric-card:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--border);
+  }
+  .bench-metrics .metric-card:nth-child(2) {
+    border-right: 0;
   }
   .bench-metrics .metric-value {
-    font-size: 26px;
+    font-size: 29px;
   }
   .bench-metrics .metric-label {
-    font-size: 10px;
+    font-size: 13px;
+  }
+  .bench-metrics .metric-label small {
+    font-size: 12px;
   }
   .bench-workspace {
     gap: 16px;
+  }
+  .bench-display-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 0 9px;
+    gap: 3px;
+  }
+  .bench-display-tabs button {
+    min-height: 44px;
+    padding: 9px 3px;
+    font-size: 13px;
+  }
+  .bench-chart-options {
+    padding: 10px 13px 5px;
+    font-size: 13px;
+    gap: 8px;
+  }
+  .bench-chart-options > label {
+    min-height: 44px;
+  }
+  .bench-chart-options select {
+    font-size: 16px;
+    min-height: 44px;
+    max-width: 170px;
+  }
+  .bench-chart {
+    padding: 4px 3px 0;
+  }
+  .bench-axis,
+  .bench-axis-label {
+    font-size: 12px;
+  }
+  .bench-legend {
+    font-size: 12px;
+    gap: 8px 12px;
+    padding: 9px 8px 13px;
+    line-height: 1.6;
+  }
+  .bench-chart-tooltip {
+    font-size: 12px;
+    right: 12px;
+    top: 12px;
+    padding: 9px;
   }
   .bench-side {
     grid-template-columns: 1fr;
     gap: 17px;
   }
-  .bench-display-tabs {
-    padding: 0 12px 12px;
-    gap: 3px;
-  }
-  .bench-display-tabs button {
-    font-size: 10px;
-    padding: 7px 9px;
-  }
-  .bench-chart-options {
-    padding: 13px 16px 6px;
-    font-size: 9px;
-  }
-  .bench-chart {
-    padding-left: 5px;
-    padding-right: 5px;
-  }
-  .bench-legend {
-    font-size: 8px;
-    gap: 9px;
-    padding: 9px 7px 16px;
-    line-height: 1.8;
-  }
-  .bench-axis {
-    font-size: 10px;
-  }
-  .bench-axis-label {
-    font-size: 9px;
-  }
-  .bench-chart-tooltip {
-    font-size: 9px;
-    right: 13px;
-    top: 24px;
-    padding: 8px 10px;
-  }
   .bench-settings-body {
-    padding: 18px 20px;
-  }
-  .bench-model-buttons button {
-    font-size: 11px;
+    padding: 18px;
   }
   .bench-field-label {
-    font-size: 11px;
+    font-size: 15px;
+  }
+  .bench-model-buttons {
+    gap: 7px;
+  }
+  .bench-model-buttons button {
+    font-size: 14px;
+    min-height: 44px;
   }
   .bench-setting-description {
-    font-size: 10px;
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .bench-fixed-split {
+    font-size: 13px;
+    padding: 10px;
+  }
+  .bench-seed {
+    font-size: 15px;
+  }
+  .bench-seed input {
+    font-size: 16px;
+    min-height: 44px;
   }
   .bench-interventions > span {
-    font-size: 9px;
+    font-size: 13px;
+  }
+  .bench-interventions > button {
+    font-size: 14px;
+    min-height: 44px;
+  }
+  .bench-coach-body {
+    padding: 18px;
+  }
+  .bench-coach-body h3 {
+    font-size: 19px;
   }
   .bench-coach-body > p:not(.bench-coach-text) {
-    font-size: 11px;
+    font-size: 15px;
+  }
+  .bench-coach-text {
+    font-size: 15px;
+    line-height: 1.9;
+    max-height: 390px;
+  }
+  .bench-coach-body .button {
+    font-size: 14px;
+    min-height: 44px;
   }
   .bench-evidence-tags > span {
-    font-size: 9px;
+    font-size: 12px;
   }
   .bench-comparison,
   .bench-stability {
-    padding: 17px;
+    padding: 15px;
   }
   .bench-analysis-heading {
-    font-size: 9px;
-    gap: 10px;
+    font-size: 13px;
+  }
+  .bench-analysis-heading strong {
+    font-size: 13px;
   }
   .bench-model-row {
-    grid-template-columns: 68px minmax(0, 1fr) 73px;
+    grid-template-columns: 68px minmax(0, 1fr) 78px;
     gap: 8px;
-  }
-  .bench-model-row > span {
-    font-size: 15px;
+    margin-bottom: 22px;
   }
   .bench-model-row > div:first-child strong {
-    font-size: 10px;
+    font-size: 14px;
   }
   .bench-model-row small {
-    font-size: 7px;
+    font-size: 12px;
+  }
+  .bench-model-row > span {
+    font-size: 20px;
   }
   .bench-bar-track {
-    height: 12px;
+    height: 15px;
   }
   .bench-stability-summary {
     gap: 7px;
   }
   .bench-stability-summary > div {
-    padding: 10px 9px;
+    padding: 10px 8px;
+  }
+  .bench-stability-summary span {
+    font-size: 12px;
   }
   .bench-stability-summary strong {
-    font-size: 13px;
+    font-size: 20px;
   }
   .bench-stability-summary small {
     display: block;
-    font-size: 10px;
+    font-size: 13px;
     margin-top: 4px;
   }
   .bench-analysis-note {
-    font-size: 9px;
+    font-size: 14px;
+    line-height: 1.8;
   }
   .bench-test {
-    padding: 18px;
+    padding: 17px;
+    margin-top: 18px;
   }
   .bench-test-intro {
     align-items: flex-start;
   }
   .bench-test-intro .test-lock {
     display: none;
+  }
+  .bench-test h3 {
+    font-size: 16px;
+  }
+  .bench-test p {
+    font-size: 14px;
   }
   .bench-test-action {
     padding: 0;
@@ -959,24 +1104,72 @@
     gap: 12px;
   }
   .bench-test-action > label {
+    font-size: 14px;
     align-self: flex-start;
-    font-size: 9px;
+    min-height: 44px;
+  }
+  .bench-test-action .button {
+    font-size: 14px;
+    min-height: 44px;
   }
   .bench-final-values {
     padding-left: 0;
-    gap: 17px;
+    gap: 16px;
+    font-size: 14px;
   }
   .bench-final-values strong {
-    font-size: 16px;
+    font-size: 21px;
   }
   .bench-final-values > small {
     width: 100%;
-    margin: 0;
+    margin-left: 0;
+    font-size: 12px;
+  }
+  .bench-data-details summary {
+    min-height: 48px;
+    padding: 11px 14px;
+    font-size: 14px;
+  }
+  .bench-data-details > div {
+    padding: 0 14px 16px;
+    font-size: 14px;
+    line-height: 1.9;
+  }
+  .bench-data-details a {
+    font-size: 14px;
+    min-height: 44px;
   }
   .bench-journal-list {
     grid-template-columns: 1fr;
+    padding: 14px;
   }
   .bench-journal .panel-heading .small-copy {
     display: none;
   }
+  .bench-journal-list > button {
+    min-height: 100px;
+  }
+  .bench-journal-list strong {
+    font-size: 15px;
+  }
+  .bench-journal-list span {
+    font-size: 14px;
+  }
+  .bench-journal-list small {
+    font-size: 12px;
+  }
+  .bench-empty-copy {
+    font-size: 15px;
+  }
+}
+
+.bench-visual-panel > .metrics-grid {
+  margin: 0 16px 8px;
+}
+.bench-visual-panel > .metric-help,
+.bench-visual-panel > .bench-protocol {
+  margin: 3px 16px 12px;
+}
+.bench-visual-panel > .bench-guidance {
+  margin: 0 16px 12px;
 }

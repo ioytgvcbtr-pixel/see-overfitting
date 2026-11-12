@@ -23,7 +23,7 @@ for line in (ROOT / 'backend' / '.env').read_text(encoding='utf-8').splitlines()
         os.environ.setdefault(key.strip(), value.strip())
 
 DB_PATH = Path(os.environ.get('FITLAB_DB', str(ROOT / 'data' / 'fitlab.sqlite')))
-app = FastAPI(title='看见过拟合 · FitLab', version='0.2.0')
+app = FastAPI(title='看见过拟合 · FitLab', version='0.3.0')
 app.include_router(bench_router)
 
 
@@ -38,7 +38,7 @@ def connect():
 
 @app.get('/health')
 def health():
-    return {'status': 'ok', 'version': '0.2.0', **ai_status()}
+    return {'status': 'ok', 'version': '0.3.0', **ai_status()}
 
 
 @app.post('/experiments/run')
