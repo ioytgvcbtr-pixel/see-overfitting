@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./datasets.css";
 
 export const metadata: Metadata = {
   title: "看见过拟合 · FitLab 交互实验室",

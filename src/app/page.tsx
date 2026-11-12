@@ -13,6 +13,7 @@ import {
   ChevronRight,
   CircleHelp,
   Clock3,
+  Database,
   FlaskConical,
   FolderOpen,
   GraduationCap,
@@ -33,6 +34,7 @@ import {
   X,
 } from "lucide-react";
 import { FitChart, ErrorChart } from "@/components/FitChart";
+import DatasetLab from "@/components/DatasetLab";
 import {
   api,
   metric,
@@ -47,7 +49,7 @@ import {
   type Sweep,
 } from "@/lib/experiment";
 
-type View = "studio" | "path" | "history";
+type View = "studio" | "path" | "history" | "datasets";
 type Modal = "guide" | "save" | "report" | "final" | "sources" | "quiz" | null;
 const alphaValues = [0.00000001, 0.000001, 0.0001, 0.01, 0.1, 1, 10, 100];
 const alphaLabel = (a: number) =>
@@ -331,6 +333,16 @@ export default function Home() {
             <span className="nav-active-dot" />
           </button>
           <button
+            className={view === "datasets" ? "active" : ""}
+            onClick={() => {
+              setView("datasets");
+              setMobileMenu(false);
+            }}
+          >
+            <Database size={18} />
+            真实数据实验台<span className="nav-count">新</span>
+          </button>
+          <button
             className={view === "path" ? "active" : ""}
             onClick={() => {
               setView("path");
@@ -427,7 +439,9 @@ export default function Home() {
                 ? "实验工作台"
                 : view === "path"
                   ? "学习路径"
-                  : "实验档案"}
+                  : view === "datasets"
+                    ? "真实数据实验台"
+                    : "实验档案"}
             </strong>
           </div>
           <div className="topbar-right">
@@ -445,6 +459,7 @@ export default function Home() {
         </header>
 
         <main className="content">
+          {view === "datasets" && <DatasetLab onNotify={setToast} />}
           {view === "studio" && (
             <>
               <div className="page-heading">
