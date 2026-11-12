@@ -8,6 +8,8 @@
 - All displayed experiment metrics must come from the numerical backend. Fit preprocessing on training data only. Validation is for exploration; the independent test set remains sealed until final evaluation.
 - Use deterministic seeds and preserve train/validation/test identity across parameter changes.
 - AI explanations receive numerical evidence, not invented metrics. On API failure expose the actual fallback mode.
+- Real-data holdouts group identical feature rows; fit scaling/encoding on training only. Compare RMSE within the same dataset/unit. Preserve paired seeds and label standard deviations as descriptive, not confidence intervals.
+- DeepSeek Flash requests use reasoning_effort=xhigh with thinking enabled. Its documented compatibility mapping is native high. Show final explanations and usage, never reasoning text.
 - Keep Chinese product copy concrete. Responsive, keyboard-accessible UI; reduced-motion support.
 - Use conventional commits on the current feature branch. Local author `Codex <codex@local.invalid>` identifies AI-created commits, not the entrant's personal identity.
 - Current user priority: improve project features and interactions. Continue real development records, but defer competition videos, submission PDFs and other submission-material preparation until requested.

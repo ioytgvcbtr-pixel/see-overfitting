@@ -38,7 +38,7 @@
 
 预测问题先选择再揭示解释；答案、正确反馈和学习说明固定且审校。迁移练习记入本地学习进度，保留重做。进度不伪装为研究性学习效果证据。
 
-### F4 实验记录、比较与独立测试
+### F4 合成实验记录、比较与独立测试
 
 记录保存在SQLite，包含参数、完整实验结果、预测、备注和时间。档案支持载入、最多三组对比；刷新后保留。独立测试需用户点击“最终评估”才计算和展示，结果说明不用于继续调参。任何参数变化、切场景或重新载入记录时，当前测试显示与AI解释清空；测试结果只进入当次导出的报告，不随档案永久保存。保存的结果包含数据指纹以便追溯。
 
@@ -52,7 +52,7 @@
 
 ## 4. 架构与接口
 
-前端：Next.js App Router、React、TypeScript、CSS、lucide-react，代码原生SVG绘图。后端：FastAPI、NumPy、scikit-learn、SQLite、httpx、python-dotenv。Python固定使用<PYTHON_ENV>。Web请求通过Next.js `/api/...`转发至127.0.0.1:8000，浏览器只需同源地址。
+前端：Next.js App Router、React、TypeScript、CSS、lucide-react，代码原生SVG绘图。后端：FastAPI、NumPy、scikit-learn、SQLite、httpx。Python从本地环境配置选择。Web请求通过Next.js `/api/...`转发至127.0.0.1:8000，浏览器只需同源地址。
 
 - GET /health：版本与能力状态，不返回任何secret。
 - POST /experiments/run：验证参数并执行实验。
@@ -88,3 +88,19 @@ UCI Wine Quality（CC BY 4.0）：https://archive.ics.uci.edu/dataset/186/wine+q
 体验15%：统一视觉、反馈完整、响应式与键盘可用。
 
 最终还需参赛者真实试用反馈、5—8分钟1080p演示（至少2分钟AI协同过程）、不超过30页技术PDF。当前开发记录不得替代未发生的用户试用或视频。
+
+## 8. 0.2真实数据实验台
+
+数据：UCI Wine Quality红葡萄酒1599条、Auto MPG392条（6条缺失马力记录已移除）、Concrete Compressive Strength1030条。CSV快照、来源、CC BY 4.0许可及原始/转换后SHA-256在data/public中维护。
+
+模型：Ridge、DecisionTreeRegressor、60树RandomForestRegressor；另有训练均值基线。所有特征参与建模，汽车产地采用仅在训练集拟合的独热编码。
+
+协议：先将完全相同的特征行作为一组，按组做60/20/20划分。训练池按固定顺序取10%—100%；改变模型、树深、正则或训练占比不会重抽验证与测试集合。预处理仅拟合当前训练子集。RMSE保留目标单位；R²允许为负，不做跨数据集原始误差排名。
+
+展示：预测与真实对照、残差诊断、特征关系、学习曲线、模型对照、三种子稳定性复核。特征关系是观测散点，不作为偏依赖或因果效应。学习曲线固定模型参数与验证集合；对照显示所有模型配置；稳定性用配对种子并呈现每次结果和样本标准差，不当作置信区间。
+
+可干预学习：一次只改变一个控件；收藏条件后可恢复重算。真实数据收藏保存在浏览器，最多12条。测试接触按数据集在本浏览器记录；改参和重划分不会清除已见提醒。该机制是教学交互记录，严格最终评价仍需独立新数据。
+
+AI：请求reasoning_effort=xhigh并启用thinking；DeepSeek官方兼容映射为high。只返回最终解释和用量。解释证据由后端重算，包含适用参数、当前界面可用控件、已运行对照与复核。树模型不传入无关的岭回归α；已见测试的声明会进入解释和降级文本。
+
+新增接口：GET /datasets；POST /bench/run、/bench/compare、/bench/learning、/bench/stability、/bench/final、/bench/coach。实现分别位于backend/datasets.py、bench.py、bench_api.py、coach.py；前端独立组件与SVG图表在DatasetLab.tsx和BenchCharts.tsx。

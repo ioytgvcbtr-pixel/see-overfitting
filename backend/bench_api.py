@@ -56,9 +56,12 @@ async def bench_coach(request: BenchCoachRequest):
     evidence['available_controls'] = ['model', 'fraction', 'seed', 'alpha' if params.model == 'ridge' else 'depth']
     evidence['dataset'] = {key: result['dataset'][key] for key in ('title', 'unit', 'features', 'source', 'version')}
     evidence['browser_declared_test_exposure'] = request.test_previously_viewed
+    evidence['split'] = {**result['split'], 'test_sealed': not request.test_previously_viewed}
     if request.with_comparison:
         evidence['comparison'] = await asyncio.to_thread(compare, params)
         evidence['comparison_settings'] = {'ridge_alpha': params.alpha, 'tree_and_forest_depth': params.depth, 'forest_estimators': 60}
     if request.with_stability: evidence['stability'] = await asyncio.to_thread(stability, params)
     fallback = f"训练RMSE为{result['metrics']['train_rmse']:.3f}，验证RMSE为{result['metrics']['validation_rmse']:.3f}。保持数据与划分不变，比较模型复杂度；再用配对种子复核。独立测试应留到最后。"
+    if request.test_previously_viewed:
+        fallback = f"训练RMSE为{result['metrics']['train_rmse']:.3f}，验证RMSE为{result['metrics']['validation_rmse']:.3f}。此数据集测试结果已被查看，后续调参属于探索；严格终评需独立新数据。"
     return await explain(evidence, request.question, fallback)

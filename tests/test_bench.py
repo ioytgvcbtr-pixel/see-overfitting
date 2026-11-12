@@ -87,3 +87,12 @@ def test_coach_only_receives_applicable_controls(model, applicable, inactive, mo
     assert applicable in response['evidence']['parameters']
     assert inactive not in response['evidence']['parameters']
     assert applicable in response['evidence']['available_controls']
+
+
+def test_fallback_respects_declared_test_exposure(monkeypatch):
+    monkeypatch.delenv('AI_API_KEY', raising=False)
+    with TestClient(app) as client:
+        response=client.post('/bench/coach',json={'test_previously_viewed':True}).json()
+    assert response['evidence']['browser_declared_test_exposure'] is True
+    assert response['evidence']['split']['test_sealed'] is False
+    assert '已被查看' in response['content']

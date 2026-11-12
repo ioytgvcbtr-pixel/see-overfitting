@@ -1,0 +1,38 @@
+{
+  "web_status": 200,
+  "health": {
+    "status": "ok",
+    "version": "0.2.0",
+    "ai_configured": true,
+    "ai_model": "deepseek-flash",
+    "reasoning_effort": "xhigh",
+    "provider_effort": "high",
+    "thinking_enabled": true
+  },
+  "datasets": [
+    {
+      "id": "wine",
+      "rows": 1599,
+      "version": "d22f4f11db04"
+    },
+    {
+      "id": "auto",
+      "rows": 392,
+      "version": "362098bcf25b"
+    },
+    {
+      "id": "concrete",
+      "rows": 1030,
+      "version": "d30f66a6fa5e"
+    }
+  ],
+  "default_experiment_metrics": {
+    "train_rmse": 6.645615026330795,
+    "validation_rmse": 11.114092974094557,
+    "validation_r2": 0.5246335280093215,
+    "gap": 4.468477947763763,
+    "baseline_rmse": 16.170799461030963
+  },
+  "grouped_holdout": true,
+  "local_interpreter_configuration_verified": true
+}

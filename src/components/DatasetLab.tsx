@@ -295,6 +295,7 @@ export default function DatasetLab({
           <button
             className={`dataset-card ${dataset.color} ${params.dataset === dataset.id ? "chosen" : ""}`}
             key={dataset.id}
+            aria-pressed={params.dataset === dataset.id}
             onClick={() => {
               setBusy(true);
               setResult(null);
@@ -356,6 +357,8 @@ export default function DatasetLab({
                 <button
                   key={item.id}
                   onClick={() => {
+                    setBusy(true);
+                    setResult(null);
                     setParams({ ...item.parameters });
                     setFeature(0);
                     setDisplay("parity");
@@ -448,12 +451,35 @@ export default function DatasetLab({
                 className="bench-display-tabs"
                 role="tablist"
                 aria-label="实验展示方式"
+                onKeyDown={(event) => {
+                  if (event.ctrlKey || event.metaKey || event.altKey) return;
+                  const index = displays.findIndex(
+                    (item) => item.id === display,
+                  );
+                  const next =
+                    event.key === "ArrowRight"
+                      ? (index + 1) % displays.length
+                      : event.key === "ArrowLeft"
+                        ? (index - 1 + displays.length) % displays.length
+                        : event.key === "Home"
+                          ? 0
+                          : event.key === "End"
+                            ? displays.length - 1
+                            : -1;
+                  if (next < 0) return;
+                  event.preventDefault();
+                  event.currentTarget
+                    .querySelectorAll<HTMLButtonElement>("button")
+                    [next]?.focus();
+                  void analyze(displays[next].id);
+                }}
               >
                 {displays.map((item) => (
                   <button
                     key={item.id}
                     role="tab"
                     aria-selected={display === item.id}
+                    tabIndex={display === item.id ? 0 : -1}
                     className={display === item.id ? "selected" : ""}
                     onClick={() => void analyze(item.id)}
                   >
@@ -543,7 +569,8 @@ export default function DatasetLab({
                   ))}
                   <p className="bench-analysis-note">
                     条形从零起点编码验证RMSE，越低越好。该结果只针对当前数据和参数；可继续做配对种子复核。
-                    岭回归 α={params.alpha}；树与森林最大深度={params.depth}；森林使用60棵树。
+                    岭回归 α={params.alpha}；树与森林最大深度={params.depth}
+                    ；森林使用60棵树。
                   </p>
                 </div>
               )}
@@ -665,6 +692,7 @@ export default function DatasetLab({
                     {(Object.keys(modelNames) as ModelId[]).map((model) => (
                       <button
                         key={model}
+                        aria-pressed={params.model === model}
                         className={params.model === model ? "chosen" : ""}
                         onClick={() => update("model", model)}
                       >

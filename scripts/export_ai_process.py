@@ -56,6 +56,8 @@ def main():
             events.append(redact(json.dumps({'timestamp': entry.get('timestamp'), **cleaned}, ensure_ascii=False)))
     if not active:
         raise SystemExit('Project start prompt not found; existing evidence files were not modified.')
+    for event in events:
+        json.loads(event)
     (directory / 'conversation.md').write_text(''.join(messages), encoding='utf-8')
     (directory / 'tool-events.jsonl').write_text('\n'.join(events) + '\n', encoding='utf-8')
     print(f'Exported {len(messages)-1} public messages and {len(events)} tool events (redacted).')

@@ -1,0 +1,1402 @@
+{
+  "started_at_utc": "2026-11-12T16:14:05.347670+00:00",
+  "finished_at_utc": "2026-11-12T16:14:07.332986+00:00",
+  "elapsed_seconds": 1.985,
+  "git_commit": "b96344709e7b5c3ec471958ea14570dee0b33a00",
+  "compute_code_sha256": "b9ade672bcccf5a34e22ebb4d3617099babcc23273f01a76d0903cb030a99b1b",
+  "protocol": "Grouped holdout; 50% of training pool; matched seeds 42/43/44; training-only preprocessing; validation metrics only.",
+  "hypotheses": [
+    "Identical feature groups never cross splits.",
+    "Depth changes may improve training while validation can worsen.",
+    "The winning model may depend on the split; inspect all paired runs."
+  ],
+  "contribution": "Existing estimators transferred into an evidence-driven interactive learning protocol; no novel estimator claim.",
+  "records": [
+    {
+      "dataset": "wine",
+      "model": "ridge",
+      "depth": 5,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 0.64770080424506,
+        "validation_rmse": 0.6231321792980533,
+        "validation_r2": 0.30150242079653033,
+        "gap": -0.024568624947006734,
+        "baseline_rmse": 0.752736833370285
+      },
+      "split": {
+        "training": 479,
+        "training_pool": 959,
+        "validation": 320,
+        "test": 320,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "920607d325b9c497"
+    },
+    {
+      "dataset": "wine",
+      "model": "tree",
+      "depth": 2,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 0.6903844086890545,
+        "validation_rmse": 0.6970714632392895,
+        "validation_r2": 0.1259039563992943,
+        "gap": 0.006687054550234994,
+        "baseline_rmse": 0.752736833370285
+      },
+      "split": {
+        "training": 479,
+        "training_pool": 959,
+        "validation": 320,
+        "test": 320,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "920607d325b9c497"
+    },
+    {
+      "dataset": "wine",
+      "model": "tree",
+      "depth": 5,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 0.5058198334477189,
+        "validation_rmse": 0.7468176598085127,
+        "validation_r2": -0.003306682260396432,
+        "gap": 0.2409978263607938,
+        "baseline_rmse": 0.752736833370285
+      },
+      "split": {
+        "training": 479,
+        "training_pool": 959,
+        "validation": 320,
+        "test": 320,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "920607d325b9c497"
+    },
+    {
+      "dataset": "wine",
+      "model": "tree",
+      "depth": 12,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 0.05971982835205945,
+        "validation_rmse": 0.8632991215470388,
+        "validation_r2": -0.3406862171003835,
+        "gap": 0.8035792931949793,
+        "baseline_rmse": 0.752736833370285
+      },
+      "split": {
+        "training": 479,
+        "training_pool": 959,
+        "validation": 320,
+        "test": 320,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "920607d325b9c497"
+    },
+    {
+      "dataset": "wine",
+      "model": "forest",
+      "depth": 2,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 0.6426626980016281,
+        "validation_rmse": 0.628162533108214,
+        "validation_r2": 0.2901793900060601,
+        "gap": -0.014500164893414103,
+        "baseline_rmse": 0.752736833370285
+      },
+      "split": {
+        "training": 479,
+        "training_pool": 959,
+        "validation": 320,
+        "test": 320,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "920607d325b9c497"
+    },
+    {
+      "dataset": "wine",
+      "model": "forest",
+      "depth": 5,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 0.4668172091548879,
+        "validation_rmse": 0.6140431748886281,
+        "validation_r2": 0.3217303824004606,
+        "gap": 0.14722596573374025,
+        "baseline_rmse": 0.752736833370285
+      },
+      "split": {
+        "training": 479,
+        "training_pool": 959,
+        "validation": 320,
+        "test": 320,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "920607d325b9c497"
+    },
+    {
+      "dataset": "wine",
+      "model": "forest",
+      "depth": 12,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 0.22628937415161846,
+        "validation_rmse": 0.6330851879802886,
+        "validation_r2": 0.2790106461847406,
+        "gap": 0.40679581382867014,
+        "baseline_rmse": 0.752736833370285
+      },
+      "split": {
+        "training": 479,
+        "training_pool": 959,
+        "validation": 320,
+        "test": 320,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "920607d325b9c497"
+    },
+    {
+      "dataset": "wine",
+      "model": "ridge",
+      "depth": 5,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 0.6599780051924923,
+        "validation_rmse": 0.6811777334128272,
+        "validation_r2": 0.3340302229862182,
+        "gap": 0.02119972822033489,
+        "baseline_rmse": 0.8382010476886895
+      },
+      "split": {
+        "training": 484,
+        "training_pool": 968,
+        "validation": 317,
+        "test": 314,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "d0726e7c5b2d1fe3"
+    },
+    {
+      "dataset": "wine",
+      "model": "tree",
+      "depth": 2,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 0.6848507492373362,
+        "validation_rmse": 0.7493749205061747,
+        "validation_r2": 0.19400575108379658,
+        "gap": 0.06452417126883847,
+        "baseline_rmse": 0.8382010476886895
+      },
+      "split": {
+        "training": 484,
+        "training_pool": 968,
+        "validation": 317,
+        "test": 314,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "d0726e7c5b2d1fe3"
+    },
+    {
+      "dataset": "wine",
+      "model": "tree",
+      "depth": 5,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 0.5264310381417222,
+        "validation_rmse": 0.8135491532249498,
+        "validation_r2": 0.05004894593669884,
+        "gap": 0.2871181150832276,
+        "baseline_rmse": 0.8382010476886895
+      },
+      "split": {
+        "training": 484,
+        "training_pool": 968,
+        "validation": 317,
+        "test": 314,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "d0726e7c5b2d1fe3"
+    },
+    {
+      "dataset": "wine",
+      "model": "tree",
+      "depth": 12,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 0.19091072836275289,
+        "validation_rmse": 0.9348476150830061,
+        "validation_r2": -0.2543400324742757,
+        "gap": 0.7439368867202532,
+        "baseline_rmse": 0.8382010476886895
+      },
+      "split": {
+        "training": 484,
+        "training_pool": 968,
+        "validation": 317,
+        "test": 314,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "d0726e7c5b2d1fe3"
+    },
+    {
+      "dataset": "wine",
+      "model": "forest",
+      "depth": 2,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 0.6534804246205363,
+        "validation_rmse": 0.696760518097204,
+        "validation_r2": 0.30321193846541294,
+        "gap": 0.043280093476667614,
+        "baseline_rmse": 0.8382010476886895
+      },
+      "split": {
+        "training": 484,
+        "training_pool": 968,
+        "validation": 317,
+        "test": 314,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "d0726e7c5b2d1fe3"
+    },
+    {
+      "dataset": "wine",
+      "model": "forest",
+      "depth": 5,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 0.47874535825676834,
+        "validation_rmse": 0.6727551760131747,
+        "validation_r2": 0.3503974368857279,
+        "gap": 0.19400981775640636,
+        "baseline_rmse": 0.8382010476886895
+      },
+      "split": {
+        "training": 484,
+        "training_pool": 968,
+        "validation": 317,
+        "test": 314,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "d0726e7c5b2d1fe3"
+    },
+    {
+      "dataset": "wine",
+      "model": "forest",
+      "depth": 12,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 0.24581004023426176,
+        "validation_rmse": 0.6746718166847859,
+        "validation_r2": 0.34669080397739316,
+        "gap": 0.42886177645052415,
+        "baseline_rmse": 0.8382010476886895
+      },
+      "split": {
+        "training": 484,
+        "training_pool": 968,
+        "validation": 317,
+        "test": 314,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "d0726e7c5b2d1fe3"
+    },
+    {
+      "dataset": "wine",
+      "model": "ridge",
+      "depth": 5,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 0.6619578082194675,
+        "validation_rmse": 0.7302212999993047,
+        "validation_r2": 0.2790818824714969,
+        "gap": 0.06826349177983726,
+        "baseline_rmse": 0.8600262703683351
+      },
+      "split": {
+        "training": 478,
+        "training_pool": 956,
+        "validation": 309,
+        "test": 334,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "c7338958d22e1f94"
+    },
+    {
+      "dataset": "wine",
+      "model": "tree",
+      "depth": 2,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 0.6904586285692292,
+        "validation_rmse": 0.790354764135984,
+        "validation_r2": 0.15545830155662488,
+        "gap": 0.0998961355667548,
+        "baseline_rmse": 0.8600262703683351
+      },
+      "split": {
+        "training": 478,
+        "training_pool": 956,
+        "validation": 309,
+        "test": 334,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "c7338958d22e1f94"
+    },
+    {
+      "dataset": "wine",
+      "model": "tree",
+      "depth": 5,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 0.5044755091165795,
+        "validation_rmse": 0.8348312099515973,
+        "validation_r2": 0.05773230976041277,
+        "gap": 0.33035570083501786,
+        "baseline_rmse": 0.8600262703683351
+      },
+      "split": {
+        "training": 478,
+        "training_pool": 956,
+        "validation": 309,
+        "test": 334,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "c7338958d22e1f94"
+    },
+    {
+      "dataset": "wine",
+      "model": "tree",
+      "depth": 12,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 0.03961107997648847,
+        "validation_rmse": 1.0170472522300074,
+        "validation_r2": -0.3984894933590102,
+        "gap": 0.9774361722535189,
+        "baseline_rmse": 0.8600262703683351
+      },
+      "split": {
+        "training": 478,
+        "training_pool": 956,
+        "validation": 309,
+        "test": 334,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "c7338958d22e1f94"
+    },
+    {
+      "dataset": "wine",
+      "model": "forest",
+      "depth": 2,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 0.655646926600801,
+        "validation_rmse": 0.7524614322827957,
+        "validation_r2": 0.23449957506804642,
+        "gap": 0.09681450568199468,
+        "baseline_rmse": 0.8600262703683351
+      },
+      "split": {
+        "training": 478,
+        "training_pool": 956,
+        "validation": 309,
+        "test": 334,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "c7338958d22e1f94"
+    },
+    {
+      "dataset": "wine",
+      "model": "forest",
+      "depth": 5,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 0.46769972925914616,
+        "validation_rmse": 0.7333124056925782,
+        "validation_r2": 0.2729655155600341,
+        "gap": 0.265612676433432,
+        "baseline_rmse": 0.8600262703683351
+      },
+      "split": {
+        "training": 478,
+        "training_pool": 956,
+        "validation": 309,
+        "test": 334,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "c7338958d22e1f94"
+    },
+    {
+      "dataset": "wine",
+      "model": "forest",
+      "depth": 12,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 0.2336216654259822,
+        "validation_rmse": 0.7471242178259915,
+        "validation_r2": 0.24532046241978223,
+        "gap": 0.5135025524000093,
+        "baseline_rmse": 0.8600262703683351
+      },
+      "split": {
+        "training": 478,
+        "training_pool": 956,
+        "validation": 309,
+        "test": 334,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "c7338958d22e1f94"
+    },
+    {
+      "dataset": "auto",
+      "model": "ridge",
+      "depth": 5,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 3.218584911235668,
+        "validation_rmse": 3.029669594191658,
+        "validation_r2": 0.8405352881468202,
+        "gap": -0.18891531704401032,
+        "baseline_rmse": 7.608113933166831
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "ce475021b47592bf"
+    },
+    {
+      "dataset": "auto",
+      "model": "tree",
+      "depth": 2,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 3.986917546948659,
+        "validation_rmse": 4.336288784463314,
+        "validation_r2": 0.6733290990697753,
+        "gap": 0.3493712375146547,
+        "baseline_rmse": 7.608113933166831
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "ce475021b47592bf"
+    },
+    {
+      "dataset": "auto",
+      "model": "tree",
+      "depth": 5,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 1.4864129053739774,
+        "validation_rmse": 3.228415347346116,
+        "validation_r2": 0.8189273480781853,
+        "gap": 1.7420024419721385,
+        "baseline_rmse": 7.608113933166831
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "ce475021b47592bf"
+    },
+    {
+      "dataset": "auto",
+      "model": "tree",
+      "depth": 12,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 0.0,
+        "validation_rmse": 3.402826879115476,
+        "validation_r2": 0.7988343776913254,
+        "gap": 3.402826879115476,
+        "baseline_rmse": 7.608113933166831
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "ce475021b47592bf"
+    },
+    {
+      "dataset": "auto",
+      "model": "forest",
+      "depth": 2,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 3.344834150685246,
+        "validation_rmse": 3.3800774951233516,
+        "validation_r2": 0.8015151466834549,
+        "gap": 0.035243344438105506,
+        "baseline_rmse": 7.608113933166831
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "ce475021b47592bf"
+    },
+    {
+      "dataset": "auto",
+      "model": "forest",
+      "depth": 5,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 1.5482773239304626,
+        "validation_rmse": 2.442346695328999,
+        "validation_r2": 0.8963692404179039,
+        "gap": 0.8940693713985364,
+        "baseline_rmse": 7.608113933166831
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "ce475021b47592bf"
+    },
+    {
+      "dataset": "auto",
+      "model": "forest",
+      "depth": 12,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 1.2418802474329882,
+        "validation_rmse": 2.387537509504492,
+        "validation_r2": 0.9009682479973515,
+        "gap": 1.1456572620715038,
+        "baseline_rmse": 7.608113933166831
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "ce475021b47592bf"
+    },
+    {
+      "dataset": "auto",
+      "model": "ridge",
+      "depth": 5,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 2.773556898619823,
+        "validation_rmse": 3.4009180407827255,
+        "validation_r2": 0.8185638687194372,
+        "gap": 0.6273611421629024,
+        "baseline_rmse": 8.11806468909699
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "3468e3b422fc9d6c"
+    },
+    {
+      "dataset": "auto",
+      "model": "tree",
+      "depth": 2,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 3.088316462200402,
+        "validation_rmse": 4.374037853053388,
+        "validation_r2": 0.6998789070720393,
+        "gap": 1.2857213908529865,
+        "baseline_rmse": 8.11806468909699
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "3468e3b422fc9d6c"
+    },
+    {
+      "dataset": "auto",
+      "model": "tree",
+      "depth": 5,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 1.2642697351556664,
+        "validation_rmse": 4.108678258150468,
+        "validation_r2": 0.7351891880502708,
+        "gap": 2.8444085229948017,
+        "baseline_rmse": 8.11806468909699
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "3468e3b422fc9d6c"
+    },
+    {
+      "dataset": "auto",
+      "model": "tree",
+      "depth": 12,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 0.04012691729407366,
+        "validation_rmse": 4.126171162414189,
+        "validation_r2": 0.7329294972025008,
+        "gap": 4.0860442451201155,
+        "baseline_rmse": 8.11806468909699
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "3468e3b422fc9d6c"
+    },
+    {
+      "dataset": "auto",
+      "model": "forest",
+      "depth": 2,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 2.581051518113187,
+        "validation_rmse": 3.6705727585995476,
+        "validation_r2": 0.7886515245767187,
+        "gap": 1.0895212404863606,
+        "baseline_rmse": 8.11806468909699
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "3468e3b422fc9d6c"
+    },
+    {
+      "dataset": "auto",
+      "model": "forest",
+      "depth": 5,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 1.2730112248940402,
+        "validation_rmse": 3.3153269456961145,
+        "validation_r2": 0.8275813771584231,
+        "gap": 2.0423157208020744,
+        "baseline_rmse": 8.11806468909699
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "3468e3b422fc9d6c"
+    },
+    {
+      "dataset": "auto",
+      "model": "forest",
+      "depth": 12,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 0.9880642592773993,
+        "validation_rmse": 3.2824104141287127,
+        "validation_r2": 0.8309881292837011,
+        "gap": 2.2943461548513135,
+        "baseline_rmse": 8.11806468909699
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "3468e3b422fc9d6c"
+    },
+    {
+      "dataset": "auto",
+      "model": "ridge",
+      "depth": 5,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 2.844199349886148,
+        "validation_rmse": 3.568974977494663,
+        "validation_r2": 0.7987518212129414,
+        "gap": 0.7247756276085147,
+        "baseline_rmse": 8.347178739078734
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "12423fdc2f6c7e47"
+    },
+    {
+      "dataset": "auto",
+      "model": "tree",
+      "depth": 2,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 3.112948688864305,
+        "validation_rmse": 5.006040374261131,
+        "validation_r2": 0.6040561072562312,
+        "gap": 1.893091685396826,
+        "baseline_rmse": 8.347178739078734
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "12423fdc2f6c7e47"
+    },
+    {
+      "dataset": "auto",
+      "model": "tree",
+      "depth": 5,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 1.4028615163553515,
+        "validation_rmse": 3.9695942667254016,
+        "validation_r2": 0.7510356336385735,
+        "gap": 2.56673275037005,
+        "baseline_rmse": 8.347178739078734
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "12423fdc2f6c7e47"
+    },
+    {
+      "dataset": "auto",
+      "model": "tree",
+      "depth": 12,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 0.0,
+        "validation_rmse": 4.354617354911027,
+        "validation_r2": 0.700397832572722,
+        "gap": 4.354617354911027,
+        "baseline_rmse": 8.347178739078734
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "12423fdc2f6c7e47"
+    },
+    {
+      "dataset": "auto",
+      "model": "forest",
+      "depth": 2,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 2.7074554417392656,
+        "validation_rmse": 4.334476384799484,
+        "validation_r2": 0.7031628623978721,
+        "gap": 1.6270209430602187,
+        "baseline_rmse": 8.347178739078734
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "12423fdc2f6c7e47"
+    },
+    {
+      "dataset": "auto",
+      "model": "forest",
+      "depth": 5,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 1.2788673389200644,
+        "validation_rmse": 3.416392500343848,
+        "validation_r2": 0.8155916965409323,
+        "gap": 2.1375251614237833,
+        "baseline_rmse": 8.347178739078734
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "12423fdc2f6c7e47"
+    },
+    {
+      "dataset": "auto",
+      "model": "forest",
+      "depth": 12,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 0.9671207103546539,
+        "validation_rmse": 3.3108386247352,
+        "validation_r2": 0.8268107310899032,
+        "gap": 2.343717914380546,
+        "baseline_rmse": 8.347178739078734
+      },
+      "split": {
+        "training": 118,
+        "training_pool": 236,
+        "validation": 78,
+        "test": 78,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "12423fdc2f6c7e47"
+    },
+    {
+      "dataset": "concrete",
+      "model": "ridge",
+      "depth": 5,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 9.91188411190512,
+        "validation_rmse": 11.7989659560487,
+        "validation_r2": 0.46424233596787123,
+        "gap": 1.8870818441435802,
+        "baseline_rmse": 16.170799461030963
+      },
+      "split": {
+        "training": 305,
+        "training_pool": 610,
+        "validation": 206,
+        "test": 214,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "b10648b28eadac81"
+    },
+    {
+      "dataset": "concrete",
+      "model": "tree",
+      "depth": 2,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 12.362816463999454,
+        "validation_rmse": 12.009711965166748,
+        "validation_r2": 0.44493265335632437,
+        "gap": -0.3531044988327068,
+        "baseline_rmse": 16.170799461030963
+      },
+      "split": {
+        "training": 305,
+        "training_pool": 610,
+        "validation": 206,
+        "test": 214,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "b10648b28eadac81"
+    },
+    {
+      "dataset": "concrete",
+      "model": "tree",
+      "depth": 5,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 6.645615026330795,
+        "validation_rmse": 11.114092974094557,
+        "validation_r2": 0.5246335280093215,
+        "gap": 4.468477947763763,
+        "baseline_rmse": 16.170799461030963
+      },
+      "split": {
+        "training": 305,
+        "training_pool": 610,
+        "validation": 206,
+        "test": 214,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "b10648b28eadac81"
+    },
+    {
+      "dataset": "concrete",
+      "model": "tree",
+      "depth": 12,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 0.5222190700986351,
+        "validation_rmse": 9.75944380873847,
+        "validation_r2": 0.6334521874804283,
+        "gap": 9.237224738639835,
+        "baseline_rmse": 16.170799461030963
+      },
+      "split": {
+        "training": 305,
+        "training_pool": 610,
+        "validation": 206,
+        "test": 214,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "b10648b28eadac81"
+    },
+    {
+      "dataset": "concrete",
+      "model": "forest",
+      "depth": 2,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 10.664630310529573,
+        "validation_rmse": 10.489195643376918,
+        "validation_r2": 0.5765863369535665,
+        "gap": -0.1754346671526541,
+        "baseline_rmse": 16.170799461030963
+      },
+      "split": {
+        "training": 305,
+        "training_pool": 610,
+        "validation": 206,
+        "test": 214,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "b10648b28eadac81"
+    },
+    {
+      "dataset": "concrete",
+      "model": "forest",
+      "depth": 5,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 5.12184488102475,
+        "validation_rmse": 7.378725725354306,
+        "validation_r2": 0.7904714385780662,
+        "gap": 2.2568808443295554,
+        "baseline_rmse": 16.170799461030963
+      },
+      "split": {
+        "training": 305,
+        "training_pool": 610,
+        "validation": 206,
+        "test": 214,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "b10648b28eadac81"
+    },
+    {
+      "dataset": "concrete",
+      "model": "forest",
+      "depth": 12,
+      "seed": 42,
+      "metrics": {
+        "train_rmse": 2.4364146001372893,
+        "validation_rmse": 6.7669397813507945,
+        "validation_r2": 0.8237759736516639,
+        "gap": 4.330525181213505,
+        "baseline_rmse": 16.170799461030963
+      },
+      "split": {
+        "training": 305,
+        "training_pool": 610,
+        "validation": 206,
+        "test": 214,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "b10648b28eadac81"
+    },
+    {
+      "dataset": "concrete",
+      "model": "ridge",
+      "depth": 5,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 10.175305048256758,
+        "validation_rmse": 10.97308276780823,
+        "validation_r2": 0.5692070127273875,
+        "gap": 0.7977777195514708,
+        "baseline_rmse": 16.772426859950354
+      },
+      "split": {
+        "training": 312,
+        "training_pool": 625,
+        "validation": 201,
+        "test": 204,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "62ba58d4044a0005"
+    },
+    {
+      "dataset": "concrete",
+      "model": "tree",
+      "depth": 2,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 11.554136067928987,
+        "validation_rmse": 13.425993942082153,
+        "validation_r2": 0.3550824303075458,
+        "gap": 1.8718578741531662,
+        "baseline_rmse": 16.772426859950354
+      },
+      "split": {
+        "training": 312,
+        "training_pool": 625,
+        "validation": 201,
+        "test": 204,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "62ba58d4044a0005"
+    },
+    {
+      "dataset": "concrete",
+      "model": "tree",
+      "depth": 5,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 6.7655896552228905,
+        "validation_rmse": 10.084096131439107,
+        "validation_r2": 0.6361810892958069,
+        "gap": 3.318506476216217,
+        "baseline_rmse": 16.772426859950354
+      },
+      "split": {
+        "training": 312,
+        "training_pool": 625,
+        "validation": 201,
+        "test": 204,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "62ba58d4044a0005"
+    },
+    {
+      "dataset": "concrete",
+      "model": "tree",
+      "depth": 12,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 1.6353419293066425,
+        "validation_rmse": 8.555210057626832,
+        "validation_r2": 0.7381378860113288,
+        "gap": 6.919868128320189,
+        "baseline_rmse": 16.772426859950354
+      },
+      "split": {
+        "training": 312,
+        "training_pool": 625,
+        "validation": 201,
+        "test": 204,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "62ba58d4044a0005"
+    },
+    {
+      "dataset": "concrete",
+      "model": "forest",
+      "depth": 2,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 10.35791100117235,
+        "validation_rmse": 11.815236520743031,
+        "validation_r2": 0.5005452420414543,
+        "gap": 1.4573255195706807,
+        "baseline_rmse": 16.772426859950354
+      },
+      "split": {
+        "training": 312,
+        "training_pool": 625,
+        "validation": 201,
+        "test": 204,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "62ba58d4044a0005"
+    },
+    {
+      "dataset": "concrete",
+      "model": "forest",
+      "depth": 5,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 5.165792901192388,
+        "validation_rmse": 8.006891743133135,
+        "validation_r2": 0.7706286195735177,
+        "gap": 2.841098841940747,
+        "baseline_rmse": 16.772426859950354
+      },
+      "split": {
+        "training": 312,
+        "training_pool": 625,
+        "validation": 201,
+        "test": 204,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "62ba58d4044a0005"
+    },
+    {
+      "dataset": "concrete",
+      "model": "forest",
+      "depth": 12,
+      "seed": 43,
+      "metrics": {
+        "train_rmse": 2.8726565953793988,
+        "validation_rmse": 7.0646695466726115,
+        "validation_r2": 0.8214355421246604,
+        "gap": 4.192012951293213,
+        "baseline_rmse": 16.772426859950354
+      },
+      "split": {
+        "training": 312,
+        "training_pool": 625,
+        "validation": 201,
+        "test": 204,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "62ba58d4044a0005"
+    },
+    {
+      "dataset": "concrete",
+      "model": "ridge",
+      "depth": 5,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 10.387962494433534,
+        "validation_rmse": 10.31472574705466,
+        "validation_r2": 0.6049535902967437,
+        "gap": -0.07323674737887487,
+        "baseline_rmse": 16.433769742191565
+      },
+      "split": {
+        "training": 311,
+        "training_pool": 623,
+        "validation": 200,
+        "test": 207,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "a5926851d5179b7b"
+    },
+    {
+      "dataset": "concrete",
+      "model": "tree",
+      "depth": 2,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 11.077822273396553,
+        "validation_rmse": 12.546250630492057,
+        "validation_r2": 0.4155320963371498,
+        "gap": 1.4684283570955046,
+        "baseline_rmse": 16.433769742191565
+      },
+      "split": {
+        "training": 311,
+        "training_pool": 623,
+        "validation": 200,
+        "test": 207,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "a5926851d5179b7b"
+    },
+    {
+      "dataset": "concrete",
+      "model": "tree",
+      "depth": 5,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 5.996645255888376,
+        "validation_rmse": 8.855511262290362,
+        "validation_r2": 0.708821014792452,
+        "gap": 2.8588660064019855,
+        "baseline_rmse": 16.433769742191565
+      },
+      "split": {
+        "training": 311,
+        "training_pool": 623,
+        "validation": 200,
+        "test": 207,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "a5926851d5179b7b"
+    },
+    {
+      "dataset": "concrete",
+      "model": "tree",
+      "depth": 12,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 0.6723836578078806,
+        "validation_rmse": 8.597908695228561,
+        "validation_r2": 0.7255151325984233,
+        "gap": 7.92552503742068,
+        "baseline_rmse": 16.433769742191565
+      },
+      "split": {
+        "training": 311,
+        "training_pool": 623,
+        "validation": 200,
+        "test": 207,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "a5926851d5179b7b"
+    },
+    {
+      "dataset": "concrete",
+      "model": "forest",
+      "depth": 2,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 9.930742012452134,
+        "validation_rmse": 11.284692708606078,
+        "validation_r2": 0.5271621613919861,
+        "gap": 1.3539506961539445,
+        "baseline_rmse": 16.433769742191565
+      },
+      "split": {
+        "training": 311,
+        "training_pool": 623,
+        "validation": 200,
+        "test": 207,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "a5926851d5179b7b"
+    },
+    {
+      "dataset": "concrete",
+      "model": "forest",
+      "depth": 5,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 5.31199754193498,
+        "validation_rmse": 7.851144275289489,
+        "validation_r2": 0.7711248378209701,
+        "gap": 2.5391467333545084,
+        "baseline_rmse": 16.433769742191565
+      },
+      "split": {
+        "training": 311,
+        "training_pool": 623,
+        "validation": 200,
+        "test": 207,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "a5926851d5179b7b"
+    },
+    {
+      "dataset": "concrete",
+      "model": "forest",
+      "depth": 12,
+      "seed": 44,
+      "metrics": {
+        "train_rmse": 2.367701453776053,
+        "validation_rmse": 6.526335185111869,
+        "validation_r2": 0.8418491616320127,
+        "gap": 4.158633731335817,
+        "baseline_rmse": 16.433769742191565
+      },
+      "split": {
+        "training": 311,
+        "training_pool": 623,
+        "validation": 200,
+        "test": 207,
+        "test_sealed": true,
+        "grouped_by_features": true
+      },
+      "fingerprint": "a5926851d5179b7b"
+    }
+  ]
+}

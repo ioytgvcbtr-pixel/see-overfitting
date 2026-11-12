@@ -6,7 +6,7 @@
 
 从合成曲线建立直觉，再到公开数据比较模型。支持参数干预、固定条件对照、配对划分复核，以及基于真实指标的AI解释。
 
-![实验工作台](artifacts/screenshots/desktop.jpg)
+![真实数据实验台](artifacts/screenshots/real-data-lab.jpg)
 
 - [功能设计](docs/FUNCTIONAL_DESIGN.md)
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
@@ -30,6 +30,10 @@
 - 可检验的解释：AI收到后端重算的实际指标、适用控件，以及已执行的模型对照和配对复核。
 - 测试接触记录：浏览器记住已查看的测试结果；改参和重划分后继续提示其属于探索，严格终评需独立新数据。
 - 实验收藏：当前浏览器保留最近12组真实数据实验条件，可一键恢复并重算。
+
+![同一数据划分上的模型对照](artifacts/screenshots/real-data-comparison.jpg)
+
+[稳定性复核预览](artifacts/screenshots/real-data-stability.jpg) · [窄屏预览](artifacts/screenshots/real-data-mobile.jpg) · [合成实验工作台](artifacts/screenshots/desktop.jpg)
 
 ## 安装与启动
 
