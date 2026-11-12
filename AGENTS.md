@@ -1,7 +1,8 @@
 # 看见过拟合 · Development contract
 
-- Work in this repository. Python interpreter: `<PYTHON_ENV>\python.exe`.
-- Preserve real chronological Git history. Commit a coherent module after its relevant checks pass. Do not rewrite or fabricate development history.
+- Work in this repository. Resolve the local Python interpreter from FITLAB_PYTHON or the ignored .env.local configuration.
+- Preserve real chronological Git history. Commit a coherent module after relevant checks pass. Owner-authorized privacy redaction must retain original commit order and timestamps, with an offline backup. Never fabricate development history.
+- Public files and development exports use relative paths or environment placeholders; local machine identifiers belong in ignored configuration only.
 - Keep user prompts, public AI responses, implementation changes, observed failures and fixes under `docs/ai-process/`. Never export internal reasoning, system/developer instructions, credentials, or unrelated conversations.
 - Never commit `.env`, credentials, runtime databases, dependencies, or raw private session logs. Use `.env.example` for configuration.
 - All displayed experiment metrics must come from the numerical backend. Fit preprocessing on training data only. Validation is for exploration; the independent test set remains sealed until final evaluation.

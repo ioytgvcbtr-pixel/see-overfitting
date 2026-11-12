@@ -3,21 +3,14 @@ import argparse
 import json
 import re
 from pathlib import Path
+from privacy import redact
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT = Path(r"<LOCAL_ROOT>/Users\<LOCAL_USER>\.codex\sessions\2026\11\12\rollout-2026-11-12T16-58-51-<SESSION_ID>.jsonl")
-START = '2026-11-12T13:40:00'
-
-
-def redact(text: str) -> str:
-    text = re.sub(r"sk-[A-Za-z0-9_-]{12,}", "[REDACTED]", text)
-    text = re.sub(r"(?i)(Bearer\s+)[A-Za-z0-9._-]{12,}", r"\1[REDACTED]", text)
-    return text
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--session', type=Path, default=DEFAULT)
+    parser.add_argument('--session', type=Path, required=True)
     args = parser.parse_args()
     directory = ROOT / 'docs' / 'ai-process'
     directory.mkdir(parents=True, exist_ok=True)

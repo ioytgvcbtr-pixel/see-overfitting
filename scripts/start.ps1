@@ -1,8 +1,15 @@
-param([int]$WebPort = 3000, [int]$ApiPort = 8000)
+param([int]$WebPort = 3000, [int]$ApiPort = 8000, [string]$Python = '')
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$pythonPath = '<PYTHON_ENV>\python.exe'
-if (!(Test-Path -LiteralPath $pythonPath)) { throw "Python interpreter missing: $pythonPath" }
+$pythonPath = $Python
+if (!$pythonPath) { $pythonPath = $env:FITLAB_PYTHON }
+$localConfig = Join-Path $projectRoot '.env.local'
+if (!$pythonPath -and (Test-Path -LiteralPath $localConfig)) {
+    $setting = Get-Content -LiteralPath $localConfig | Where-Object { $_ -match '^FITLAB_PYTHON=' } | Select-Object -First 1
+    if ($setting) { $pythonPath = $setting.Substring('FITLAB_PYTHON='.Length).Trim().Trim('"') }
+}
+if (!$pythonPath) { $pythonPath = (Get-Command python -ErrorAction Stop).Source }
+if (!(Test-Path -LiteralPath $pythonPath)) { throw 'Python interpreter not found. Set FITLAB_PYTHON or pass -Python.' }
 if ($ApiPort -ne 8000) { throw 'The web proxy currently expects ApiPort 8000.' }
 Set-Location -LiteralPath $projectRoot
 $listeners = Get-NetTCPConnection -State Listen -LocalPort @($WebPort, $ApiPort) -ErrorAction SilentlyContinue

@@ -14,27 +14,21 @@
 
 当前为本地可运行的0.1版：三个实验、复杂度扫描、预测与迁移练习、记录回放与对比、独立测试、报告导出和DeepSeek Flash教练已实现。实际核验范围见[验收记录](docs/VALIDATION.md)。比赛视频、正式技术PDF和目标用户试用仍待参赛者完成。
 
-## 本机启动
+## 安装与启动
 
-Python固定使用`<PYTHON_ENV>\python.exe`。进入项目后，在PowerShell运行：
-
-```powershell
-cd '<PROJECT_ROOT>'
-.\scripts\start.ps1
-```
-
-打开 http://127.0.0.1:3000 。关闭运行终端或Ctrl+C停止；脚本会同时关闭由它启动的后端。3000和8000端口需空闲。
-
-## 首次安装与10分钟复现
+使用Node.js 20.9+、Python 3.13。克隆后，在项目根目录运行：
 
 ```powershell
 npm.cmd ci
-& '<PYTHON_ENV>\python.exe' -m pip install -r requirements.txt
-& '<PYTHON_ENV>\python.exe' scripts/check_environment.py
+python -m pip install -r requirements.txt
 .\scripts\start.ps1
 ```
 
-另一台电脑可先准备Python3.13，调整`scripts/start.ps1`中的解释器路径。当前已锁定本次验证使用的依赖；全新环境的10分钟目标仍需参赛前实测，网络下载时间取决于环境。
+打开 http://127.0.0.1:3000 。启动脚本从当前Python环境获取解释器；也可通过`FITLAB_PYTHON`环境变量、忽略的`.env.local`文件，或`-Python`参数选择已有环境。关闭运行终端或Ctrl+C可停止服务。3000和8000端口需空闲。
+
+其他系统可分别运行`python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000`与`npm run dev`。
+
+依赖版本已锁定。安装与启动速度取决于环境和网络，可运行`python scripts/check_environment.py`核对版本。
 
 ## AI配置
 
@@ -47,12 +41,12 @@ AI_API_KEY=填写你自己的密钥
 AI_TIMEOUT=45
 ```
 
-当前电脑的密钥已经保存于忽略的本地配置中。修改配置后重启后端。无API时实验、练习、记录照常运行，教练明确显示规则分析。接口故障也显示降级原因。密钥不进入前端、Git或导出报告。
+密钥保存在忽略的本地配置中。修改配置后重启后端。无API时实验、练习、记录照常运行，教练明确显示规则分析。接口故障也显示降级原因。密钥不进入前端、Git或导出报告。
 
 ## 验证
 
 ```powershell
-& '<PYTHON_ENV>\python.exe' -m pytest tests -q
+python -m pytest tests -q
 npm.cmd run typecheck
 npm.cmd run build
 ```
