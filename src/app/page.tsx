@@ -85,6 +85,7 @@ export default function Home() {
   const [chartTab, setChartTab] = useState<"fit" | "sweep">("fit");
   const [final, setFinal] = useState<FinalResult | null>(null);
   const [evaluating, setEvaluating] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const coachAbort = useRef<AbortController | null>(null);
   const sweepAbort = useRef<AbortController | null>(null);
   const modalRef = useRef<HTMLElement | null>(null);
@@ -262,7 +263,8 @@ export default function Home() {
     }
   }
   async function exportReport(format: "json" | "md") {
-    if (!result) return;
+    if (!result || busy || exporting) return;
+    setExporting(true);
     try {
       const report = await api<{ json_url: string; markdown_url: string }>(
         "/reports",
@@ -285,6 +287,8 @@ export default function Home() {
       setToast("已生成报告附件，请在浏览器中保存。");
     } catch (e) {
       setToast((e as Error).message);
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -1165,7 +1169,9 @@ export default function Home() {
                       <button
                         className="text-button"
                         onClick={() => {
-                          setParams(r.result.parameters);
+                          setParams({ ...r.result.parameters });
+                          setPrediction(null);
+                          setRevealed(false);
                           setView("studio");
                           setChartTab("fit");
                           setToast("已恢复实验参数；按同一随机种子重新计算。");
@@ -1371,13 +1377,15 @@ export default function Home() {
                   <button
                     className="button primary"
                     onClick={() => exportReport("md")}
+                    disabled={exporting || busy}
                   >
                     <ArrowDownToLine size={16} />
-                    Markdown 报告
+                    {exporting ? "正在生成…" : "Markdown 报告"}
                   </button>
                   <button
                     className="button secondary"
                     onClick={() => exportReport("json")}
+                    disabled={exporting || busy}
                   >
                     JSON 完整数据
                   </button>
