@@ -65,6 +65,10 @@ def test_report_attachment_recomputes_metrics_and_keeps_test_sealed(tmp_path, mo
         assert response.json()['experiment']['metrics'] == run(Parameters())['metrics']
         assert response.json()['final_evaluation'] is None
         assert client.get(report['markdown_url']).text.startswith('# 看见过拟合')
+        preview = client.get('/reports/' + report['id'] + '/preview?format=json')
+        assert preview.status_code == 200
+        assert 'content-disposition' not in preview.headers
+        assert 'data_fingerprint' in preview.json()['content']
         final = client.post('/reports', json={'parameters': Parameters().model_dump(), 'final_evaluated': True}).json()
         assert client.get(final['json_url']).json()['final_evaluation']['test_samples'] == 120
         assert client.get('/reports/missing.json').status_code == 404

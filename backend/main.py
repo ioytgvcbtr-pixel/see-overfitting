@@ -132,6 +132,12 @@ def download_report(report_id: str, format: Literal['json', 'md']):
     return Response(content, media_type=media_type, headers={'Content-Disposition': f'attachment; filename="FitLab-{report_id}.{format}"', 'Cache-Control': 'no-store'})
 
 
+@app.get('/reports/{report_id}/preview')
+def preview_report(report_id: str, format: Literal['json', 'md'] = 'json'):
+    response = download_report(report_id, format)
+    return {'content': response.body.decode('utf-8'), 'download_url': f'/reports/{report_id}.{format}'}
+
+
 def rule_analysis(result):
     metrics, params = result['metrics'], result['parameters']
     return ('观察：训练MSE为{:.5f}，验证MSE为{:.5f}，差距为{:.5f}。\n\n解释：{}\n\n下一步：保持随机种子{}与其他参数不变，只改变一个变量，再保存两组实验比较。验证集用于选择，独立测试留到最后。').format(metrics['train_mse'], metrics['validation_mse'], metrics['gap'], result['diagnosis']['description'], params['seed'])

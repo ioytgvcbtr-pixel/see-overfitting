@@ -86,6 +86,11 @@ export default function Home() {
   const [final, setFinal] = useState<FinalResult | null>(null);
   const [evaluating, setEvaluating] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [reportPreview, setReportPreview] = useState<{
+    content: string;
+    download_url: string;
+    format: "json" | "md";
+  } | null>(null);
   const coachAbort = useRef<AbortController | null>(null);
   const sweepAbort = useRef<AbortController | null>(null);
   const modalRef = useRef<HTMLElement | null>(null);
@@ -114,6 +119,7 @@ export default function Home() {
     setCoaching(false);
     setCoach(null);
     setFinal(null);
+    setReportPreview(null);
     setBusy(true);
     setError("");
     const timeout = setTimeout(
@@ -278,13 +284,12 @@ export default function Home() {
           learning_progress: completed,
         },
       );
-      const anchor = document.createElement("a");
-      anchor.href =
-        "/api" + (format === "json" ? report.json_url : report.markdown_url);
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      setToast("已生成报告附件，请在浏览器中保存。");
+      const reportId = report.json_url.split("/").pop()!.replace(".json", "");
+      const preview = await api<{ content: string; download_url: string }>(
+        `/reports/${reportId}/preview?format=${format}`,
+      );
+      setReportPreview({ ...preview, format });
+      setToast("报告已生成，可预览、复制或下载。");
     } catch (e) {
       setToast((e as Error).message);
     } finally {
@@ -1400,6 +1405,47 @@ export default function Home() {
                     <ArrowUpRight size={14} />
                   </button>
                 </div>
+                {reportPreview && (
+                  <div className="report-content-preview">
+                    <label htmlFor="report-content">
+                      {reportPreview.format === "json"
+                        ? "JSON完整数据"
+                        : "Markdown报告"}
+                    </label>
+                    <textarea
+                      id="report-content"
+                      aria-label="报告内容"
+                      readOnly
+                      value={reportPreview.content}
+                    />
+                    <div>
+                      <button
+                        className="button secondary"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(
+                              reportPreview.content,
+                            );
+                            setToast("报告内容已复制，可粘贴保存。");
+                          } catch {
+                            setToast("请在报告内容框中全选并复制。");
+                          }
+                        }}
+                      >
+                        复制报告
+                      </button>
+                      <a
+                        className="button secondary"
+                        href={"/api" + reportPreview.download_url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        下载附件
+                        <ArrowDownToLine size={14} />
+                      </a>
+                    </div>
+                  </div>
+                )}
               </>
             )}
             {modal === "final" && (
