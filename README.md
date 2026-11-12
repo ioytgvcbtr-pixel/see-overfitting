@@ -2,6 +2,12 @@
 
 交互式机器学习实验与诊断工作台。用真实计算理解模型复杂度、样本量、噪声与正则化，通过预测、实验、解释和练习形成学习闭环。
 
+拖动滑块，观察模型怎样从捕捉规律变成拟合噪声；把不同实验放在一起比较，再让AI根据这次实验的实际指标解释现象。
+
+三个学习主题：模型复杂度与泛化、样本数量与噪声、正则化。支持1—15阶扫描、固定种子回放、独立测试、实验档案和报告预览。
+
+![实验工作台](artifacts/screenshots/desktop.jpg)
+
 - [功能设计](docs/FUNCTIONAL_DESIGN.md)
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
 - [AI开发记录](docs/ai-process/README.md)
@@ -61,4 +67,5 @@ npm.cmd run build
 
 - 真实公开会话与工具事件：`docs/ai-process/`。用`scripts/export_ai_process.py --session <当前会话jsonl>`更新；导出仅包含本项目开始后的公开信息，排除内部推理与凭据。
 - Git提交使用仓库内的自动化作者`Codex <codex@local.invalid>`，清楚标识AI生成工作；未来参赛者自己的提交使用本人身份。
-- 待完成材料与录屏脚本：[比赛交付清单](docs/COMPETITION_CHECKLIST.md)。本地尚未配置远程仓库，发布至GitHub/Gitee时另行建立评审访问方式。
+- GitHub公开仓库：https://github.com/ioytgvcbtr-pixel/see-overfitting 。保留完整提交历史，主分支为main，开发在feature分支进行。
+- 当前优先完善项目功能与体验。正式比赛材料准备暂缓；已有[交付清单](docs/COMPETITION_CHECKLIST.md)保留作后续参考。

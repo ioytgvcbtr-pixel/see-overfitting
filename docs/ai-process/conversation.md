@@ -53,3 +53,53 @@
 
 当前 Chrome 策略拦截了附件导航，虽然服务端已返回报告。我会补上报告在线预览和复制功能，让你能直接取得完整内容，同时保留标准附件接口。验收文档会注明这项浏览器限制。
 
+
+## 2026-11-12T14:48:02.766Z · assistant
+
+首版已完成，项目位于 [see-overfitting](<PROJECT_ROOT>/README.md)，使用指定的 `<PYTHON_ENV>`。
+
+已实现三组交互实验、复杂度扫描、预测与练习、实验保存与对比、独立测试、报告预览和 DeepSeek Flash 在线解释。
+
+- [详细功能设计](<PROJECT_ROOT>/docs/FUNCTIONAL_DESIGN.md)
+- [开发计划](<PROJECT_ROOT>/docs/DEVELOPMENT_PLAN.md)
+- [AI开发过程记录](<PROJECT_ROOT>/docs/ai-process/README.md)
+- [验收记录](<PROJECT_ROOT>/docs/VALIDATION.md)
+
+**已保留9次真实 Git 提交，工作区干净。** 7项后端测试、类型检查、生产构建和一键启动验证通过。密钥仅保存在忽略的本地配置中。
+
+在 PowerShell 运行：
+
+```powershell
+& '<PROJECT_ROOT>\scripts\start.ps1'
+```
+
+启动后打开 [实验工作台](http://127.0.0.1:3000)。
+
+当前 Chrome 策略限制附件下载，已提供报告在线预览和复制。正式比赛视频、技术PDF及真实用户试用仍需按[交付清单](<PROJECT_ROOT>/docs/COMPETITION_CHECKLIST.md)补齐。
+
+![工作台预览](<PROJECT_ROOT>/artifacts/screenshots/desktop.jpg)
+
+## 2026-11-12T14:52:45.958Z · user
+
+github的话打开我的谷歌浏览器，按要求去建立一个仓库。目前先主要完成好项目内容，不做其他的提交文件准备。先介绍一下项目我看看。
+
+
+## 2026-11-12T14:53:11.849Z · assistant
+
+我会先按比赛要求建立 GitHub 仓库，检查后再上传当前源码和开发记录。后续重点放在项目功能与体验，暂不继续准备比赛视频、技术PDF等材料。建好后我会介绍现有项目，方便你判断下一步怎么改。
+
+
+## 2026-11-12T14:54:05.153Z · assistant
+
+Chrome 当前停在 GitHub 登录页，需要你亲自登录。我先检查待上传内容和历史记录，并整理项目介绍。
+
+
+## 2026-11-12T14:55:31.506Z · assistant
+
+本机 GitHub CLI 已登录 `ioytgvcbtr-pixel`，可以直接建立仓库，Chrome 的登录状态不影响创建。现有 Git 历史中未发现密钥或运行数据库。我会使用这个已登录账号创建公开仓库并保留提交历史，完成后给你链接核对。
+
+
+## 2026-11-12T14:58:31.893Z · assistant
+
+仓库已创建并上传，原有9次提交完整保留，默认分支为 `main`，Chrome 已能公开查看。项目的核心是一间“能亲手做实验”的机器学习教室：拖动参数就能看到曲线和误差变化，AI 再依据这次实验解释原因。当前版本聚焦过拟合、数据量与噪声、正则化三个主题。
+
