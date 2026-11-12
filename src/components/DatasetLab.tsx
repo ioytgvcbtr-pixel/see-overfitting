@@ -300,6 +300,7 @@ export default function DatasetLab({
               setResult(null);
               update("dataset", dataset.id);
               setFeature(0);
+              setDisplay("parity");
             }}
           >
             <div className="dataset-card-top">

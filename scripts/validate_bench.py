@@ -15,6 +15,7 @@ from backend.datasets import catalog
 
 def main():
     started = time.perf_counter()
+    started_at = datetime.now(timezone.utc).isoformat()
     records = []
     for dataset in catalog():
         for seed in (42, 43, 44):
@@ -28,7 +29,7 @@ def main():
             fingerprints = {row['fingerprint'] for row in records if row['dataset']==dataset['id'] and row['seed']==seed}
             assert len(fingerprints) == 1
     code_hash = hashlib.sha256(b''.join((ROOT / 'backend' / name).read_bytes() for name in ('bench.py', 'datasets.py'))).hexdigest()
-    record = {'started_at_utc': datetime.now(timezone.utc).isoformat(), 'elapsed_seconds': round(time.perf_counter()-started, 3),
+    record = {'started_at_utc': started_at, 'finished_at_utc': datetime.now(timezone.utc).isoformat(), 'elapsed_seconds': round(time.perf_counter()-started, 3),
               'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(), 'compute_code_sha256': code_hash,
               'protocol': 'Grouped holdout; 50% of training pool; matched seeds 42/43/44; training-only preprocessing; validation metrics only.',
               'hypotheses': ['Identical feature groups never cross splits.', 'Depth changes may improve training while validation can worsen.', 'The winning model may depend on the split; inspect all paired runs.'],
