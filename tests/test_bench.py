@@ -77,3 +77,13 @@ def test_thinking_request_uses_xhigh_and_keeps_reasoning_private(monkeypatch):
     assert captured['thinking']['type'] == 'enabled'
     assert response['provider_effort'] == 'high'
     assert 'private reasoning' not in str(response)
+
+
+@pytest.mark.parametrize('model,applicable,inactive',[('ridge','alpha','depth'),('tree','depth','alpha'),('forest','depth','alpha')])
+def test_coach_only_receives_applicable_controls(model, applicable, inactive, monkeypatch):
+    monkeypatch.delenv('AI_API_KEY', raising=False)
+    with TestClient(app) as client:
+        response = client.post('/bench/coach',json={'model':model}).json()
+    assert applicable in response['evidence']['parameters']
+    assert inactive not in response['evidence']['parameters']
+    assert applicable in response['evidence']['available_controls']

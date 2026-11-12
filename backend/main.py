@@ -150,4 +150,5 @@ def rule_analysis(result):
 async def coach(request: CoachRequest):
     result = await asyncio.to_thread(run, request.parameters)
     evidence = {'parameters': result['parameters'], 'metrics': result['metrics'], 'diagnosis': result['diagnosis'], 'split': result['split'], 'fingerprint': result['data_fingerprint'], 'dataset': 'Synthetic cosine + Gaussian noise'}
+    evidence['available_controls'] = ['degree', 'samples', 'noise', 'alpha', 'seed']
     return await explain(evidence, request.question, rule_analysis(result))

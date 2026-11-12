@@ -52,7 +52,7 @@ type JournalEntry = {
 const displays: { id: Display; label: string }[] = [
   { id: "parity", label: "预测对照" },
   { id: "residual", label: "残差诊断" },
-  { id: "feature", label: "特征切片" },
+  { id: "feature", label: "特征关系" },
   { id: "learning", label: "学习曲线" },
   { id: "compare", label: "模型对照" },
   { id: "stability", label: "稳定性复核" },
@@ -296,6 +296,8 @@ export default function DatasetLab({
             className={`dataset-card ${dataset.color} ${params.dataset === dataset.id ? "chosen" : ""}`}
             key={dataset.id}
             onClick={() => {
+              setBusy(true);
+              setResult(null);
               update("dataset", dataset.id);
               setFeature(0);
             }}
@@ -466,7 +468,7 @@ export default function DatasetLab({
                         <label>
                           选择特征
                           <select
-                            aria-label="特征切片字段"
+                            aria-label="特征关系字段"
                             value={feature}
                             onChange={(e) => setFeature(Number(e.target.value))}
                           >
@@ -540,6 +542,7 @@ export default function DatasetLab({
                   ))}
                   <p className="bench-analysis-note">
                     条形从零起点编码验证RMSE，越低越好。该结果只针对当前数据和参数；可继续做配对种子复核。
+                    岭回归 α={params.alpha}；树与森林最大深度={params.depth}；森林使用60棵树。
                   </p>
                 </div>
               )}
@@ -772,7 +775,7 @@ export default function DatasetLab({
                     title="DeepSeek兼容将xhigh映射为原生high"
                   >
                     {coach?.mode === "online"
-                      ? "Flash · xhigh"
+                      ? `Flash · ${coach.reasoning_effort}`
                       : coach?.mode === "rules"
                         ? "规则说明"
                         : "xhigh"}
