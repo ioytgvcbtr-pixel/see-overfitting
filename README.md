@@ -6,13 +6,20 @@
 
 从合成曲线建立直觉，再到公开数据比较模型。支持参数干预、固定条件对照、配对划分复核，以及基于真实指标的AI解释。
 
-![真实数据实验台](artifacts/screenshots/real-data-lab.jpg)
+![学习实验工作台](artifacts/screenshots/learning-studio-v03.jpg)
 
 - [功能设计](docs/FUNCTIONAL_DESIGN.md)
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
+- [界面设计与参考依据](design-system/fitlab/MASTER.md)
 - [AI开发记录](docs/ai-process/README.md)
 
-当前为本地可运行的0.2版，提供合成实验工作台与真实数据实验台。计算、数据读取和实验记录可在本地运行，AI解释通过配置的模型API提供。实际核验范围见[验收记录](docs/VALIDATION.md)。
+当前为本地可运行的0.3版，提供合成实验工作台与真实数据实验台。按初学者的学习顺序组织问题、操作、证据和解释；计算、数据读取和实验记录可在本地运行，AI解释通过配置的模型API提供。实际核验范围见[验收记录](docs/VALIDATION.md)。
+
+## 从一次对照开始
+
+每个基础实验提供三个推荐条件：比较模型阶数、样本量或正则化强度。点击条件后才记录实际返回的结果，修改其他条件会开启新的对照；结论只比较当前条件下已经算出的验证误差。主要参数直接呈现，其余条件可展开。指标说明可随时查阅，手机点击推荐条件后直接定位图形。
+
+真实数据实验按“比较模型 → 复核结论 → 解释结果”给出下一步操作，同时保留六种自由探索视图。界面使用系统中文字体、清晰焦点与形状区分数据，无需远程字体。
 
 ## 真实数据实验台
 
@@ -31,9 +38,9 @@
 - 测试接触记录：浏览器记住已查看的测试结果；改参和重划分后继续提示其属于探索，严格终评需独立新数据。
 - 实验收藏：当前浏览器保留最近12组真实数据实验条件，可一键恢复并重算。
 
-![同一数据划分上的模型对照](artifacts/screenshots/real-data-comparison.jpg)
+![真实数据实验台](artifacts/screenshots/real-data-lab-v03.jpg)
 
-[稳定性复核预览](artifacts/screenshots/real-data-stability.jpg) · [窄屏预览](artifacts/screenshots/real-data-mobile.jpg) · [合成实验工作台](artifacts/screenshots/desktop.jpg)
+[稳定性复核预览](artifacts/screenshots/real-data-stability-v03.jpg) · [窄屏交互预览](artifacts/screenshots/learning-mobile-v03.jpg)
 
 ## 安装与启动
 
@@ -73,11 +80,12 @@ DeepSeek兼容接受`xhigh`并映射为原生`high`，请求启用思考模式�
 ```powershell
 python -m pip install -r requirements-dev.txt
 python -m pytest tests -q
+npm.cmd run test:ui
 npm.cmd run typecheck
 npm.cmd run build
 ```
 
-测试依赖：`requirements-dev.txt`。数值来源为独立随机流生成的合成数据，预处理只在训练集拟合，验证集供调参，测试集在点击最终评估后才揭示。改变参数使旧测试结果和解释失效。改变噪声会用同一噪声抽样缩放三组标签，改变样本量则保持验证与测试数据不变。
+测试依赖：`requirements-dev.txt`；`test:ui`使用Node.js 22.18+的原生TypeScript支持。数值来源为独立随机流生成的合成数据，预处理只在训练集拟合，验证集供调参，测试集在点击最终评估后才揭示。改变参数使旧测试结果和解释失效。改变噪声会用同一噪声抽样缩放三组标签，改变样本量则保持验证与测试数据不变。
 
 真实数据的配对验证可用`python scripts/validate_bench.py`复现；[原始运行记录](experiments/improvement/real-data-v1/results.json)包含63组条件与验证结果。不同数据集的RMSE单位不同，不进行跨数据集直接排名。三种子的均值与样本标准差只描述划分波动，不作为置信区间。
 

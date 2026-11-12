@@ -68,7 +68,7 @@ API错误返回用户可理解的消息；不回显密钥与供应商请求头�
 
 核心数据是显式标记的合成数据，不声称真实调查。官方教学来源：https://scikit-learn.org/stable/auto_examples/model_selection/plot_underfitting_overfitting.html 。模型实现可复用成熟库，但应用交互与流程原创实现。
 
-UCI Wine Quality（CC BY 4.0）：https://archive.ics.uci.edu/dataset/186/wine+quality 。保留来源和可选下载脚本，作为后续扩展，不影响当前教学主流程。
+真实数据实验使用三份UCI公开快照，来源、CC BY 4.0许可、清理与校验值见data/public/README.md。具体功能和划分协议见第8节。
 
 ## 6. 验收标准
 
@@ -104,3 +104,15 @@ UCI Wine Quality（CC BY 4.0）：https://archive.ics.uci.edu/dataset/186/wine+q
 AI：请求reasoning_effort=xhigh并启用thinking；DeepSeek官方兼容映射为high。只返回最终解释和用量。解释证据由后端重算，包含适用参数、当前界面可用控件、已运行对照与复核。树模型不传入无关的岭回归α；已见测试的声明会进入解释和降级文本。
 
 新增接口：GET /datasets；POST /bench/run、/bench/compare、/bench/learning、/bench/stability、/bench/final、/bench/coach。实现分别位于backend/datasets.py、bench.py、bench_api.py、coach.py；前端独立组件与SVG图表在DatasetLab.tsx和BenchCharts.tsx。
+
+## 9. 0.3面向初学者的实验引导
+
+主要用户：刚开始学习机器学习的大学生和研究生。设计问题是“先改什么、看什么、如何比较、怎样解释”，角色推演和公开页面观察不作为真实访谈证据。设计系统与外部参考在design-system/fitlab/MASTER.md。
+
+基础课三步对照：复杂度1/4/15阶，样本量12/60/120，正则化1e-8/0.01/1。步骤只改变当前主变量；后端结果实际返回后才计入观察。对照键包含课程和其余固定条件，条件不匹配的旧结果不参与展示或最低验证误差判断。自由探索值仍可调节，但不计入推荐三步的完成数。
+
+每课直接展示主要控件，其余控件放在“更多实验条件”。同一页面提供可展开的MSE/RMSE/R²解释和真实结果对照板。计算新条件时隐藏旧指标，标明暂保留的旧图形，并禁用依赖当前计算的操作。窄屏点击推荐条件直接定位图表；减少动态效果设置使用即时定位。
+
+真实数据实验的下一步操作依次为模型对照、配对复核和基于证据的解释，六个展示方式保留。数据集选择紧凑，比较协议和指标说明可展开，测试接触状态保持原协议。模块导航使用可回退的地址片段；跳到内容链接只移动焦点。
+
+视觉：清晰中文系统字体、浅蓝背景与白色科学画布；训练/验证点用圆形/方形双重编码，自适应SVG坐标和图表文字；焦点可见、主要目标至少44px，图标与字体不依赖远程资源。
