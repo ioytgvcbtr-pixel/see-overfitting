@@ -69,10 +69,10 @@ export default function DatasetLab({
   const [result, setResult] = useState<BenchResult | null>(null);
   const [loading, setBusy] = useState(true),
     [error, setError] = useState("");
-  const busy = loading || !result ||
+  const busy = loading || (!!result &&
     (Object.keys(params) as (keyof BenchParameters)[]).some(
       key => params[key] !== result.parameters[key],
-    );
+    ));
   const [display, setDisplay] = useState<Display>("parity");
   const [feature, setFeature] = useState(0),
     [showTraining, setShowTraining] = useState(false);

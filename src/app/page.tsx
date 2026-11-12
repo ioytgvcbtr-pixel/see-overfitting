@@ -71,10 +71,10 @@ export default function Home() {
   const [params, setParams] = useState<Parameters>(scenes[0].defaults);
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setBusy] = useState(true);
-  const busy = loading || !result ||
+  const busy = loading || (!!result &&
     (Object.keys(params) as (keyof Parameters)[]).some(
       key => params[key] !== result.parameters[key],
-    );
+    ));
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const [records, setRecords] = useState<SavedRecord[]>([]);
