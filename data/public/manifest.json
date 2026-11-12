@@ -1,0 +1,47 @@
+[
+  {
+    "id": "wine",
+    "file": "wine.csv",
+    "rows": 1599,
+    "features": 11,
+    "removed_missing_rows": 0,
+    "source": "https://archive.ics.uci.edu/dataset/186/wine+quality",
+    "download": "https://archive.ics.uci.edu/static/public/186/wine%2Bquality.zip",
+    "citation": "Cortez, P. et al. (2009). Wine Quality. UCI. DOI:10.24432/C56S3T.",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "raw_archive_sha256": "3ed56667f4b828242bd732d7d1dd7f2861e54432239d7fa63877014cbb0304d4",
+    "csv_sha256": "d22f4f11db0456ff21745d2fa96d26fa348a8cdb889efda65bde802085be45fd",
+    "transformation": "Numeric CSV; target last; identifiers excluded; Auto MPG rows with missing horsepower omitted."
+  },
+  {
+    "id": "auto",
+    "file": "auto.csv",
+    "rows": 392,
+    "features": 7,
+    "removed_missing_rows": 6,
+    "source": "https://archive.ics.uci.edu/dataset/9/auto+mpg",
+    "download": "https://archive.ics.uci.edu/static/public/9/auto%2Bmpg.zip",
+    "citation": "Quinlan, R. (1993). Auto MPG. UCI. DOI:10.24432/C5859H.",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "raw_archive_sha256": "5fc1507522b73b8050d3aa45df51eefe1b666ae5f428a5f1347b6483339f1003",
+    "csv_sha256": "362098bcf25b0ff6752095aa977512da98c3c1ab2733e212beae9f5515a7e4fc",
+    "transformation": "Numeric CSV; target last; identifiers excluded; Auto MPG rows with missing horsepower omitted."
+  },
+  {
+    "id": "concrete",
+    "file": "concrete.csv",
+    "rows": 1030,
+    "features": 8,
+    "removed_missing_rows": 0,
+    "source": "https://archive.ics.uci.edu/dataset/165/concrete+compressive+strength",
+    "download": "https://archive.ics.uci.edu/static/public/165/concrete%2Bcompressive%2Bstrength.zip",
+    "citation": "Yeh, I. (1998). Concrete Compressive Strength. UCI. DOI:10.24432/C5PK67.",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "raw_archive_sha256": "dad85d14de8aee4e07479daa774e6b569a313715b71a3b92c95a07cf91c2c9a7",
+    "csv_sha256": "d30f66a6fa5e3267096de883119a80361cf8ea75c930c23ab957d062dfaf1c81",
+    "transformation": "Numeric CSV; target last; identifiers excluded; Auto MPG rows with missing horsepower omitted."
+  }
+]
