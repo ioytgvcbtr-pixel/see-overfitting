@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.log
+.env
+.env.*
+!.env.example
+data/*.sqlite*
+artifacts/local/
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
