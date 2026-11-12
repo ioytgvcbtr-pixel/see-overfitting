@@ -3,10 +3,10 @@
 import {useEffect, useRef, useState} from 'react';
 import {Activity, ArrowDownToLine, ArrowLeft, ArrowRight, ArrowUpRight, BarChart3, BookOpen, Check, CheckCheck, ChevronDown, ChevronRight, CircleHelp, Clock3, FlaskConical, FolderOpen, GraduationCap, Layers3, Lightbulb, LoaderCircle, LockKeyhole, Menu, MessageSquare, Play, Plus, RotateCcw, Save, Settings2, ShieldCheck, Sparkles, Target, TrendingDown, X} from 'lucide-react';
 import {FitChart, ErrorChart} from '@/components/FitChart';
-import {api, download, metric, scenes, type Coach, type FinalResult, type Parameters, type Result, type SavedRecord, type SceneId, type Sweep} from '@/lib/experiment';
+import {api, download, metric, quizzes, scenes, type Coach, type FinalResult, type Parameters, type Result, type SavedRecord, type SceneId, type Sweep} from '@/lib/experiment';
 
 type View = 'studio' | 'path' | 'history';
-type Modal = 'guide' | 'save' | 'report' | 'final' | 'sources' | null;
+type Modal = 'guide' | 'save' | 'report' | 'final' | 'sources' | 'quiz' | null;
 const alphaValues = [0.00000001, 0.000001, 0.0001, 0.01, 0.1, 1, 10, 100];
 const alphaLabel = (a:number) => a < .001 ? a.toExponential(0).replace('e-', ' × 10⁻') : String(a);
 
@@ -21,6 +21,8 @@ export default function Home() {
   const [selected,setSelected] = useState<number[]>([]);
   const [prediction,setPrediction] = useState<number|null>(null);
   const [revealed,setRevealed] = useState(false);
+  const [quizChoice,setQuizChoice] = useState<number|null>(null);
+  const [quizRevealed,setQuizRevealed] = useState(false);
   const [completed,setCompleted] = useState<SceneId[]>([]);
   const [modal,setModal] = useState<Modal>(null);
   const [mobileMenu,setMobileMenu] = useState(false);
@@ -39,7 +41,9 @@ export default function Home() {
   const [evaluating,setEvaluating] = useState(false);
   const coachAbort=useRef<AbortController|null>(null);
   const sweepAbort=useRef<AbortController|null>(null);
+  const modalRef=useRef<HTMLElement|null>(null);
   const scene=scenes.find(s=>s.id===params.scene)!;
+  const quiz=quizzes[params.scene];
   const comparison=records.filter(r=>selected.includes(r.id));
 
   useEffect(()=>{
@@ -55,7 +59,7 @@ export default function Home() {
   },[params,retry]);
   useEffect(()=>{sweepAbort.current?.abort();setSweeping(false);setSweep(null);},[params.samples,params.noise,params.alpha,params.seed,params.scene]);
   useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(''),3500);return()=>clearTimeout(t);},[toast]);
-  useEffect(()=>{if(!modal)return;const handler=(e:KeyboardEvent)=>{if(e.key==='Escape')setModal(null);};document.addEventListener('keydown',handler);return()=>document.removeEventListener('keydown',handler);},[modal]);
+  useEffect(()=>{if(!modal)return;const previous=document.activeElement as HTMLElement|null;const handler=(e:KeyboardEvent)=>{if(e.key==='Escape')setModal(null);if(e.key==='Tab'){const elements=modalRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), input, textarea, a[href]');if(!elements?.length)return;const first=elements[0],last=elements[elements.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};document.addEventListener('keydown',handler);return()=>{document.removeEventListener('keydown',handler);previous?.focus();};},[modal]);
 
   function changeScene(id:SceneId) {setParams({...scenes.find(s=>s.id===id)!.defaults});setPrediction(null);setRevealed(false);setChartTab('fit');setView('studio');setMobileMenu(false);}
   function update<K extends keyof Parameters>(key:K,value:Parameters[K]) {setParams(p=>({...p,[key]:value}));}
@@ -79,8 +83,8 @@ export default function Home() {
   }
   function answer() {
     setRevealed(true);
-    if(prediction===scene.answer){const next=Array.from(new Set([...completed,scene.id]));setCompleted(next);localStorage.setItem('fitlab-progress',JSON.stringify(next));}
   }
+  function answerQuiz(){setQuizRevealed(true);if(quizChoice===quiz.answer){const next=Array.from(new Set([...completed,scene.id]));setCompleted(next);localStorage.setItem('fitlab-progress',JSON.stringify(next));}}
   async function evaluate() {
     setEvaluating(true);
     try {setFinal(await api<FinalResult>('/experiments/final',params));setModal(null);setToast('独立测试已完成，结果已加入当前报告。');}
@@ -133,6 +137,7 @@ export default function Home() {
         <div className="workspace-grid">
           <section className="panel chart-panel"><div className="panel-heading"><div><h2><span className="panel-dot"/>看见模型如何拟合</h2><p>改变右侧参数，观察曲线与误差的变化</p></div><span className="live-badge">{busy?<LoaderCircle size={12} className="spin"/>:<span/>}{busy?'更新中':'实时计算'}</span></div>
             <div className="chart-toolbar"><div className="segmented"><button className={chartTab==='fit'?'chosen':''} onClick={()=>setChartTab('fit')}><Activity size={14}/>拟合曲线</button><button className={chartTab==='sweep'?'chosen':''} onClick={()=>{setChartTab('sweep');if(!sweep&&!sweeping)void scan();}}><BarChart3 size={14}/>复杂度扫描</button></div><span className="chart-hint">{chartTab==='fit'?'悬停探索数据点':'同一数据 · 比较 1—15 阶'}</span></div>
+            {chartTab==='fit'&&<div className="experiment-presets"><span>快速对照</span>{[1,4,15].map(degree=><button key={degree} className={params.degree===degree?'selected':''} onClick={()=>update('degree',degree)}>{degree} 阶模型</button>)}<small>保持其他条件不变</small></div>}
             {chartTab==='fit'?<FitChart result={result}/>:<div className="sweep-container">{sweep?<><ErrorChart data={sweep} current={params.degree}/><div className="sweep-summary"><span>验证误差最小：<strong>{sweep.best_degree} 阶</strong></span><button className="text-button" onClick={()=>{update('degree',sweep.best_degree);setChartTab('fit');}}>应用此阶数<ArrowRight size={14}/></button></div><p className="muted small-copy">纵轴采用对数尺度。橙线为验证误差，青线为训练误差。最小值只针对当前数据与正则强度。</p></>:<div className="empty-chart"><LoaderCircle size={28} className={sweeping?'spin':''}/><p>{sweeping?'正在比较不同复杂度…':'运行扫描，找到当前数据的平衡点。'}</p>{!sweeping&&<button className="button secondary" onClick={()=>void scan()}>开始扫描</button>}</div>}</div>}
             <div className="chart-footer"><span><ShieldCheck size={13}/>固定种子 {params.seed} · 独立数据划分</span><span>{result?.elapsed_ms??'—'} ms<span className="subtle-dot">·</span>合成数据</span></div>
           </section>
@@ -151,7 +156,7 @@ export default function Home() {
         </div>
 
         <div className="learning-grid">
-          <section className="panel prediction-panel" id="prediction"><div className="panel-heading compact"><h2><Lightbulb size={17}/>先预测，再验证</h2><span className="section-index">THINK FIRST</span></div><p className="question-text">{scene.question}</p><div className="prediction-options" role="radiogroup" aria-label="实验预测">{scene.options.map((option,index)=><button role="radio" aria-checked={prediction===index} key={option} className={`${prediction===index?'selected':''} ${revealed&&index===scene.answer?'correct':''}`} onClick={()=>{setPrediction(index);setRevealed(false);}}><span className="radio-circle">{revealed&&index===scene.answer?<Check size={11}/>:prediction===index?<span/>:null}</span>{option}</button>)}</div>{revealed?<div className={`answer-feedback ${prediction===scene.answer?'correct':'retry'}`}><strong>{prediction===scene.answer?'理解得很准确':'再想一步，你会发现'}</strong><p>{scene.reason}</p></div>:<div className="prediction-footer"><span>让直觉成为可检验的假设</span><button className="button secondary small-button" disabled={prediction===null} onClick={answer}>验证我的预测<ArrowRight size={14}/></button></div>}</section>
+          <section className="panel prediction-panel" id="prediction"><div className="panel-heading compact"><h2><Lightbulb size={17}/>先预测，再验证</h2><span className="section-index">THINK FIRST</span></div><p className="question-text">{scene.question}</p><div className="prediction-options" role="radiogroup" aria-label="实验预测">{scene.options.map((option,index)=><button role="radio" aria-checked={prediction===index} key={option} className={`${prediction===index?'selected':''} ${revealed&&index===scene.answer?'correct':''}`} onClick={()=>{setPrediction(index);setRevealed(false);}}><span className="radio-circle">{revealed&&index===scene.answer?<Check size={11}/>:prediction===index?<span/>:null}</span>{option}</button>)}</div>{revealed?<div className={`answer-feedback ${prediction===scene.answer?'correct':'retry'}`}><strong>{prediction===scene.answer?'理解得很准确':'再想一步，你会发现'}</strong><p>{scene.reason}</p><button className="text-button quiz-link" onClick={()=>{setQuizChoice(null);setQuizRevealed(false);setModal('quiz');}}>做一道迁移练习<ArrowRight size={14}/></button></div>:<div className="prediction-footer"><span>让直觉成为可检验的假设</span><button className="button secondary small-button" disabled={prediction===null} onClick={answer}>验证我的预测<ArrowRight size={14}/></button></div>}</section>
 
           <section className="panel coach-panel"><div className="panel-heading compact"><h2><span className="coach-icon"><Sparkles size={16}/></span>你的实验教练</h2><span className={`coach-mode ${coach?.mode==='online'?'online':''}`}>{coach?.mode==='online'?'Flash 在线':coach?.mode==='rules'?'规则分析':'基于真实指标'}</span></div>
             {coach?<div className="coach-response"><div className="coach-response-text">{coach.content}</div>{coach.notice&&<p className="coach-notice">{coach.notice}</p>}<div className="evidence-anchor"><ShieldCheck size={12}/>依据当前实验 · {result?.data_fingerprint.slice(0,8)}</div></div>:<div className="coach-intro"><p>曲线在变化，<br/><strong>背后的规律是什么？</strong></p><span>让教练结合这次实验的真实指标，帮你理解现象，找到下一步。</span><button className="coach-ask" disabled={busy||!result||coaching} onClick={()=>void askCoach()}>{coaching?<LoaderCircle size={16} className="spin"/>:<Sparkles size={16}/>} {coaching?'正在分析实验…':'解读当前实验'}<ArrowUpRight size={15}/></button></div>}
@@ -173,7 +178,8 @@ export default function Home() {
     </div>
 
     {toast&&<div className="toast" role="status"><Check size={16}/>{toast}</div>}
-    {modal&&<div className="modal-overlay" onClick={()=>setModal(null)}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onClick={e=>e.stopPropagation()}><button className="modal-close icon-button" aria-label="关闭对话框" onClick={()=>setModal(null)} autoFocus><X size={20}/></button>
+    {modal&&<div className="modal-overlay" onClick={()=>setModal(null)}><section ref={modalRef} className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onClick={e=>e.stopPropagation()}><button className="modal-close icon-button" aria-label="关闭对话框" onClick={()=>setModal(null)} autoFocus><X size={20}/></button>
+      {modal==='quiz'&&<><span className="modal-icon"><GraduationCap size={25}/></span><h2 id="modal-title">把理解，带到新问题</h2><p className="modal-description">{quiz.question}</p><div className="prediction-options quiz-options" role="radiogroup" aria-label="迁移练习">{quiz.options.map((option,index)=><button role="radio" aria-checked={quizChoice===index} key={option} className={`${quizChoice===index?'selected':''} ${quizRevealed&&index===quiz.answer?'correct':''}`} onClick={()=>{setQuizChoice(index);setQuizRevealed(false);}}><span className="radio-circle">{quizChoice===index&&<span/>}</span>{option}</button>)}</div>{quizRevealed&&<div className={`answer-feedback ${quizChoice===quiz.answer?'correct':''}`}><strong>{quizChoice===quiz.answer?'实验完成，进度已保存':'再试一次'}</strong><p>{quiz.reason}</p></div>}<button className="button primary full-width" disabled={quizChoice===null} onClick={answerQuiz}><Check size={16}/>检查我的理解</button></>}
       {modal==='guide'&&<><span className="modal-icon"><BookOpen size={25}/></span><h2 id="modal-title">一次实验，五个小步骤</h2><p className="modal-description">保持好奇，也给每个结论留下证据。</p><ol className="guide-steps">{['选择一个场景，先回答预测问题。','一次改变一个参数，观察曲线与验证误差。','保存几组实验，在档案中选择对比。','请教练解释当前指标，完成迁移练习。','确定模型后揭示独立测试，导出实验报告。'].map((text,index)=><li key={text}><span>{index+1}</span>{text}</li>)}</ol><button className="button primary full-width" onClick={()=>setModal(null)}>开始探索<ArrowRight size={16}/></button></>}
       {modal==='save'&&<><span className="modal-icon"><Save size={25}/></span><h2 id="modal-title">保存这次发现</h2><p className="modal-description">参数与计算结果会一起保存，随时可以回放。</p><label className="field-label">实验名称<input maxLength={80} value={title} onChange={e=>setTitle(e.target.value)} placeholder="为这次实验起个名字"/></label><label className="field-label">我的观察<textarea rows={3} maxLength={1000} value={note} onChange={e=>setNote(e.target.value)} placeholder="哪个变化让你意外？你想接着验证什么？"/></label><div className="save-preview"><span>{params.degree} 阶模型</span><span>{params.samples} 个训练样本</span><span>种子 {params.seed}</span></div><button className="button primary full-width" disabled={saving||busy} onClick={()=>void save()}>{saving?<LoaderCircle className="spin" size={16}/>:<Save size={16}/>} {saving?'正在保存…':'保存到实验档案'}</button></>}
       {modal==='report'&&<><span className="modal-icon"><ArrowDownToLine size={25}/></span><h2 id="modal-title">带走你的实验成果</h2><p className="modal-description">报告包含参数、真实指标、数据指纹、解释模式和已选对比记录。</p><div className="report-preview"><div><span>当前实验</span><strong>{scene.title}</strong></div><div><span>验证 MSE</span><strong>{result&&metric(result.metrics.validation_mse)}</strong></div><div><span>独立测试</span><strong>{final?'已完成':'尚未揭示'}</strong></div><div><span>对比记录</span><strong>{comparison.length} 组</strong></div></div><div className="export-options"><button className="button primary" onClick={()=>exportReport('md')}><ArrowDownToLine size={16}/>Markdown 报告</button><button className="button secondary" onClick={()=>exportReport('json')}>JSON 完整数据</button><button className="text-button" onClick={()=>{setModal(null);setTimeout(()=>window.print(),100);}}>打印 / 保存为 PDF<ArrowUpRight size={14}/></button></div></>}

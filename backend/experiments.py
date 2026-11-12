@@ -16,10 +16,10 @@ from sklearn.preprocessing import PolynomialFeatures, StandardScaler
 class Parameters(BaseModel):
     model_config = ConfigDict(extra='forbid', allow_inf_nan=False)
     scene: Literal['complexity', 'samples', 'regularization'] = 'complexity'
-    degree: int = Field(default=9, ge=1, le=15)
-    samples: int = Field(default=24, ge=12, le=160)
+    degree: int = Field(default=4, ge=1, le=15)
+    samples: int = Field(default=12, ge=12, le=160)
     noise: float = Field(default=0.22, ge=0, le=0.6)
-    alpha: float = Field(default=0.000001, ge=0.00000001, le=100)
+    alpha: float = Field(default=0.00000001, ge=0.00000001, le=100)
     seed: int = Field(default=42, ge=0, le=999999)
 
 
