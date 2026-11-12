@@ -12,7 +12,7 @@ def path_pattern(path: str) -> str:
 
 
 def rules():
-    locations = [(str(ROOT), '<PROJECT_ROOT>'), (str(ROOT.parent), '<WORKSPACE>'),
+    locations = [(ROOT.as_uri(), '<PROJECT_ROOT>'), (str(ROOT), '<PROJECT_ROOT>'), (str(ROOT.parent), '<WORKSPACE>'),
                  (str(Path.home()), '<USER_HOME>'),
                  (str(Path(sys.executable).parent), '<PYTHON_ENV>')]
     return [(path_pattern(source), target) for source, target in locations if source]

@@ -18,3 +18,8 @@ def test_windows_location_and_credentials_are_normalized():
     location = 'Z' + ':' + '\\' + 'example' + '\\' + 'file.txt'
     assert '<LOCAL_ROOT>' in redact(location)
     assert '[REDACTED]' in redact('sk-' + 'a' * 24)
+
+
+def test_file_uri_is_normalized():
+    from privacy import ROOT
+    assert redact(ROOT.as_uri() + '/tests/example.mjs') == '<PROJECT_ROOT>/tests/example.mjs'
