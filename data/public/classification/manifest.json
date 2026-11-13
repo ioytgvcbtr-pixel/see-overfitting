@@ -1,0 +1,30 @@
+[
+  {
+    "id": "iris",
+    "file": "iris.csv",
+    "rows": 150,
+    "features": 4,
+    "source": "https://archive.ics.uci.edu/dataset/53/iris",
+    "download": "https://archive.ics.uci.edu/static/public/53/iris.zip",
+    "citation": "Fisher, R. (1936). Iris. UCI. DOI:10.24432/C56C76.",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "raw_archive_sha256": "d11fe30213d36434a0879aab7cb00ce3c812eb7ba2495874438abff7b7b762e9",
+    "csv_sha256": "0b1a9c0b475c1d919a3c97fba0bc0da4b08b7cb09febff7b61765edcf094b601",
+    "transformation": "UCI iris.data variant; four features preserved; labels mapped to 0/1/2; historical errata not applied separately."
+  },
+  {
+    "id": "seeds",
+    "file": "seeds.csv",
+    "rows": 210,
+    "features": 7,
+    "source": "https://archive.ics.uci.edu/dataset/236/seeds",
+    "download": "https://archive.ics.uci.edu/static/public/236/seeds.zip",
+    "citation": "Charytanowicz, M. et al. (2010). Seeds. UCI. DOI:10.24432/C5H30K.",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "raw_archive_sha256": "5033bd71b24592fa70d9b3cc5be02332dc6d03d0b27e6655e6d553f39afab323",
+    "csv_sha256": "6448e2d893b1087d07eecf1ad8fc1f6e8fb213aab12345475faea59f04ced773",
+    "transformation": "Seven original features preserved; whitespace normalized to CSV; labels 1/2/3 mapped to 0/1/2."
+  }
+]
