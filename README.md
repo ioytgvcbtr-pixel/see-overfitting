@@ -2,20 +2,37 @@
 
 交互式机器学习实验与诊断工作台。用真实计算理解模型复杂度、样本量、噪声与正则化，通过预测、实验、解释和练习形成学习闭环。
 
-拖动滑块，观察模型怎样从捕捉规律变成拟合噪声；把不同实验放在一起比较，再让AI根据这次实验的实际指标解释现象。
+拖动训练点和参数标记，把残差、损失地形、样本牵引与正则化变成可以亲手操纵的图形；再到学习工作台完成预测、实验和迁移验证。
 
 从合成曲线建立直觉，再到公开数据比较模型。支持参数干预、固定条件对照、配对划分复核，以及基于真实指标的AI解释。
 
-![科学探索馆工作台](artifacts/screenshots/observatory-studio-v05.jpg)
+![误差与损失地形联动](artifacts/screenshots/concept-error-v06.jpg)
 
 - [功能设计](docs/FUNCTIONAL_DESIGN.md)
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
 - [界面设计与参考依据](design-system/fitlab/MASTER.md)
 - [学习闭环与可核验实验](docs/LEARNING_LOOP.md)
 - [0.5逐项改进与界面方案](docs/REFINEMENT_V05.md)
+- [概念工坊与前端参考](docs/CONCEPT_WORKSHOP.md)
 - [AI开发记录](docs/ai-process/README.md)
 
-当前为本地可运行的0.5版，提供合成实验工作台与真实数据实验台。按初学者的学习顺序组织预测、操作、证据和迁移验证；计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[验收记录](docs/VALIDATION.md)。
+当前为本地可运行的0.6版，提供概念工坊、合成学习工作台与真实数据实验台。按初学者的学习顺序组织预测、操作、证据和迁移验证；计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[验收记录](docs/VALIDATION.md)。
+
+## 把概念拖到眼前
+
+默认进入概念工坊，三个面板共用训练条件与样本编辑：
+
+| 面板 | 直接操作 | 联动证据 |
+|---|---|---|
+| 误差的几何 | 上下拖点；拖动Canvas地形中的参数标记；调节斜率和截距 | 拟合线、残差平方、逐点误差柱、训练/验证MSE与最小二乘解 |
+| 过拟合的牵引 | 同一标签扰动作用于3阶参考与可调阶数模型 | 原始/编辑后曲线、共用色标的变化带、曲线变化RMS与验证误差变化 |
+| 约束的形状 | 调α、模型阶数，点击正则化路径节点 | 标准化系数、系数范数、拟合曲线，以及SSE＋α‖w‖² |
+
+React管理输入和请求，SVG负责可访问的点与曲线，Canvas 2D绘制41×41损失地形。指标、系数和等高线由Python后端实际计算；拖动限频请求，更新期间明确标出指标为最近实算。滑块和选点有键盘替代，输入可刷新恢复，参数可复制。探索不写入学习成绩，验证点不能拖动，独立测试指标不返回。
+
+前端机制参考[TensorFlow Playground](https://playground.tensorflow.org/)、[Seeing Theory](https://seeing-theory.brown.edu/regression-analysis/index.html)与[Distill的动量解释](https://distill.pub/2017/momentum/)，图形与代码自行实现。二维教学使用React＋SVG＋Canvas，图形围绕概念和实算证据组织。
+
+[配对样本牵引](artifacts/screenshots/concept-sensitivity-v06.jpg) · [系数与正则化路径](artifacts/screenshots/concept-regularization-v06.jpg) · [手机概念工坊](artifacts/screenshots/concept-mobile-v06.jpg)
 
 ## 科学探索馆
 
