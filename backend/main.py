@@ -15,6 +15,9 @@ from pydantic import BaseModel, Field
 from backend.experiments import Parameters, final_evaluation, run, sweep
 from backend.coach import ai_status, explain
 from backend.bench_api import router as bench_router
+from backend.learning_api import make_router as learning_router
+from backend.actions import make_router as actions_router
+from backend import learning
 
 ROOT = Path(__file__).resolve().parents[1]
 for line in (ROOT / 'backend' / '.env').read_text(encoding='utf-8').splitlines() if (ROOT / 'backend' / '.env').exists() else []:
@@ -33,7 +36,13 @@ def connect():
     connection.row_factory = sqlite3.Row
     connection.execute('CREATE TABLE IF NOT EXISTS records (id INTEGER PRIMARY KEY, title TEXT, note TEXT, prediction TEXT, created_at TEXT, result TEXT)')
     connection.execute('CREATE TABLE IF NOT EXISTS reports (id TEXT PRIMARY KEY, content TEXT)')
+    connection.execute('CREATE TABLE IF NOT EXISTS learning_attempts (id TEXT PRIMARY KEY, content TEXT)')
+    connection.execute('CREATE TABLE IF NOT EXISTS action_plans (id TEXT PRIMARY KEY, content TEXT)')
     return connection
+
+
+app.include_router(learning_router(connect))
+app.include_router(actions_router(connect))
 
 
 @app.get('/health')
@@ -93,6 +102,8 @@ class ReportRequest(BaseModel):
     explanation_model: str | None = Field(default=None, max_length=100)
     record_ids: list[int] = Field(default_factory=list, max_length=3)
     learning_progress: list[str] = Field(default_factory=list, max_length=3)
+    learning_attempt_id: str | None = Field(default=None, max_length=40)
+    action_plan_ids: list[str] = Field(default_factory=list, max_length=12)
 
 
 @app.post('/reports')
@@ -106,6 +117,20 @@ def create_report(request: ReportRequest):
                   'coach': {'mode': request.explanation_mode, 'model': request.explanation_model, 'content': request.explanation},
                   'comparison': comparison, 'learning_progress': request.learning_progress,
                   'source': '合成数据 cos(1.5πx) + Gaussian noise; https://scikit-learn.org/stable/auto_examples/model_selection/plot_underfitting_overfitting.html'}
+        report['learning_attempt'] = None
+        if request.learning_attempt_id:
+            row = connection.execute('SELECT content FROM learning_attempts WHERE id=?', (request.learning_attempt_id,)).fetchone()
+            if not row: raise HTTPException(404, '学习记录不存在')
+            attempt = json.loads(row['content'])
+            if not learning.matches(attempt, request.parameters): raise HTTPException(409, '学习记录与当前固定条件不一致')
+            report['learning_attempt'] = learning.public(attempt)
+        report['verified_actions'] = []
+        for plan_id in dict.fromkeys(request.action_plan_ids):
+            row = connection.execute('SELECT content FROM action_plans WHERE id=?', (plan_id,)).fetchone()
+            if row:
+                saved = json.loads(row['content'])
+                if saved['kind'] == 'synthetic' and saved['execution'] and learning.matches({'parameters': saved['baseline_parameters']}, request.parameters):
+                    report['verified_actions'].append(saved['execution'])
         report_id = uuid.uuid4().hex
         connection.execute('INSERT INTO reports (id,content) VALUES (?,?)', (report_id, json.dumps(report, ensure_ascii=False)))
     return {'id': report_id, 'json_url': f'/reports/{report_id}.json', 'markdown_url': f'/reports/{report_id}.md'}
@@ -131,6 +156,11 @@ def download_report(report_id: str, format: Literal['json', 'md']):
         content += '\n\n## 解释\n\n模式：' + report['coach']['mode'] + '\n\n' + (report['coach']['content'] or result['diagnosis']['description'])
         content += '\n\n## 记录对比\n\n' + ('\n'.join('- ' + item['title'] + ': ' + json.dumps(item['result']['metrics'], ensure_ascii=False) + '; ' + item['note'] for item in report['comparison']) or '未选择对比记录。')
         content += '\n\n## 来源\n\n' + report['source'] + '\n'
+        if report.get('learning_attempt'):
+            attempt = report['learning_attempt']
+            content += '\n\n## 本轮学习记录\n\n' + json.dumps(attempt, ensure_ascii=False, indent=2)
+        if report.get('verified_actions'):
+            content += '\n\n## 建议执行与核验\n\n' + json.dumps(report['verified_actions'], ensure_ascii=False, indent=2)
         media_type = 'text/markdown'
     return Response(content, media_type=media_type, headers={'Content-Disposition': f'attachment; filename="FitLab-{report_id}.{format}"', 'Cache-Control': 'no-store'})
 

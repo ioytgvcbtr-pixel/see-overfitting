@@ -48,3 +48,33 @@ async def explain(evidence: dict, question: str, fallback: str):
     except (httpx.HTTPError, ValueError, KeyError, IndexError):
         return {**base, 'mode': 'rules', 'model': None, 'content': fallback,
                 'notice': '模型响应未完成，已切换为基于实际指标的规则分析。'}
+
+
+async def suggest(evidence, candidates):
+    """Request a bounded JSON hypothesis; callers validate it before execution."""
+    status = ai_status()
+    fallback = {'mode': 'rules', 'model': None, 'suggestion': None,
+                'notice': '未配置模型API，使用可执行的规则建议。'}
+    if not status['ai_configured']: return fallback
+    prompt = ('你是实验教练。只从candidates中选择一个candidate_id，提出尚未验证的单变量实验假设。'
+              '不编造执行后的指标，不声称一定改善，不选择测试集或额外参数。'
+              '返回json对象，严格只有candidate_id、hypothesis、expected三个字段。'
+              'hypothesis用中文解释为何值得尝试，180字以内；expected只可为lower、higher、uncertain，'
+              '分别表示预期验证误差降低、升高、无方向假设。'
+              '示例json：{"candidate_id":"degree-4","hypothesis":"减小复杂度可能减轻噪声拟合，比较固定验证集上的误差。","expected":"lower"}')
+    payload = {'model': status['ai_model'], 'messages': [{'role': 'system', 'content': prompt},
+                {'role': 'user', 'content': json.dumps({'evidence': evidence, 'candidates': candidates}, ensure_ascii=False)}],
+               'response_format': {'type': 'json_object'}, 'max_tokens': int(os.environ.get('AI_MAX_TOKENS', '8192')),
+               'reasoning_effort': status['reasoning_effort'],
+               'thinking': {'type': 'enabled' if status['thinking_enabled'] else 'disabled'}, 'stream': False}
+    try:
+        async with httpx.AsyncClient(timeout=float(os.environ.get('AI_TIMEOUT', '90'))) as client:
+            response = await client.post(os.environ.get('AI_BASE_URL', 'https://api.deepseek.com/v1').rstrip('/') + '/chat/completions',
+                headers={'Authorization': 'Bearer ' + os.environ['AI_API_KEY']}, json=payload)
+        if not response.is_success:
+            return {**fallback, 'notice': f'建议接口返回HTTP {response.status_code}，使用规则方案。'}
+        value = response.json()
+        return {'mode': 'online', 'model': value.get('model', status['ai_model']),
+                'suggestion': json.loads(value['choices'][0]['message']['content']), 'notice': '', 'usage': value.get('usage', {})}
+    except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
+        return {**fallback, 'notice': '模型未返回可解析的实验建议，使用规则方案。'}
