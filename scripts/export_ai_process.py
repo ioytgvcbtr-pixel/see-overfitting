@@ -41,7 +41,7 @@ def main():
         elif active and kind in ('function_call', 'function_call_output', 'custom_tool_call', 'custom_tool_call_output'):
             # Discovery inventories and agent instructions are not project evidence.
             command = str(payload.get('input', payload.get('arguments', '')))
-            if 'web__run' in command or 'web_run' in str(payload.get('name', '')) or any(marker in command for marker in ('tfReference', 'theoryReference', 'courseReference', 'rulesReviewTab')) or ('ui-ux-pro-max' in command and 'search.py' in command):
+            if 'web__run' in command or 'web_run' in str(payload.get('name', '')) or any(marker in command for marker in ('tfReference', 'theoryReference', 'courseReference', 'rulesReviewTab', 'museumMathRef', 'museumExploreRef')) or ('ui-ux-pro-max' in command and 'search.py' in command):
                 reference_calls.add(payload.get('call_id'))
             if any(marker in command for marker in ('ALL_TOOLS', 'cua.getState(', 'cua.listApps(', 'cua.listWindows(', 'cua.listTabs(', 'browser.user.openTabs(', 'browser.tabs.list(', 'SKILL.md', 'RUNTIME-MATRIX.md')):
                 omitted_calls.add(payload.get('call_id'))

@@ -6,15 +6,24 @@
 
 从合成曲线建立直觉，再到公开数据比较模型。支持参数干预、固定条件对照、配对划分复核，以及基于真实指标的AI解释。
 
-![先预测再实验](artifacts/screenshots/prediction-gate-v04.jpg)
+![科学探索馆工作台](artifacts/screenshots/observatory-studio-v05.jpg)
 
 - [功能设计](docs/FUNCTIONAL_DESIGN.md)
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
 - [界面设计与参考依据](design-system/fitlab/MASTER.md)
 - [学习闭环与可核验实验](docs/LEARNING_LOOP.md)
+- [0.5逐项改进与界面方案](docs/REFINEMENT_V05.md)
 - [AI开发记录](docs/ai-process/README.md)
 
-当前为本地可运行的0.4版，提供合成实验工作台与真实数据实验台。按初学者的学习顺序组织预测、操作、证据和迁移验证；计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[验收记录](docs/VALIDATION.md)。
+当前为本地可运行的0.5版，提供合成实验工作台与真实数据实验台。按初学者的学习顺序组织预测、操作、证据和迁移验证；计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[验收记录](docs/VALIDATION.md)。
+
+## 科学探索馆
+
+界面采用深紫导航、明亮画布和紫/青/橙学习阶段。曲线航线由实际学习进度驱动，可跳到已解锁区域；预测选择、指标和记录采用开放排版，绘图与参数共享连续工作区。设计依据和色值见[视觉覆盖规则](design-system/fitlab/pages/observatory.md)。
+
+学习档案分为学习足迹、AI核验和已保存实验。支持回看或继续最近50轮学习，以及换用未使用的种子重练；旧判断和错答保留。新数据的待预测条件在提交前刷新也能恢复。
+
+AI实验执行后可以恢复执行前条件、再回看执行后条件，原核验记录保持不变。真实数据记住当前数据集、模型、参数和展示方式；基础图表按恢复条件重新计算。报告按学习轮次从后端补齐已关联的执行证据，刷新不再依赖本页临时ID。
 
 ## 从一次对照开始
 
@@ -22,7 +31,7 @@
 
 迁移题由后端按新数据判分，选择与依据均正确才完成本轮。错答保留，重试更换数据；刷新恢复当前课程、条件和作答。旧版练习进度不计入新闭环。完成迁移后开放合成实验的最终测试入口。
 
-![真实对照与新数据迁移](artifacts/screenshots/learning-loop-v04.jpg)
+[开放式预测入口](artifacts/screenshots/observatory-prediction-v05.jpg) · [手机预测入口](artifacts/screenshots/observatory-mobile-prediction-v05.jpg)
 
 ## 让AI建议接受实验检验
 
@@ -32,7 +41,7 @@
 
 核验档案保留前后参数、指纹、指标、模型来源和执行时间。学习记录与本页执行的核验可进入功能报告。模型不会直接执行代码，也不读取测试指标；Flash保持xhigh配置。结构化输出依据[DeepSeek JSON模式说明](https://api-docs.deepseek.com/guides/json_mode/)，其候选与方向仍由本应用再次校验。
 
-![支持和不支持预期都保留](artifacts/screenshots/verified-actions-v04.jpg)
+[核验机制与实际验证记录](docs/VALIDATION.md)
 
 真实数据实验按“比较模型 → 复核结论 → 解释结果”给出下一步操作，同时保留六种自由探索视图。界面使用系统中文字体、清晰焦点与形状区分数据，无需远程字体。
 
@@ -53,9 +62,9 @@
 - 测试接触记录：浏览器记住已查看的测试结果；改参和重划分后继续提示其属于探索，严格终评需独立新数据。
 - 实验收藏：当前浏览器保留最近12组真实数据实验条件，可一键恢复并重算。
 
-![真实数据实验台](artifacts/screenshots/real-data-lab-v03.jpg)
+![真实数据实验工作区](artifacts/screenshots/observatory-data-v05.jpg)
 
-[稳定性复核预览](artifacts/screenshots/real-data-stability-v03.jpg) · [窄屏交互预览](artifacts/screenshots/learning-mobile-v04.jpg)
+[学习复盘](artifacts/screenshots/observatory-notebook-v05.jpg) · [手机实验画布](artifacts/screenshots/observatory-mobile-v05.jpg)
 
 ## 安装与启动
 
