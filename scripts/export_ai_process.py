@@ -43,7 +43,7 @@ def main():
             command = str(payload.get('input', payload.get('arguments', '')))
             if 'web__run' in command or 'web_run' in str(payload.get('name', '')) or any(marker in command for marker in ('tfReference', 'theoryReference', 'courseReference', 'rulesReviewTab')) or ('ui-ux-pro-max' in command and 'search.py' in command):
                 reference_calls.add(payload.get('call_id'))
-            if any(marker in command for marker in ('cua.getState(', 'cua.listApps(', 'cua.listWindows(', 'cua.listTabs(', 'browser.user.openTabs(', 'browser.tabs.list(', 'SKILL.md', 'RUNTIME-MATRIX.md')):
+            if any(marker in command for marker in ('ALL_TOOLS', 'cua.getState(', 'cua.listApps(', 'cua.listWindows(', 'cua.listTabs(', 'browser.user.openTabs(', 'browser.tabs.list(', 'SKILL.md', 'RUNTIME-MATRIX.md')):
                 omitted_calls.add(payload.get('call_id'))
                 continue
             if payload.get('call_id') in omitted_calls:
@@ -58,7 +58,8 @@ def main():
         raise SystemExit('Project start prompt not found; existing evidence files were not modified.')
     for event in events:
         json.loads(event)
-    (directory / 'conversation.md').write_text(''.join(messages), encoding='utf-8')
+    conversation = '\n'.join(line.rstrip() for line in ''.join(messages).splitlines()) + '\n'
+    (directory / 'conversation.md').write_text(conversation, encoding='utf-8')
     (directory / 'tool-events.jsonl').write_text('\n'.join(events) + '\n', encoding='utf-8')
     print(f'Exported {len(messages)-1} public messages and {len(events)} tool events (redacted).')
 

@@ -22,6 +22,8 @@
 
 后端按已保存方案重算前后结果，不执行模型生成的代码，不读取测试指标。核验使用实际验证误差，可能支持或不支持预期；无方向假设只记录观察。条件变化后的旧方案不能执行。接口或格式错误明确显示规则建议。
 
+基础课的方案还接收同一固定条件下、从SQLite读取的原预测和已提交迁移反馈。它可以提出用于反证的上升方向假设，而不只追求误差下降。核验同时显示原假设方向与实测变化，支持假设不等于模型性能改善。
+
 执行结果保留前后参数、指纹、指标、方向和时间；AI解释与实验假设分开标记。基础课程与三个公开数据集共用操作组件。设计沿用现有浅蓝科学画布与可读字体，步骤编号仅用于真实流程，不增加装饰性动效。
 
 ## 验收重点
@@ -32,3 +34,13 @@
 - 一键方案只改变一个合法变量，旧条件拒绝执行，前后指标可独立重算。
 - 模型错误建议、API失败、请求取消和刷新恢复有实际验证。
 - 保留真实Git与脱敏公开过程，不将开发验收当成学生学习效果研究。
+
+## 实现与接口
+
+学习状态机在backend/learning.py，SQLite接口在learning_api.py。POST /learning/attempts记录预测；GET /learning/attempts/{id}恢复；observe记录实际结果；transfer核验选择与依据；retry生成另一个新种子任务。固定条件变化拒绝沿用旧预测，重复提交同题不会多计尝试。未提交的迁移答案不返回前端。
+
+方案在backend/actions.py，POST /actions/plan产生候选内的单变量假设；POST /actions/{id}/execute重算并存证；GET /actions/history读取执行档案。模型只返回candidate_id、hypothesis、expected；格式、候选ID、参数边界与当前条件由后端校验。JSON请求依据[DeepSeek官方说明](https://api-docs.deepseek.com/guides/json_mode/)，保持xhigh与thinking配置，推理正文不进入响应或记录。
+
+前端以useLearningJourney协调恢复、取消与提交；LearningJourney提供步骤、预测及迁移组件，ActionExperiment共用于基础课和真实数据。原预测与实际对照放在图形之后，避免挤占操作画布；真实数据的一键实验使用独立宽工作区。执行结果仍可在档案中查看，移动端推荐条件直接定位图形。
+
+功能报告可包含learning_attempt_id对应的后端记录和本页action_plan_ids对应的实算结果。报告不计作竞赛技术文档，正式提交材料本轮未制作。
