@@ -56,6 +56,18 @@ def points(data):
     return [{'x': round(float(x), 7), 'y': round(float(y), 7)} for x, y in zip(*data)]
 
 
+def diagnose(params, train_mse, valid_mse):
+    noise_floor = params.noise ** 2
+    if train_mse > max(noise_floor * 2.2, .09) and valid_mse > max(noise_floor * 2.2, .09):
+        return {'label': '可能欠拟合' if params.degree <= 3 else '训练与验证误差均偏高', 'tone': 'warning',
+                'description': '两侧误差都偏高。模型容量不足、约束过强或数据异常均可能影响拟合，需在固定条件下继续对照。'}
+    if valid_mse > max(train_mse * 2.8, noise_floor * 2.3, .025):
+        return {'label': '出现过拟合信号', 'tone': 'warning', 'description': '训练误差较低，验证误差明显更高。试试降低复杂度、增加样本或加强正则化。'}
+    if valid_mse > max(noise_floor * 2.3, .1):
+        return {'label': '需要继续对照', 'tone': 'warning', 'description': '当前验证误差仍偏高，尚不能仅凭误差差距判断拟合状态。'}
+    return {'label': '泛化表现较平衡', 'tone': 'success', 'description': '当前训练与验证表现相对接近。继续比较相邻参数，避免仅凭一次结果下结论。'}
+
+
 @lru_cache(maxsize=256)
 def _run(serialized: str):
     started = time.perf_counter()
@@ -65,13 +77,7 @@ def _run(serialized: str):
     valid_mse = float(mean_squared_error(valid[1], model.predict(valid[0].reshape(-1, 1))))
     x_grid = np.linspace(0, 1, 241)
     predictions = model.predict(x_grid.reshape(-1, 1))
-    noise_floor = params.noise ** 2
-    if valid_mse > max(train_mse * 2.8, noise_floor * 2.3, 0.025) and params.degree >= 5:
-        diagnosis = {'label': '出现过拟合信号', 'tone': 'warning', 'description': '训练误差较低，验证误差明显更高。试试降低复杂度、增加样本或加强正则化。'}
-    elif train_mse > max(noise_floor * 2.2, 0.09) and params.degree <= 3:
-        diagnosis = {'label': '可能欠拟合', 'tone': 'warning', 'description': '模型尚未充分捕捉曲线形状。可以增加复杂度，再比较验证误差。'}
-    else:
-        diagnosis = {'label': '泛化表现较平衡', 'tone': 'success', 'description': '当前训练与验证表现相对接近。继续比较相邻参数，避免仅凭一次结果下结论。'}
+    diagnosis = diagnose(params, train_mse, valid_mse)
     dataset_text = json.dumps({'train': points(train), 'validation': points(valid)}, sort_keys=True)
     result = {
         'parameters': params.model_dump(),

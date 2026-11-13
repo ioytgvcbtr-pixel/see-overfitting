@@ -18,6 +18,7 @@ from backend.bench_api import router as bench_router
 from backend.learning_api import make_router as learning_router
 from backend.actions import make_router as actions_router
 from backend import learning
+from backend.concepts import router as concepts_router
 
 ROOT = Path(__file__).resolve().parents[1]
 for line in (ROOT / 'backend' / '.env').read_text(encoding='utf-8').splitlines() if (ROOT / 'backend' / '.env').exists() else []:
@@ -28,6 +29,7 @@ for line in (ROOT / 'backend' / '.env').read_text(encoding='utf-8').splitlines()
 DB_PATH = Path(os.environ.get('FITLAB_DB', str(ROOT / 'data' / 'fitlab.sqlite')))
 app = FastAPI(title='看见过拟合 · FitLab', version='0.5.0')
 app.include_router(bench_router)
+app.include_router(concepts_router)
 
 
 def connect():
