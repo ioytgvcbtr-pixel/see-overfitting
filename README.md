@@ -6,7 +6,7 @@
 
 从合成曲线建立直觉，再到公开数据比较模型。支持参数干预、固定条件对照、配对划分复核，以及基于真实指标的AI解释。
 
-![误差与损失地形联动](artifacts/screenshots/concept-error-v06.jpg)
+![分类边界与固定Q版插画](artifacts/screenshots/classification-overview-v07.jpg)
 
 - [功能设计](docs/FUNCTIONAL_DESIGN.md)
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
@@ -14,9 +14,23 @@
 - [学习闭环与可核验实验](docs/LEARNING_LOOP.md)
 - [0.5逐项改进与界面方案](docs/REFINEMENT_V05.md)
 - [概念工坊与前端参考](docs/CONCEPT_WORKSHOP.md)
+- [逐环节复评与0.7改进](docs/REVIEW_V07.md)
+- [0.7实际验收](docs/VALIDATION_V07.md)
 - [AI开发记录](docs/ai-process/README.md)
 
-当前为本地可运行的0.6版，提供概念工坊、合成学习工作台与真实数据实验台。按初学者的学习顺序组织预测、操作、证据和迁移验证；计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[验收记录](docs/VALIDATION.md)。
+当前为本地可运行的0.7版，提供概念工坊、分类边界、合成学习工作台与真实数据实验台。按初学者的学习顺序组织预测、操作、证据和迁移验证；计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[0.7验收](docs/VALIDATION_V07.md)和[此前记录](docs/VALIDATION.md)。
+
+## 让分类边界现形
+
+分类实验提供逻辑回归、K近邻、RBF SVM、决策树、60棵树随机森林，以及多数类基线。月牙、同心圆和XOR用于理解线性边界、邻域、核函数与局部过拟合；UCI [Iris](https://archive.ics.uci.edu/dataset/53/iris)及[Seeds](https://archive.ics.uci.edu/dataset/236/seeds)分别提供150条花卉、210条小麦记录。来源、CC BY 4.0许可、原始维度与CSV校验值见[分类快照](data/public/classification/README.md)。
+
+可以拖动合成训练点，调节K、C、γ、树深、训练比例与噪声，观察边界、错分点和混淆矩阵。公开测量只读；图中类别同时用颜色、形状和文字表示。模型只使用标注的两个特征，标准化仅拟合当前训练；验证固定，独立测试封存。
+
+先选择探索预测，再运行同条件对照；并列保留，点击模型查看边界不清除对照，改变实验条件后旧预测失效。该探索不计正式课程成绩，刷新恢复输入，可复制当前实算记录。固定seed42、噪声0.15及训练池75%的XOR例子，逻辑回归与RBF SVM的验证准确率分别为61.7%和96.7%；仅说明这次划分与参数下的二维结果。
+
+Q版向导出现在概念标题和观察提示旁，花朵与麦穗呼应公开案例。插画通过内置image_gen生成并固定到本地，由Next Image优化显示；[完整提示词与用途](public/illustrations/README.md)保留。所有科学图形仍由代码与实算数据绘制。
+
+[决策边界](artifacts/screenshots/classification-boundary-v07.jpg) · [预测与混淆矩阵](artifacts/screenshots/classification-evidence-v07.jpg) · [手机界面](artifacts/screenshots/classification-mobile-v07.jpg) · [概念工坊向导](artifacts/screenshots/concept-guide-v07.jpg)
 
 ## 把概念拖到眼前
 
