@@ -6,7 +6,7 @@
 
 从合成曲线建立直觉，再到公开数据比较模型。支持参数干预、固定条件对照、配对划分复核，以及基于真实指标的AI解释。
 
-![分类边界与固定Q版插画](artifacts/screenshots/classification-overview-v07.jpg)
+![问题驱动的模型探索地图](artifacts/screenshots/explore-map-v08.jpg)
 
 - [功能设计](docs/FUNCTIONAL_DESIGN.md)
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
@@ -16,9 +16,28 @@
 - [概念工坊与前端参考](docs/CONCEPT_WORKSHOP.md)
 - [逐环节复评与0.7改进](docs/REVIEW_V07.md)
 - [0.7实际验收](docs/VALIDATION_V07.md)
+- [0.8界面自评与参考](docs/UI_REVIEW_V08.md)
+- [0.8实际验收](docs/VALIDATION_V08.md)
 - [AI开发记录](docs/ai-process/README.md)
 
-当前为本地可运行的0.7版，提供概念工坊、分类边界、合成学习工作台与真实数据实验台。按初学者的学习顺序组织预测、操作、证据和迁移验证；计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[0.7验收](docs/VALIDATION_V07.md)和[此前记录](docs/VALIDATION.md)。
+当前为本地可运行的0.8版，默认进入探索地图，从问题选择概念工坊、分类玩法或正式学习工作台。按初学者的学习顺序组织操作、证据、预测和迁移验证；计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[0.8验收](docs/VALIDATION_V08.md)、[0.7验收](docs/VALIDATION_V07.md)和[此前记录](docs/VALIDATION.md)。
+
+## 从一个问题开始玩
+
+地图中的误差湖、曲线山、约束花园和边界森林分别对应残差、样本扰动、正则化与分类。选中岛屿后，旁边说明要观察什么、怎样操作，再进入相应场景。地图是导航示意，实验结果在进入后由后端实际计算。
+
+| 玩法 | 操作与反馈 |
+|---|---|
+| 错分侦探 | 先隐藏全部错分标记，寻找空心验证点；点选或按编号检查后，按当前后端预测核验。已定位点去重、可刷新恢复，参数变化后重新开始；揭晓后开放完整矩阵 |
+| A/B边界掀幕 | 定格实算A，换模型或参数生成B，拖中线或原生滑块比较；左右区域各显示对应模型的判断与错分。只有数据指纹、坐标范围一致才启用 |
+| 实验配方 | 一键进入XOR错分侦探、月牙对照或花瓣辨认；每个配方说明要发现的现象 |
+| 放大画布 | 暂时收起参数区，用紧邻画布的模型选择器切换；合成点另有方向按钮，拖拽不再是唯一移动方式 |
+
+A仅保存参数，刷新后重新请求后端复算，不信任浏览器保存的指标。当前结果与旧数据不一致时停止对照；可恢复A参数或重新定格。定位进度是本地探索记录，不计正式课程成绩。
+
+界面参考[The Evolution of Trust](https://ncase.me/trust/)的问题叙事、[Polypad](https://polypad.amplify.com/p)的画布与周边工具层级，以及[Brilliant](https://brilliant.org/)当前公开页的共享画布和引导说明。图形与交互自行实现，现有Q版向导继续用于问题引导。
+
+[A/B实际画面](artifacts/screenshots/curtain-compare-v08.jpg) · [侦探实际反馈](artifacts/screenshots/detective-task-v08.jpg) · [手机地图](artifacts/screenshots/explore-mobile-v08.jpg) · [手机拖幕](artifacts/screenshots/curtain-mobile-v08.jpg)
 
 ## 让分类边界现形
 
