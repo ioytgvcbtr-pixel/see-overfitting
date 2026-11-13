@@ -37,6 +37,15 @@ export function VerificationResult({ value }: { value: VerifiedAction }) {
       </p>
       <p>{value.hypothesis}</p>
       <p>
+        原假设方向：
+        {value.expected === "lower"
+          ? "验证误差降低"
+          : value.expected === "higher"
+            ? "验证误差升高"
+            : "只观察，不预设方向"}
+        。
+      </p>
+      <p>
         {value.before.dataset?.title || "合成余弦数据"} ·{" "}
         {value.metric === "validation_mse"
           ? "验证 MSE"
