@@ -125,10 +125,16 @@ def create_report(request: ReportRequest):
             if not learning.matches(attempt, request.parameters): raise HTTPException(409, '学习记录与当前固定条件不一致')
             report['learning_attempt'] = learning.public(attempt)
         report['verified_actions'] = []
-        for plan_id in dict.fromkeys(request.action_plan_ids):
+        linked = []
+        if request.learning_attempt_id:
+            linked = [row['id'] for row in connection.execute(
+                "SELECT id FROM action_plans WHERE json_extract(content,'$.learning_attempt_id')=? AND json_extract(content,'$.execution') IS NOT NULL ORDER BY rowid DESC",
+                (request.learning_attempt_id,)).fetchall()]
+        for plan_id in dict.fromkeys([*request.action_plan_ids, *linked]):
             row = connection.execute('SELECT content FROM action_plans WHERE id=?', (plan_id,)).fetchone()
             if row:
                 saved = json.loads(row['content'])
+                if request.learning_attempt_id and saved.get('learning_attempt_id') not in (None, request.learning_attempt_id): continue
                 if saved['kind'] == 'synthetic' and saved['execution'] and learning.matches({'parameters': saved['baseline_parameters']}, request.parameters):
                     report['verified_actions'].append(saved['execution'])
         report_id = uuid.uuid4().hex

@@ -97,3 +97,22 @@ def test_report_uses_saved_learning_evidence_and_rejects_mixed_context(client):
     assert report['learning_attempt'] == attempt and report['final_evaluation'] is None
     assert '_answer' not in json.dumps(report)
     assert client.post('/reports', json={'parameters': params.model_copy(update={'noise': .3}).model_dump(), 'learning_attempt_id': attempt['id']}).status_code == 409
+
+
+def test_history_summarizes_real_attempts_without_transfer_answers(client):
+    attempt = finish_observation(client, begin(client), Parameters())
+    row = client.get('/learning/history').json()[0]
+    assert row['id'] == attempt['id'] and row['observed_count'] == 3
+    assert row['prediction'] == attempt['prediction']
+    assert row['first_transfer_passed'] is None
+    assert 'task' not in row and '_answer' not in json.dumps(row)
+
+
+def test_new_practice_uses_unseen_seed_and_does_not_overwrite_old_prediction(client):
+    attempt = finish_observation(client, begin(client), Parameters())
+    context = client.post(f"/learning/attempts/{attempt['id']}/practice", json={}).json()
+    assert context['parameters']['seed'] not in {attempt['parameters']['seed'], attempt['task']['seed']}
+    newer = begin(client, Parameters.model_validate(context['parameters']))
+    other = client.post(f"/learning/attempts/{attempt['id']}/practice", json={}).json()
+    assert other['parameters']['seed'] != newer['parameters']['seed']
+    assert client.get(f"/learning/attempts/{attempt['id']}").json() == attempt

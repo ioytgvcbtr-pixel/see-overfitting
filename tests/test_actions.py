@@ -112,3 +112,17 @@ def test_plan_uses_authoritative_prediction_and_rejects_other_context(client, mo
     body['parameters'] = params.model_copy(update={'seed': 43}).model_dump()
     assert client.post('/actions/plan', json=body).status_code == 409
     assert len(captured) == 1
+
+
+def test_report_recovers_executed_actions_by_learning_round_after_refresh(client):
+    params = Parameters()
+    attempt = client.post('/learning/attempts', json={'parameters': params.model_dump(), 'choice': 1}).json()
+    body = {'kind': 'synthetic', 'parameters': params.model_dump(), 'learning_attempt_id': attempt['id']}
+    plan = client.post('/actions/plan', json=body).json()
+    result = client.post(f"/actions/{plan['id']}/execute", json={'parameters': params.model_dump()}).json()
+    assert result['learning_attempt_id'] == attempt['id']
+    report = client.post('/reports', json={'parameters': params.model_dump(), 'learning_attempt_id': attempt['id']}).json()
+    assert client.get(report['json_url']).json()['verified_actions'] == [result]
+    another = client.post('/learning/attempts', json={'parameters': params.model_dump(), 'choice': 0}).json()
+    report = client.post('/reports', json={'parameters': params.model_dump(), 'learning_attempt_id': another['id']}).json()
+    assert client.get(report['json_url']).json()['verified_actions'] == []

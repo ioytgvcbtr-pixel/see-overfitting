@@ -33,6 +33,40 @@ def make_router(connect):
         connection.execute('INSERT OR REPLACE INTO learning_attempts(id,content) VALUES (?,?)',
                            (attempt['id'], json.dumps(attempt, ensure_ascii=False)))
 
+    @router.get('/history')
+    def history():
+        with connect() as connection:
+            rows = connection.execute('SELECT content FROM learning_attempts ORDER BY rowid DESC LIMIT 50').fetchall()
+        output = []
+        for row in rows:
+            attempt = learning.public(json.loads(row['content']))
+            answers = attempt['transfer_attempts']
+            output.append({key: attempt.get(key) for key in ('id', 'created_at', 'completed_at', 'parameters', 'last_parameters', 'stage', 'prediction')} |
+                          {'observed_count': len(attempt['observations']), 'transfer_count': len(answers),
+                           'first_transfer_passed': answers[0]['passed'] if answers else None,
+                           'last_transfer_passed': answers[-1]['passed'] if answers else None,
+                           'prediction_matched': attempt.get('prediction_review', {}).get('matched')})
+        return output
+
+    @router.post('/attempts/{attempt_id}/practice')
+    def practice(attempt_id: str):
+        with connect() as connection:
+            attempt = read(connection, attempt_id)
+            rows = connection.execute('SELECT content FROM learning_attempts').fetchall()
+        seen = set()
+        for row in rows:
+            item = json.loads(row['content'])
+            seen.add(item['parameters']['seed'])
+            if item.get('_task'): seen.add(item['_task']['seed'])
+            seen.update(answer['task']['seed'] for answer in item['transfer_attempts'])
+        seed = (attempt['parameters']['seed'] + 307) % 1000000
+        for _ in range(1000000):
+            if seed not in seen: break
+            seed = (seed + 307) % 1000000
+        else: raise HTTPException(409, '已使用全部随机种子，请选择其他数据条件。')
+        params = {**attempt['parameters'], 'seed': seed}
+        return {'parameters': params, 'source_attempt_id': attempt_id}
+
     @router.post('/attempts')
     def begin(request: PredictionRequest):
         attempt = learning.start(request.parameters, request.choice, request.confidence, request.reason)

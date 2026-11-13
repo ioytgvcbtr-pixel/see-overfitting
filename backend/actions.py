@@ -101,6 +101,7 @@ def execute(saved):
     return {'id': saved['id'], 'kind': saved['kind'], 'executed_at': learning.now(),
             'mode': saved['mode'], 'model': saved['model'], 'reasoning_effort': saved['reasoning_effort'],
             'learning_prediction': saved.get('learning_prediction'),
+            'learning_attempt_id': saved.get('learning_attempt_id'),
             'change': saved['change'], 'hypothesis': saved['hypothesis'], 'expected': saved['expected'],
             'before': before, 'after': after, 'metric': metric_name, 'delta': delta,
             'observed': observed, 'verdict': verdict, 'test_not_consulted': True,
