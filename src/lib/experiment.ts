@@ -181,12 +181,11 @@ export async function api<T>(
     body: body === undefined ? undefined : JSON.stringify(body),
     signal,
   });
-  if (!response.ok)
-    throw new Error(
-      response.status === 502
-        ? "实验服务尚未启动，请检查后端服务。"
-        : `请求未完成（${response.status}），请重试。`,
-    );
+  if (!response.ok) {
+    const detail = await response.json().catch(() => null);
+    throw new Error(response.status === 502 ? "实验服务尚未启动，请检查后端服务。"
+      : typeof detail?.detail === "string" ? detail.detail : `请求未完成（${response.status}），请重试。`);
+  }
   return response.json();
 }
 

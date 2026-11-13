@@ -37,20 +37,24 @@ import { FitChart, ErrorChart } from "@/components/FitChart";
 import DatasetLab from "@/components/DatasetLab";
 import ExperimentControls from "@/components/ExperimentControls";
 import {
+  JourneySteps,
+  PredictionGate,
+  PredictionReview,
+  TransferValidation,
+} from "@/components/LearningJourney";
+import { useLearningJourney } from "@/components/useLearningJourney";
+import ActionExperiment from "@/components/ActionExperiment";
+import ActionArchive from "@/components/ActionArchive";
+import {
   LearningMission,
   ObservationBoard,
   MetricHelp,
 } from "@/components/LearningGuide";
-import {
-  lessonGuide,
-  recordObservation,
-  type ObservationSet,
-} from "@/lib/learning-guide";
+import { lessonGuide, type ObservationSet } from "@/lib/learning-guide";
 import { viewFromHash, hashForView } from "@/lib/navigation";
 import {
   api,
   metric,
-  quizzes,
   scenes,
   type Coach,
   type FinalResult,
@@ -62,31 +66,27 @@ import {
 } from "@/lib/experiment";
 
 type View = "studio" | "path" | "history" | "datasets";
-type Modal = "guide" | "save" | "report" | "final" | "sources" | "quiz" | null;
+type Modal = "guide" | "save" | "report" | "final" | "sources" | null;
 const alphaLabel = (a: number) =>
   a < 0.001 ? a.toExponential(0).replace("e-", " × 10⁻") : String(a);
 
 export default function Home() {
   const [view, setViewState] = useState<View>("studio");
   const [params, setParams] = useState<Parameters>(scenes[0].defaults);
+  const [sceneReady, setSceneReady] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [loading, setBusy] = useState(true);
-  const busy = loading || (!!result &&
-    (Object.keys(params) as (keyof Parameters)[]).some(
-      key => params[key] !== result.parameters[key],
-    ));
+  const busy =
+    loading ||
+    (!!result &&
+      (Object.keys(params) as (keyof Parameters)[]).some(
+        (key) => params[key] !== result.parameters[key],
+      ));
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const [records, setRecords] = useState<SavedRecord[]>([]);
+  const [actionIds, setActionIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
-  const [prediction, setPrediction] = useState<number | null>(null);
-  const [revealed, setRevealed] = useState(false);
-  const [observations, setObservations] = useState<ObservationSet>({
-    conditionKey: "",
-    items: {},
-  });
-  const [quizChoice, setQuizChoice] = useState<number | null>(null);
-  const [quizRevealed, setQuizRevealed] = useState(false);
   const [completed, setCompleted] = useState<SceneId[]>([]);
   const [modal, setModal] = useState<Modal>(null);
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -116,9 +116,19 @@ export default function Home() {
   const sweepAbort = useRef<AbortController | null>(null);
   const modalRef = useRef<HTMLElement | null>(null);
   const scene = scenes.find((s) => s.id === params.scene)!;
-  const quiz = quizzes[params.scene];
   const comparison = records.filter((r) => selected.includes(r.id));
   const guide = lessonGuide(params);
+  const journey = useLearningJourney(params, setParams, sceneReady);
+  const canReveal = journey.ready && !!journey.activeId;
+  const observations: ObservationSet = {
+    conditionKey: guide.conditionKey,
+    items: Object.fromEntries(
+      (journey.attempt?.observations || []).map((item) => [
+        String(item.value),
+        item,
+      ]),
+    ),
+  };
   const currentCondition =
     guide.control === "degree"
       ? `${params.degree}阶模型`
@@ -130,6 +140,12 @@ export default function Home() {
     if (window.location.hash !== hashForView(next))
       window.history.pushState(null, "", hashForView(next));
   }
+  useEffect(() => {
+    const stored = localStorage.getItem("fitlab-current-scene-v1");
+    const previous = scenes.find((item) => item.id === stored);
+    if (previous) setParams({ ...previous.defaults });
+    setSceneReady(true);
+  }, []);
   useEffect(() => {
     const apply = () => {
       setViewState(viewFromHash(window.location.hash));
@@ -144,9 +160,18 @@ export default function Home() {
     };
   }, []);
   useEffect(() => {
-    if (result)
-      setObservations((previous) => recordObservation(previous, result));
-  }, [result]);
+    if (journey.attempt?.stage !== "complete") return;
+    setCompleted((previous) => {
+      const next = Array.from(
+        new Set([...previous, journey.attempt!.parameters.scene]),
+      );
+      localStorage.setItem(
+        "fitlab-learning-completed-v1",
+        JSON.stringify(next),
+      );
+      return next;
+    });
+  }, [journey.attempt?.completed_at]);
 
   useEffect(() => {
     api<{ ai_configured: boolean; ai_model: string }>("/health")
@@ -157,7 +182,7 @@ export default function Home() {
       .catch(() => {});
     try {
       const stored = JSON.parse(
-        localStorage.getItem("fitlab-progress") || "[]",
+        localStorage.getItem("fitlab-learning-completed-v1") || "[]",
       );
       if (Array.isArray(stored))
         setCompleted(stored.filter((id) => scenes.some((s) => s.id === id)));
@@ -172,9 +197,15 @@ export default function Home() {
     setReportPreview(null);
     setBusy(true);
     setError("");
+    if (!canReveal) {
+      setResult(null);
+      setBusy(false);
+      return () => controller.abort();
+    }
     const timeout = setTimeout(
       () =>
-        api<Result>("/experiments/run", params, controller.signal)
+        journey
+          .observe(params, controller.signal)
           .then(setResult)
           .catch((e) => {
             if (e.name !== "AbortError") setError(e.message);
@@ -188,7 +219,7 @@ export default function Home() {
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [params, retry]);
+  }, [params, retry, journey.activeId, journey.ready]);
   useEffect(() => {
     sweepAbort.current?.abort();
     setSweeping(false);
@@ -228,9 +259,8 @@ export default function Home() {
   }, [modal]);
 
   function changeScene(id: SceneId) {
+    localStorage.setItem("fitlab-current-scene-v1", id);
     setParams({ ...scenes.find((s) => s.id === id)!.defaults });
-    setPrediction(null);
-    setRevealed(false);
     setChartTab("fit");
     setView("studio");
     setMobileMenu(false);
@@ -244,7 +274,8 @@ export default function Home() {
       document.getElementById("experiment-chart")?.scrollIntoView({
         block: "start",
         behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "instant" : "smooth",
+          ? "instant"
+          : "smooth",
       });
     }
   }
@@ -294,7 +325,7 @@ export default function Home() {
         parameters: params,
         title: title.trim() || `${scene.short} · ${currentCondition}`,
         note,
-        prediction: prediction === null ? "" : scene.options[prediction],
+        prediction: journey.attempt?.prediction.label || "",
       });
       setRecords(await api<SavedRecord[]>("/records"));
       setModal(null);
@@ -303,17 +334,6 @@ export default function Home() {
       setToast((e as Error).message);
     } finally {
       setSaving(false);
-    }
-  }
-  function answer() {
-    setRevealed(true);
-  }
-  function answerQuiz() {
-    setQuizRevealed(true);
-    if (quizChoice === quiz.answer) {
-      const next = Array.from(new Set([...completed, scene.id]));
-      setCompleted(next);
-      localStorage.setItem("fitlab-progress", JSON.stringify(next));
     }
   }
   async function evaluate() {
@@ -342,6 +362,8 @@ export default function Home() {
           explanation_model: coach?.model || null,
           record_ids: selected,
           learning_progress: completed,
+          learning_attempt_id: journey.activeId,
+          action_plan_ids: actionIds,
         },
       );
       const reportId = report.json_url.split("/").pop()!.replace(".json", "");
@@ -483,7 +505,7 @@ export default function Home() {
             <span style={{ width: `${(completed.length / 3) * 100}%` }} />
           </div>
           <footer>
-            <span>基础实验进度</span>
+            <span>学习闭环进度</span>
             <strong>{completed.length} / 3</strong>
           </footer>
         </div>
@@ -570,382 +592,382 @@ export default function Home() {
                 </div>
               </div>
 
-              <LearningMission
-                guide={guide}
-                params={params}
-                observations={observations}
-                onSelect={selectGuidedValue}
-              />
-
-              {error && (
+              <JourneySteps attempt={journey.attempt} />
+              {journey.error && (
                 <div className="error-banner" role="alert">
-                  <span>{error}</span>
-                  <button onClick={() => setRetry((r) => r + 1)}>
-                    重新连接
-                  </button>
+                  {journey.error}
                 </div>
               )}
-              <div
-                className={`metrics-grid ${busy ? "updating" : ""}`}
-                aria-busy={busy}
-              >
-                <MetricCard
-                  icon={<TrendingDown size={16} />}
-                  label="训练误差"
-                  tag="MSE"
-                  value={result && !busy ? metric(result.metrics.train_mse) : "—"}
-                  color="teal"
-                  caption={`${params.samples} 个样本，用于拟合`}
+              {!canReveal ? (
+                <PredictionGate
+                  key={guide.conditionKey}
+                  guide={guide}
+                  parameters={params}
+                  ready={journey.ready}
+                  working={journey.working}
+                  onSubmit={journey.begin}
                 />
-                <MetricCard
-                  icon={<Activity size={16} />}
-                  label="验证误差"
-                  tag="MSE"
-                  value={result && !busy ? metric(result.metrics.validation_mse) : "—"}
-                  color="coral"
-                  caption="80 个样本，用于比较参数"
-                />
-                <MetricCard
-                  icon={<Layers3 size={16} />}
-                  label="泛化差距"
-                  tag="MSE"
-                  value={result && !busy ? metric(result.metrics.gap) : "—"}
-                  color="blue"
-                  caption="验证误差 − 训练误差"
-                />
-                <div className="metric-card diagnosis-card">
-                  <div className="metric-label">
-                    <span>
-                      <ShieldCheck size={16} />
-                      当前诊断
-                    </span>
-                    <i
-                      className={`status-dot ${result?.diagnosis.tone || ""}`}
-                    />
-                  </div>
-                  <strong className="diagnosis-value">
-                    {!busy && result ? result.diagnosis.label : "正在计算实验"}
-                  </strong>
-                  <p>
-                    基于误差的教学提示
-                    <span
-                      className="metric-info"
-                      title="规则诊断用于探索，不替代严格的统计检验。"
-                    >
-                      <CircleHelp size={13} />
-                    </span>
-                  </p>
-                </div>
-              </div>
+              ) : (
+                <>
+                  <LearningMission
+                    guide={guide}
+                    params={params}
+                    observations={observations}
+                    onSelect={selectGuidedValue}
+                  />
 
-              <MetricHelp />
-              <div className="workspace-grid">
-                <section
-                  className="panel chart-panel"
-                  id="experiment-chart"
-                  aria-busy={busy}
-                >
-                  <div className="panel-heading">
-                    <div>
-                      <h2>
-                        <span className="panel-dot" />
-                        看见模型如何拟合
-                      </h2>
-                      <p>调整实验参数，观察曲线与误差的变化</p>
-                    </div>
-                    <span className="live-badge">
-                      {busy ? (
-                        <LoaderCircle size={12} className="spin" />
-                      ) : (
-                        <span />
-                      )}
-                      {busy ? "更新中" : "实时计算"}
-                    </span>
-                  </div>
-                  <div className="chart-toolbar">
-                    <div className="segmented">
-                      <button
-                        className={chartTab === "fit" ? "chosen" : ""}
-                        onClick={() => setChartTab("fit")}
-                      >
-                        <Activity size={14} />
-                        拟合曲线
-                      </button>
-                      <button
-                        className={chartTab === "sweep" ? "chosen" : ""}
-                        onClick={() => {
-                          setChartTab("sweep");
-                          if (!sweep && !sweeping) void scan();
-                        }}
-                      >
-                        <BarChart3 size={14} />
-                        复杂度扫描
+                  {error && (
+                    <div className="error-banner" role="alert">
+                      <span>{error}</span>
+                      <button onClick={() => setRetry((r) => r + 1)}>
+                        重新连接
                       </button>
                     </div>
-                    <span className="chart-hint">
-                      {chartTab === "fit"
-                        ? "悬停探索数据点"
-                        : "同一数据 · 比较 1—15 阶"}
-                    </span>
+                  )}
+                  <div
+                    className={`metrics-grid ${busy ? "updating" : ""}`}
+                    aria-busy={busy}
+                  >
+                    <MetricCard
+                      icon={<TrendingDown size={16} />}
+                      label="训练误差"
+                      tag="MSE"
+                      value={
+                        result && !busy ? metric(result.metrics.train_mse) : "—"
+                      }
+                      color="teal"
+                      caption={`${params.samples} 个样本，用于拟合`}
+                    />
+                    <MetricCard
+                      icon={<Activity size={16} />}
+                      label="验证误差"
+                      tag="MSE"
+                      value={
+                        result && !busy
+                          ? metric(result.metrics.validation_mse)
+                          : "—"
+                      }
+                      color="coral"
+                      caption="80 个样本，用于比较参数"
+                    />
+                    <MetricCard
+                      icon={<Layers3 size={16} />}
+                      label="泛化差距"
+                      tag="MSE"
+                      value={result && !busy ? metric(result.metrics.gap) : "—"}
+                      color="blue"
+                      caption="验证误差 − 训练误差"
+                    />
+                    <div className="metric-card diagnosis-card">
+                      <div className="metric-label">
+                        <span>
+                          <ShieldCheck size={16} />
+                          当前诊断
+                        </span>
+                        <i
+                          className={`status-dot ${result?.diagnosis.tone || ""}`}
+                        />
+                      </div>
+                      <strong className="diagnosis-value">
+                        {!busy && result
+                          ? result.diagnosis.label
+                          : "正在计算实验"}
+                      </strong>
+                      <p>
+                        基于误差的教学提示
+                        <span
+                          className="metric-info"
+                          title="规则诊断用于探索，不替代严格的统计检验。"
+                        >
+                          <CircleHelp size={13} />
+                        </span>
+                      </p>
+                    </div>
                   </div>
-                  {chartTab === "fit" ? (
-                    <FitChart result={result} />
-                  ) : (
-                    <div className="sweep-container">
-                      {sweep ? (
-                        <>
-                          <ErrorChart data={sweep} current={params.degree} />
-                          <div className="sweep-summary">
-                            <span>
-                              验证误差最小：
-                              <strong>{sweep.best_degree} 阶</strong>
-                            </span>
-                            <button
-                              className="text-button"
-                              onClick={() => {
-                                update("degree", sweep.best_degree);
-                                setChartTab("fit");
-                              }}
-                            >
-                              应用此阶数
-                              <ArrowRight size={14} />
-                            </button>
-                          </div>
-                          <p className="muted small-copy">
-                            纵轴采用对数尺度。橙线为验证误差，青线为训练误差。最小值只针对当前数据与正则强度。
-                          </p>
-                        </>
+
+                  <MetricHelp />
+                  <div className="workspace-grid">
+                    <section
+                      className="panel chart-panel"
+                      id="experiment-chart"
+                      aria-busy={busy}
+                    >
+                      <div className="panel-heading">
+                        <div>
+                          <h2>
+                            <span className="panel-dot" />
+                            看见模型如何拟合
+                          </h2>
+                          <p>调整实验参数，观察曲线与误差的变化</p>
+                        </div>
+                        <span className="live-badge">
+                          {busy ? (
+                            <LoaderCircle size={12} className="spin" />
+                          ) : (
+                            <span />
+                          )}
+                          {busy ? "更新中" : "实时计算"}
+                        </span>
+                      </div>
+                      <div className="chart-toolbar">
+                        <div className="segmented">
+                          <button
+                            className={chartTab === "fit" ? "chosen" : ""}
+                            onClick={() => setChartTab("fit")}
+                          >
+                            <Activity size={14} />
+                            拟合曲线
+                          </button>
+                          <button
+                            className={chartTab === "sweep" ? "chosen" : ""}
+                            onClick={() => {
+                              setChartTab("sweep");
+                              if (!sweep && !sweeping) void scan();
+                            }}
+                          >
+                            <BarChart3 size={14} />
+                            复杂度扫描
+                          </button>
+                        </div>
+                        <span className="chart-hint">
+                          {chartTab === "fit"
+                            ? "悬停探索数据点"
+                            : "同一数据 · 比较 1—15 阶"}
+                        </span>
+                      </div>
+                      {chartTab === "fit" ? (
+                        <FitChart result={result} />
                       ) : (
-                        <div className="empty-chart">
-                          <LoaderCircle
-                            size={28}
-                            className={sweeping ? "spin" : ""}
-                          />
-                          <p>
-                            {sweeping
-                              ? "正在比较不同复杂度…"
-                              : "运行扫描，找到当前数据的平衡点。"}
-                          </p>
-                          {!sweeping && (
-                            <button
-                              className="button secondary"
-                              onClick={() => void scan()}
-                            >
-                              开始扫描
-                            </button>
+                        <div className="sweep-container">
+                          {sweep ? (
+                            <>
+                              <ErrorChart
+                                data={sweep}
+                                current={params.degree}
+                              />
+                              <div className="sweep-summary">
+                                <span>
+                                  验证误差最小：
+                                  <strong>{sweep.best_degree} 阶</strong>
+                                </span>
+                                <button
+                                  className="text-button"
+                                  onClick={() => {
+                                    update("degree", sweep.best_degree);
+                                    setChartTab("fit");
+                                  }}
+                                >
+                                  应用此阶数
+                                  <ArrowRight size={14} />
+                                </button>
+                              </div>
+                              <p className="muted small-copy">
+                                纵轴采用对数尺度。橙线为验证误差，青线为训练误差。最小值只针对当前数据与正则强度。
+                              </p>
+                            </>
+                          ) : (
+                            <div className="empty-chart">
+                              <LoaderCircle
+                                size={28}
+                                className={sweeping ? "spin" : ""}
+                              />
+                              <p>
+                                {sweeping
+                                  ? "正在比较不同复杂度…"
+                                  : "运行扫描，找到当前数据的平衡点。"}
+                              </p>
+                              {!sweeping && (
+                                <button
+                                  className="button secondary"
+                                  onClick={() => void scan()}
+                                >
+                                  开始扫描
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       )}
-                    </div>
-                  )}
-                  <div className="chart-footer">
-                    <span>
-                      <ShieldCheck size={14} />
-                      {busy && result
-                        ? "正在更新，图形暂为上次结果"
-                        : "数据条件固定，适合逐项比较"}
-                    </span>
-                    <span>合成数据 · 随机种子 {params.seed}</span>
-                  </div>
-                </section>
-
-                <ExperimentControls
-                  params={params}
-                  onChange={(key, value) =>
-                    setParams((previous) => ({ ...previous, [key]: value }))
-                  }
-                  onReset={() => setParams({ ...scene.defaults })}
-                />
-              </div>
-              <ObservationBoard
-                guide={guide}
-                observations={observations}
-                onSelect={selectGuidedValue}
-              />
-
-              <div className="learning-grid">
-                <section className="panel prediction-panel" id="prediction">
-                  <div className="panel-heading compact">
-                    <h2>
-                      <Lightbulb size={17} />
-                      先预测，再验证
-                    </h2>
-                    <span className="section-index">先想一想</span>
-                  </div>
-                  <p className="question-text">{scene.question}</p>
-                  <div
-                    className="prediction-options"
-                    role="radiogroup"
-                    aria-label="实验预测"
-                  >
-                    {scene.options.map((option, index) => (
-                      <button
-                        role="radio"
-                        aria-checked={prediction === index}
-                        key={option}
-                        className={`${prediction === index ? "selected" : ""} ${revealed && index === scene.answer ? "correct" : ""}`}
-                        onClick={() => {
-                          setPrediction(index);
-                          setRevealed(false);
-                        }}
-                      >
-                        <span className="radio-circle">
-                          {revealed && index === scene.answer ? (
-                            <Check size={11} />
-                          ) : prediction === index ? (
-                            <span />
-                          ) : null}
+                      <div className="chart-footer">
+                        <span>
+                          <ShieldCheck size={14} />
+                          {busy && result
+                            ? "正在更新，图形暂为上次结果"
+                            : "数据条件固定，适合逐项比较"}
                         </span>
-                        {option}
-                      </button>
-                    ))}
+                        <span>合成数据 · 随机种子 {params.seed}</span>
+                      </div>
+                    </section>
+
+                    <ExperimentControls
+                      params={params}
+                      onChange={(key, value) =>
+                        setParams((previous) => ({ ...previous, [key]: value }))
+                      }
+                      onReset={() => setParams({ ...scene.defaults })}
+                    />
                   </div>
-                  {revealed ? (
-                    <div
-                      className={`answer-feedback ${prediction === scene.answer ? "correct" : "retry"}`}
-                    >
-                      <strong>
-                        {prediction === scene.answer
-                          ? "理解得很准确"
-                          : "再想一步，你会发现"}
-                      </strong>
-                      <p>{scene.reason}</p>
-                      <button
-                        className="text-button quiz-link"
-                        onClick={() => {
-                          setQuizChoice(null);
-                          setQuizRevealed(false);
-                          setModal("quiz");
+                  <ObservationBoard
+                    guide={guide}
+                    observations={observations}
+                    onSelect={selectGuidedValue}
+                  />
+                  <PredictionReview
+                    attempt={journey.attempt!}
+                    onReset={() => journey.reset()}
+                  />
+
+                  <div className="learning-grid">
+                    <TransferValidation
+                      key={journey.attempt!.task?.id || journey.activeId}
+                      attempt={journey.attempt!}
+                      working={journey.working}
+                      onSubmit={journey.transfer}
+                      onRetry={journey.retryTransfer}
+                      onRealData={() => setView("datasets")}
+                    />
+
+                    <section className="panel coach-panel">
+                      <div className="panel-heading compact">
+                        <h2>
+                          <span className="coach-icon">
+                            <Sparkles size={16} />
+                          </span>
+                          你的实验教练
+                        </h2>
+                        <span
+                          className={`coach-mode ${coach?.mode === "online" ? "online" : ""}`}
+                        >
+                          {coach?.mode === "online"
+                            ? "AI讲解"
+                            : coach?.mode === "rules"
+                              ? "规则讲解"
+                              : "依据本次计算"}
+                        </span>
+                      </div>
+                      {coach ? (
+                        <div className="coach-response">
+                          <div className="coach-response-text">
+                            {coach.content}
+                          </div>
+                          {coach.notice && (
+                            <p className="coach-notice">{coach.notice}</p>
+                          )}
+                          <div className="evidence-anchor">
+                            <ShieldCheck size={12} />
+                            依据当前实验 ·{" "}
+                            {result?.data_fingerprint.slice(0, 8)}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="coach-intro">
+                          <p>
+                            曲线在变化，
+                            <br />
+                            <strong>背后的规律是什么？</strong>
+                          </p>
+                          <span>
+                            让教练结合这次实验的真实指标，帮你理解现象，找到下一步。
+                          </span>
+                          <button
+                            className="coach-ask"
+                            disabled={busy || !result || coaching}
+                            onClick={() => void askCoach()}
+                          >
+                            {coaching ? (
+                              <LoaderCircle size={16} className="spin" />
+                            ) : (
+                              <Sparkles size={16} />
+                            )}{" "}
+                            {coaching ? "正在分析实验…" : "解释这次实验"}
+                            <ArrowUpRight size={15} />
+                          </button>
+                        </div>
+                      )}
+                      <ActionExperiment
+                        kind="synthetic"
+                        learningAttemptId={journey.activeId || undefined}
+                        parameters={params}
+                        enabled={!busy && !!result}
+                        onApply={(value) => setParams(value as Parameters)}
+                        onVerified={(id) =>
+                          setActionIds((previous) =>
+                            Array.from(new Set([...previous, id])).slice(-12),
+                          )
+                        }
+                      />
+                      <form
+                        className="coach-input"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          void askCoach();
                         }}
                       >
-                        做一道迁移练习
-                        <ArrowRight size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="prediction-footer">
-                      <span>让直觉成为可检验的假设</span>
-                      <button
-                        className="button secondary small-button"
-                        disabled={prediction === null}
-                        onClick={answer}
-                      >
-                        验证我的预测
-                        <ArrowRight size={14} />
-                      </button>
-                    </div>
-                  )}
-                </section>
-
-                <section className="panel coach-panel">
-                  <div className="panel-heading compact">
-                    <h2>
-                      <span className="coach-icon">
-                        <Sparkles size={16} />
-                      </span>
-                      你的实验教练
-                    </h2>
-                    <span
-                      className={`coach-mode ${coach?.mode === "online" ? "online" : ""}`}
-                    >
-                      {coach?.mode === "online"
-                        ? "AI讲解"
-                        : coach?.mode === "rules"
-                          ? "规则讲解"
-                          : "依据本次计算"}
-                    </span>
+                        <input
+                          aria-label="向实验教练提问"
+                          placeholder="为什么训练误差低，验证误差却很高？"
+                          value={question}
+                          maxLength={500}
+                          onChange={(e) => setQuestion(e.target.value)}
+                        />
+                        <button
+                          aria-label="发送问题"
+                          disabled={
+                            busy || !result || coaching || !question.trim()
+                          }
+                        >
+                          {coaching ? (
+                            <LoaderCircle size={16} className="spin" />
+                          ) : (
+                            <ArrowRight size={16} />
+                          )}
+                        </button>
+                      </form>
+                    </section>
                   </div>
-                  {coach ? (
-                    <div className="coach-response">
-                      <div className="coach-response-text">{coach.content}</div>
-                      {coach.notice && (
-                        <p className="coach-notice">{coach.notice}</p>
-                      )}
-                      <div className="evidence-anchor">
-                        <ShieldCheck size={12} />
-                        依据当前实验 · {result?.data_fingerprint.slice(0, 8)}
+
+                  <section className="test-strip">
+                    <div className="test-strip-title">
+                      <span className="test-lock">
+                        <LockKeyhole size={19} />
+                      </span>
+                      <div>
+                        <h3>
+                          {final
+                            ? "独立测试已揭示"
+                            : "还有一份数据，留给最后的答案"}
+                        </h3>
+                        <p>
+                          {final
+                            ? `测试 MSE ${metric(final.test_mse)} · ${final.note}`
+                            : "120 个独立测试样本暂不参与参数选择。完成迁移验证并选好模型后，再做一次最终评估。"}
+                        </p>
                       </div>
                     </div>
-                  ) : (
-                    <div className="coach-intro">
-                      <p>
-                        曲线在变化，
-                        <br />
-                        <strong>背后的规律是什么？</strong>
-                      </p>
-                      <span>
-                        让教练结合这次实验的真实指标，帮你理解现象，找到下一步。
-                      </span>
-                      <button
-                        className="coach-ask"
-                        disabled={busy || !result || coaching}
-                        onClick={() => void askCoach()}
-                      >
-                        {coaching ? (
-                          <LoaderCircle size={16} className="spin" />
-                        ) : (
-                          <Sparkles size={16} />
-                        )}{" "}
-                        {coaching ? "正在分析实验…" : "解释这次实验"}
-                        <ArrowUpRight size={15} />
-                      </button>
-                    </div>
-                  )}
-                  <form
-                    className="coach-input"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      void askCoach();
-                    }}
-                  >
-                    <input
-                      aria-label="向实验教练提问"
-                      placeholder="为什么训练误差低，验证误差却很高？"
-                      value={question}
-                      maxLength={500}
-                      onChange={(e) => setQuestion(e.target.value)}
-                    />
                     <button
-                      aria-label="发送问题"
-                      disabled={busy || !result || coaching || !question.trim()}
+                      className="button secondary"
+                      disabled={
+                        busy ||
+                        !result ||
+                        !!final ||
+                        journey.attempt?.stage !== "complete"
+                      }
+                      onClick={() => setModal("final")}
                     >
-                      {coaching ? (
-                        <LoaderCircle size={16} className="spin" />
+                      {final ? (
+                        <CheckCheck size={15} />
                       ) : (
-                        <ArrowRight size={16} />
-                      )}
+                        <ShieldCheck size={15} />
+                      )}{" "}
+                      {final
+                        ? "已完成评估"
+                        : journey.attempt?.stage !== "complete"
+                          ? "迁移验证后开放"
+                          : "最终评估"}
                     </button>
-                  </form>
-                </section>
-              </div>
-
-              <section className="test-strip">
-                <div className="test-strip-title">
-                  <span className="test-lock">
-                    <LockKeyhole size={19} />
-                  </span>
-                  <div>
-                    <h3>
-                      {final
-                        ? "独立测试已揭示"
-                        : "还有一份数据，留给最后的答案"}
-                    </h3>
-                    <p>
-                      {final
-                        ? `测试 MSE ${metric(final.test_mse)} · ${final.note}`
-                        : "120 个独立测试样本暂不参与参数选择。选好模型后，再做一次最终评估。"}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  className="button secondary"
-                  disabled={busy || !result || !!final}
-                  onClick={() => setModal("final")}
-                >
-                  {final ? <CheckCheck size={15} /> : <ShieldCheck size={15} />}{" "}
-                  {final ? "已完成评估" : "最终评估"}
-                </button>
-              </section>
+                  </section>
+                </>
+              )}
               <footer className="page-footer">
                 <span>理解，来自亲手探索。</span>
                 <span>
@@ -1035,6 +1057,7 @@ export default function Home() {
                   继续实验
                 </button>
               </div>
+              <ActionArchive />
               {comparison.length > 0 && (
                 <section className="panel comparison-panel">
                   <div className="panel-heading compact">
@@ -1151,12 +1174,13 @@ export default function Home() {
                       <button
                         className="text-button"
                         onClick={() => {
+                          journey.reset(r.result.parameters.scene);
                           setParams({ ...r.result.parameters });
-                          setPrediction(null);
-                          setRevealed(false);
                           setView("studio");
                           setChartTab("fit");
-                          setToast("已恢复实验参数；按同一随机种子重新计算。");
+                          setToast(
+                            "已恢复实验条件；先记录本轮判断，这是已见条件的复习。",
+                          );
                         }}
                       >
                         载入并回放
@@ -1195,58 +1219,6 @@ export default function Home() {
             >
               <X size={20} />
             </button>
-            {modal === "quiz" && (
-              <>
-                <span className="modal-icon">
-                  <GraduationCap size={25} />
-                </span>
-                <h2 id="modal-title">把理解，带到新问题</h2>
-                <p className="modal-description">{quiz.question}</p>
-                <div
-                  className="prediction-options quiz-options"
-                  role="radiogroup"
-                  aria-label="迁移练习"
-                >
-                  {quiz.options.map((option, index) => (
-                    <button
-                      role="radio"
-                      aria-checked={quizChoice === index}
-                      key={option}
-                      className={`${quizChoice === index ? "selected" : ""} ${quizRevealed && index === quiz.answer ? "correct" : ""}`}
-                      onClick={() => {
-                        setQuizChoice(index);
-                        setQuizRevealed(false);
-                      }}
-                    >
-                      <span className="radio-circle">
-                        {quizChoice === index && <span />}
-                      </span>
-                      {option}
-                    </button>
-                  ))}
-                </div>
-                {quizRevealed && (
-                  <div
-                    className={`answer-feedback ${quizChoice === quiz.answer ? "correct" : ""}`}
-                  >
-                    <strong>
-                      {quizChoice === quiz.answer
-                        ? "实验完成，进度已保存"
-                        : "再试一次"}
-                    </strong>
-                    <p>{quiz.reason}</p>
-                  </div>
-                )}
-                <button
-                  className="button primary full-width"
-                  disabled={quizChoice === null}
-                  onClick={answerQuiz}
-                >
-                  <Check size={16} />
-                  检查我的理解
-                </button>
-              </>
-            )}
             {modal === "guide" && (
               <>
                 <span className="modal-icon">
@@ -1333,7 +1305,7 @@ export default function Home() {
                 </span>
                 <h2 id="modal-title">带走你的实验成果</h2>
                 <p className="modal-description">
-                  报告包含参数、真实指标、数据指纹、解释模式和已选对比记录。
+                  报告包含参数、真实指标、数据指纹、本轮预测与迁移作答、本页建议核验及已选对比记录。
                 </p>
                 <div className="report-preview">
                   <div>
@@ -1492,13 +1464,21 @@ export default function Home() {
                     葡萄酒质量 · UCI Wine Quality
                     <ArrowUpRight size={15} />
                   </a>
-                  <a href="https://archive.ics.uci.edu/dataset/9/auto+mpg"
-                    target="_blank" rel="noreferrer">
-                    汽车油耗 · UCI Auto MPG<ArrowUpRight size={15} />
+                  <a
+                    href="https://archive.ics.uci.edu/dataset/9/auto+mpg"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    汽车油耗 · UCI Auto MPG
+                    <ArrowUpRight size={15} />
                   </a>
-                  <a href="https://archive.ics.uci.edu/dataset/165/concrete+compressive+strength"
-                    target="_blank" rel="noreferrer">
-                    混凝土强度 · UCI Concrete Strength<ArrowUpRight size={15} />
+                  <a
+                    href="https://archive.ics.uci.edu/dataset/165/concrete+compressive+strength"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    混凝土强度 · UCI Concrete Strength
+                    <ArrowUpRight size={15} />
                   </a>
                 </div>
               </>

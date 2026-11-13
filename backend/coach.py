@@ -57,6 +57,7 @@ async def suggest(evidence, candidates):
                 'notice': '未配置模型API，使用可执行的规则建议。'}
     if not status['ai_configured']: return fallback
     prompt = ('你是实验教练。只从candidates中选择一个candidate_id，提出尚未验证的单变量实验假设。'
+              '如有learning_context，围绕学生已提交的预测或错误依据设计实验，不透露不存在的执行后结果。'
               '不编造执行后的指标，不声称一定改善，不选择测试集或额外参数。'
               '返回json对象，严格只有candidate_id、hypothesis、expected三个字段。'
               'hypothesis用中文解释为何值得尝试，180字以内；expected只可为lower、higher、uncertain，'

@@ -34,14 +34,10 @@ import {
 } from "@/lib/bench";
 import { LearningChart, PredictionChart } from "@/components/BenchCharts";
 import { MetricHelp } from "./LearningGuide";
+import ActionExperiment from "./ActionExperiment";
 
 type Display =
-  | "parity"
-  | "residual"
-  | "feature"
-  | "learning"
-  | "compare"
-  | "stability";
+  "parity" | "residual" | "feature" | "learning" | "compare" | "stability";
 type JournalEntry = {
   id: number;
   parameters: BenchParameters;
@@ -69,10 +65,12 @@ export default function DatasetLab({
   const [result, setResult] = useState<BenchResult | null>(null);
   const [loading, setBusy] = useState(true),
     [error, setError] = useState("");
-  const busy = loading || (!!result &&
-    (Object.keys(params) as (keyof BenchParameters)[]).some(
-      key => params[key] !== result.parameters[key],
-    ));
+  const busy =
+    loading ||
+    (!!result &&
+      (Object.keys(params) as (keyof BenchParameters)[]).some(
+        (key) => params[key] !== result.parameters[key],
+      ));
   const [display, setDisplay] = useState<Display>("parity");
   const [feature, setFeature] = useState(0),
     [showTraining, setShowTraining] = useState(false);
@@ -438,16 +436,14 @@ export default function DatasetLab({
                     else if (!stability) void analyze("stability");
                     else {
                       void askCoach();
-                      document
-                        .querySelector(".bench-coach")
-                        ?.scrollIntoView({
-                          behavior: window.matchMedia(
-                            "(prefers-reduced-motion: reduce)",
-                          ).matches
-                            ? "auto"
-                            : "smooth",
-                          block: "center",
-                        });
+                      document.querySelector(".bench-coach")?.scrollIntoView({
+                        behavior: window.matchMedia(
+                          "(prefers-reduced-motion: reduce)",
+                        ).matches
+                          ? "auto"
+                          : "smooth",
+                        block: "center",
+                      });
                     }
                   }}
                 >
@@ -683,19 +679,27 @@ export default function DatasetLab({
               >
                 <BenchMetric
                   label="训练 RMSE"
-                  value={result && !busy ? number(result.metrics.train_rmse) : "—"}
+                  value={
+                    result && !busy ? number(result.metrics.train_rmse) : "—"
+                  }
                   caption={`${result?.split.training ?? "—"} 条训练数据`}
                   unit={selected.unit}
                 />
                 <BenchMetric
                   label="验证 RMSE"
-                  value={result && !busy ? number(result.metrics.validation_rmse) : "—"}
+                  value={
+                    result && !busy
+                      ? number(result.metrics.validation_rmse)
+                      : "—"
+                  }
                   caption={`${result?.split.validation ?? "—"} 条验证数据`}
                   unit={selected.unit}
                 />
                 <BenchMetric
                   label="验证 R²"
-                  value={result && !busy ? number(result.metrics.validation_r2) : "—"}
+                  value={
+                    result && !busy ? number(result.metrics.validation_r2) : "—"
+                  }
                   caption="可为负值；衡量当前验证表现"
                 />
                 <BenchMetric
@@ -916,10 +920,37 @@ export default function DatasetLab({
                         ? "重新讲解"
                         : "解释本次结果"}
                   </button>
+                  <button
+                    className="text-button bench-action-link"
+                    onClick={() =>
+                      document
+                        .getElementById("bench-action")
+                        ?.scrollIntoView({
+                          block: "start",
+                          behavior: window.matchMedia(
+                            "(prefers-reduced-motion: reduce)",
+                          ).matches
+                            ? "instant"
+                            : "smooth",
+                        })
+                    }
+                  >
+                    用实验检验一个建议
+                    <ArrowRight size={15} />
+                  </button>
                 </div>
               </section>
             </aside>
           </div>
+          <section className="panel bench-action-workbench" id="bench-action">
+            <ActionExperiment
+              kind="bench"
+              parameters={params}
+              enabled={!busy && !!result && !computing}
+              previouslyViewed={previouslyViewed}
+              onApply={(value) => setParams(value as BenchParameters)}
+            />
+          </section>
           <section
             className={`bench-test panel ${previouslyViewed ? "exposed" : ""}`}
           >

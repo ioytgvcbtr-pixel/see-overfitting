@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {lessonGuide,recordObservation,lowestObserved} from '../src/lib/learning-guide.ts';
 import {viewFromHash,hashForView} from '../src/lib/navigation.ts';
+import {hasAttemptFor} from '../src/lib/learning-session.ts';
+import {parameterKey} from '../src/lib/actions.ts';
 
 const parameters={scene:'complexity',degree:4,samples:12,noise:.22,alpha:1e-8,seed:42};
 const fixture=(overrides,error)=>({parameters:{...parameters,...overrides},metrics:{train_mse:error/2,validation_mse:error}});
@@ -38,4 +40,15 @@ test('free exploration is not counted as a guided condition',()=>{
 test('module links and unknown fragments resolve predictably',()=>{
   for(const view of ['studio','datasets','path','history'])assert.equal(viewFromHash(hashForView(view)),view);
   assert.equal(viewFromHash('#unknown'),'studio');
+});
+test('a result cannot be revealed without a prediction for the same fixed conditions',()=>{
+  assert.equal(hasAttemptFor(parameters,null),false);
+  const attempt={parameters,control:'degree'};
+  assert.equal(hasAttemptFor({...parameters,degree:15},attempt),true);
+  assert.equal(hasAttemptFor({...parameters,noise:.4},attempt),false);
+  assert.equal(hasAttemptFor({...parameters,scene:'samples'},attempt),false);
+});
+test('action applicability uses values rather than object property order',()=>{
+  assert.equal(parameterKey(parameters),parameterKey(Object.fromEntries(Object.entries(parameters).reverse())));
+  assert.notEqual(parameterKey(parameters),parameterKey({...parameters,seed:43}));
 });

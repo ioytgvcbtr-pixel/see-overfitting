@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./datasets.css";
+import "./learning.css";
 
 export const metadata: Metadata = {
   title: "看见过拟合 · FitLab 交互实验室",
-  description: "用一次可复现的交互实验，理解机器学习如何学会规律。",
+  description: "先预测，再实验，用新数据验证理解；让AI建议接受真实计算的检验。",
 };
 export default function RootLayout({
   children,

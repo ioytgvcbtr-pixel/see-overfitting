@@ -65,7 +65,7 @@ export function lessonGuide(params: Parameters): LessonGuide {
 
 export type ObservationSet = {
   conditionKey: string;
-  items: Record<string, Result>;
+  items: Record<string, Pick<Result, "parameters" | "metrics">>;
 };
 export function recordObservation(
   previous: ObservationSet,

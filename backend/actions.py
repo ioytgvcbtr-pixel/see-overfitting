@@ -16,6 +16,7 @@ class PlanRequest(BaseModel):
     kind: Literal['synthetic', 'bench']
     parameters: dict
     test_previously_viewed: bool = False
+    learning_attempt_id: str | None = Field(default=None, max_length=40)
 
 
 class ExecuteRequest(BaseModel):
@@ -57,13 +58,14 @@ def candidates_for(kind, params):
             for control, value in settings if getattr(params, control) != value]
 
 
-async def plan(request):
+async def plan(request, learning_context=None):
     params = parameters(request.kind, request.parameters)
     baseline = await asyncio.to_thread(calculate, request.kind, params)
     options = candidates_for(request.kind, params)
     evidence = {'parameters': params.model_dump(), 'metrics': baseline['metrics'],
                 'dataset': '合成余弦数据' if request.kind == 'synthetic' else baseline['dataset']['title'],
                 'test_previously_viewed': request.test_previously_viewed}
+    if learning_context: evidence['learning_context'] = learning_context
     response = await coach.suggest(evidence, options)
     try:
         selection = Suggestion.model_validate(response['suggestion'])
@@ -83,6 +85,8 @@ async def plan(request):
             'hypothesis': selection.hypothesis, 'expected': selection.expected, 'change': selected,
             'baseline_parameters': params.model_dump(), 'target_parameters': target.model_dump(),
             'baseline_fingerprint': baseline.get('data_fingerprint', baseline.get('fingerprint')),
+            'learning_attempt_id': request.learning_attempt_id,
+            'learning_prediction': learning_context['prediction']['label'] if learning_context else None,
             'test_previously_viewed': request.test_previously_viewed, 'execution': None}
 
 
@@ -95,6 +99,8 @@ def execute(saved):
     observed = 'unchanged' if math.isclose(a, b, rel_tol=1e-9, abs_tol=1e-12) else ('lower' if b < a else 'higher')
     verdict = 'observed' if saved['expected'] == 'uncertain' else ('supported' if observed == saved['expected'] else 'not_supported')
     return {'id': saved['id'], 'kind': saved['kind'], 'executed_at': learning.now(),
+            'mode': saved['mode'], 'model': saved['model'], 'reasoning_effort': saved['reasoning_effort'],
+            'learning_prediction': saved.get('learning_prediction'),
             'change': saved['change'], 'hypothesis': saved['hypothesis'], 'expected': saved['expected'],
             'before': before, 'after': after, 'metric': metric_name, 'delta': delta,
             'observed': observed, 'verdict': verdict, 'test_not_consulted': True,
@@ -107,7 +113,21 @@ def make_router(connect):
 
     @router.post('/plan')
     async def create(request: PlanRequest):
-        try: saved = await plan(request)
+        context = None
+        try:
+            if request.learning_attempt_id:
+                current = parameters(request.kind, request.parameters)
+                with connect() as connection:
+                    row = connection.execute('SELECT content FROM learning_attempts WHERE id=?', (request.learning_attempt_id,)).fetchone()
+                if not row: raise HTTPException(404, '本轮学习记录不存在')
+                attempt = json.loads(row['content'])
+                if request.kind != 'synthetic' or not learning.matches(attempt, current):
+                    raise HTTPException(409, '学习预测与当前固定条件不一致，请重新预测。')
+                visible = learning.public(attempt)
+                context = {key: visible[key] for key in ('prediction', 'prediction_review') if key in visible}
+                context['transfer_feedback'] = [{'passed': item['passed'], 'selected_reason': item['task']['reasons'][item['reason']]}
+                                                for item in visible['transfer_attempts']]
+            saved = await plan(request, context)
         except ValidationError: raise HTTPException(422, '实验参数不符合当前课程约束')
         with connect() as connection:
             connection.execute('INSERT INTO action_plans(id,content) VALUES (?,?)', (saved['id'], json.dumps(saved, ensure_ascii=False)))
@@ -117,7 +137,8 @@ def make_router(connect):
     def history():
         with connect() as connection:
             rows = connection.execute('SELECT content FROM action_plans ORDER BY rowid DESC LIMIT 30').fetchall()
-        return [saved['execution'] for row in rows if (saved := json.loads(row['content']))['execution']]
+        return [{**saved['execution'], 'mode': saved['mode'], 'model': saved['model']}
+                for row in rows if (saved := json.loads(row['content']))['execution']]
 
     @router.post('/{plan_id}/execute')
     def run_plan(plan_id: str, request: ExecuteRequest):

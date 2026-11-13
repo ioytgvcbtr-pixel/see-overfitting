@@ -92,3 +92,23 @@ def test_json_request_keeps_xhigh_and_bad_json_has_visible_fallback(client, monk
     assert captured['response_format'] == {'type': 'json_object'}
     assert value['mode'] == 'rules' and value['notice']
     assert 'test-fixture' not in json.dumps(value)
+
+
+def test_plan_uses_authoritative_prediction_and_rejects_other_context(client, monkeypatch):
+    captured = []
+    async def suggestion(evidence, candidates):
+        captured.append(evidence)
+        return {'mode': 'online', 'model': 'test-model', 'notice': '', 'suggestion':
+            {'candidate_id': candidates[0]['id'], 'hypothesis': '针对已提交的判断，只改变一个条件核验。', 'expected': 'uncertain'}}
+    monkeypatch.setattr(coach, 'suggest', suggestion)
+    params = Parameters()
+    attempt = client.post('/learning/attempts', json={'parameters': params.model_dump(), 'choice': 2, 'confidence': 1}).json()
+    body = {'kind': 'synthetic', 'parameters': params.model_dump(), 'learning_attempt_id': attempt['id']}
+    response = client.post('/actions/plan', json=body)
+    assert response.status_code == 200
+    assert captured[0]['learning_context']['prediction'] == attempt['prediction']
+    assert '_answer' not in json.dumps(captured)
+    assert response.json()['learning_prediction'] == '15 阶模型'
+    body['parameters'] = params.model_copy(update={'seed': 43}).model_dump()
+    assert client.post('/actions/plan', json=body).status_code == 409
+    assert len(captured) == 1
