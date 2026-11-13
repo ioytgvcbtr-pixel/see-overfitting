@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import {
   ArrowRight,
   Copy,
@@ -204,7 +205,16 @@ export default function ConceptWorkshop({
       <header className="concept-heading">
         <div>
           <p className="concept-kicker">可操纵的机器学习概念</p>
-          <h1>把概念，拖到眼前。</h1>
+          <div className="concept-title-with-guide">
+            <Image
+              src="/illustrations/fitlab-guide-v1.png"
+              alt=""
+              width={61}
+              height={56}
+              sizes="(max-width:760px) 42px, 61px"
+            />
+            <h1>把概念，拖到眼前。</h1>
+          </div>
           <p>点的位置、模型的形状、误差和约束，在同一张画布里彼此回应。</p>
         </div>
         <div className="concept-heading-actions">

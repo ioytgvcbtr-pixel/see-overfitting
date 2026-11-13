@@ -55,6 +55,19 @@
   </aside>
   <iframe src="/" title="390px移动端实验工作台"></iframe>
   <script>
+    const requestedView = new URLSearchParams(location.search).get("view");
+    if (
+      [
+        "concepts",
+        "classification",
+        "studio",
+        "datasets",
+        "history",
+        "path",
+      ].includes(requestedView)
+    ) {
+      document.querySelector("iframe").src = "/#" + requestedView;
+    }
     const requestedWidth = Number(
       new URLSearchParams(location.search).get("width"),
     );

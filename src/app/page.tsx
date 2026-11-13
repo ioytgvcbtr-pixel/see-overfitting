@@ -47,6 +47,7 @@ import ActionExperiment from "@/components/ActionExperiment";
 import ActionArchive from "@/components/ActionArchive";
 import StudyNotebook from "@/components/StudyNotebook";
 import ConceptWorkshop from "@/components/ConceptWorkshop";
+import ClassificationLab from "@/components/ClassificationLab";
 import {
   LearningMission,
   ObservationBoard,
@@ -67,7 +68,8 @@ import {
   type Sweep,
 } from "@/lib/experiment";
 
-type View = "concepts" | "studio" | "path" | "history" | "datasets";
+type View =
+  "concepts" | "classification" | "studio" | "path" | "history" | "datasets";
 type Modal = "guide" | "save" | "report" | "final" | "sources" | null;
 const alphaLabel = (a: number) =>
   a < 0.001 ? a.toExponential(0).replace("e-", " × 10⁻") : String(a);
@@ -448,6 +450,16 @@ export default function Home() {
             概念工坊
           </button>
           <button
+            className={view === "classification" ? "active" : ""}
+            onClick={() => {
+              setView("classification");
+              setMobileMenu(false);
+            }}
+          >
+            <Target size={18} />
+            分类边界
+          </button>
+          <button
             className={view === "studio" ? "active" : ""}
             onClick={() => {
               setView("studio");
@@ -553,13 +565,15 @@ export default function Home() {
             <strong>
               {view === "concepts"
                 ? "概念工坊"
-                : view === "studio"
-                  ? "实验工作台"
-                  : view === "path"
-                    ? "学习路径"
-                    : view === "datasets"
-                      ? "真实数据实验"
-                      : "学习档案"}
+                : view === "classification"
+                  ? "分类边界实验室"
+                  : view === "studio"
+                    ? "实验工作台"
+                    : view === "path"
+                      ? "学习路径"
+                      : view === "datasets"
+                        ? "真实数据实验"
+                        : "学习档案"}
             </strong>
           </div>
           <div className="topbar-right">
@@ -577,6 +591,7 @@ export default function Home() {
 
         <main className="content" id="main-content" tabIndex={-1}>
           {view === "concepts" && <ConceptWorkshop onLearn={changeScene} />}
+          {view === "classification" && <ClassificationLab />}
           {view === "datasets" && <DatasetLab onNotify={setToast} />}
           {view === "studio" && (
             <>
@@ -1568,6 +1583,22 @@ export default function Home() {
                     rel="noreferrer"
                   >
                     混凝土强度 · UCI Concrete Strength
+                    <ArrowUpRight size={15} />
+                  </a>
+                  <a
+                    href="https://archive.ics.uci.edu/dataset/53/iris"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    鸢尾花 · UCI Iris
+                    <ArrowUpRight size={15} />
+                  </a>
+                  <a
+                    href="https://archive.ics.uci.edu/dataset/236/seeds"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    小麦籽粒 · UCI Seeds
                     <ArrowUpRight size={15} />
                   </a>
                 </div>

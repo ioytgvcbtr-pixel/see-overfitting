@@ -162,7 +162,7 @@ def _run(serialized):
             'region': {'columns': columns, 'rows': rows, 'bounds': bounds, 'labels': model.predict(mesh).astype(int).tolist()},
             'fingerprint': fingerprint, 'validation_fingerprint': digest({'rows': val.tolist(), 'x': x[val].tolist(), 'y': y[val].tolist()}),
             'split': {'training': len(train), 'training_pool': len(pool), 'validation': len(val), 'test': len(test), 'test_sealed': True},
-            'protocol': '二维特征分层分组五折划分；两折分别为验证与封存测试，其余为训练池，实际比例近似60/20/20。标准化只拟合当前训练；分类图只使用标注的两个特征。',
+            'protocol': '按原始二维特征分层分组五折划分；两折分别为验证与封存测试，其余为训练池，实际比例近似60/20/20。编辑训练点不重分组，验证身份固定；标准化只拟合当前训练，分类图只使用标注的两个特征。',
             'elapsed_ms': round((time.perf_counter()-started)*1000, 2)}
 
 

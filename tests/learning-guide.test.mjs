@@ -6,6 +6,29 @@ import {hasAttemptFor,readLearningDraft} from '../src/lib/learning-session.ts';
 import {parameterKey} from '../src/lib/actions.ts';
 import {readBenchSession} from '../src/lib/bench-session.ts';
 import {conceptDefaults,conceptKey,editConceptPoint,weightFromPosition,readConceptInput} from '../src/lib/concepts.ts';
+import {classDefaults,classKey,classComparisonKey,editClassPoint,readClassInput} from '../src/lib/classification.ts';
+
+test('classification edits stay bounded, canonical, and leave public measurements unchanged',()=>{
+  const edited=editClassPoint(classDefaults,8,99,-99);
+  assert.deepEqual(edited.edits,[{row:8,x:3,y:-3}]);
+  const replaced=editClassPoint(edited,8,.5,.25);
+  assert.equal(replaced.edits.length,1);
+  const second=editClassPoint(replaced,3,-1,1);
+  assert.equal(classKey(second),classKey({...second,edits:[...second.edits].reverse()}));
+  const publicInput={...classDefaults,dataset:'iris'};
+  assert.equal(editClassPoint(publicInput,8,0,0),publicInput);
+});
+test('model display changes can preserve a comparison but hyperparameters cannot',()=>{
+  assert.equal(classComparisonKey(classDefaults),classComparisonKey({...classDefaults,model:'knn'}));
+  assert.notEqual(classKey(classDefaults),classKey({...classDefaults,model:'knn'}));
+  for(const change of [{c:10},{fraction:.5},{seed:43},{noise:.3},{neighbors:3}]) assert.notEqual(classComparisonKey(classDefaults),classComparisonKey({...classDefaults,...change}));
+  assert.equal(viewFromHash('#classification'),'classification');
+});
+test('classification draft excludes untrusted scores and rejects invalid interventions',()=>{
+  const valid=editClassPoint(classDefaults,8,.5,.25);
+  assert.deepEqual(readClassInput(JSON.stringify({...valid,metrics:{accuracy:1}})),valid);
+  for(const bad of [{...valid,neighbors:0},{...valid,edits:[...valid.edits,...valid.edits]},{...valid,dataset:'iris'},{...valid,seed:0},{...valid,edits:[null]}]) assert.equal(readClassInput(JSON.stringify(bad)),null);
+});
 
 const parameters={scene:'complexity',degree:4,samples:12,noise:.22,alpha:1e-8,seed:42};
 const fixture=(overrides,error)=>({parameters:{...parameters,...overrides},metrics:{train_mse:error/2,validation_mse:error}});
