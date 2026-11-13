@@ -46,6 +46,7 @@ import { useLearningJourney } from "@/components/useLearningJourney";
 import ActionExperiment from "@/components/ActionExperiment";
 import ActionArchive from "@/components/ActionArchive";
 import StudyNotebook from "@/components/StudyNotebook";
+import ConceptWorkshop from "@/components/ConceptWorkshop";
 import {
   LearningMission,
   ObservationBoard,
@@ -66,13 +67,13 @@ import {
   type Sweep,
 } from "@/lib/experiment";
 
-type View = "studio" | "path" | "history" | "datasets";
+type View = "concepts" | "studio" | "path" | "history" | "datasets";
 type Modal = "guide" | "save" | "report" | "final" | "sources" | null;
 const alphaLabel = (a: number) =>
   a < 0.001 ? a.toExponential(0).replace("e-", " × 10⁻") : String(a);
 
 export default function Home() {
-  const [view, setViewState] = useState<View>("studio");
+  const [view, setViewState] = useState<View>("concepts");
   const [params, setParams] = useState<Parameters>(scenes[0].defaults);
   const [sceneReady, setSceneReady] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -211,7 +212,7 @@ export default function Home() {
     setReportPreview(null);
     setBusy(true);
     setError("");
-    if (!canReveal) {
+    if (!canReveal || view !== "studio") {
       setResult(null);
       setBusy(false);
       return () => controller.abort();
@@ -233,7 +234,7 @@ export default function Home() {
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [params, retry, journey.activeId, journey.ready]);
+  }, [params, retry, journey.activeId, journey.ready, view]);
   useEffect(() => {
     sweepAbort.current?.abort();
     setSweeping(false);
@@ -437,6 +438,16 @@ export default function Home() {
         </div>
         <nav className="main-nav" aria-label="主导航">
           <button
+            className={view === "concepts" ? "active" : ""}
+            onClick={() => {
+              setView("concepts");
+              setMobileMenu(false);
+            }}
+          >
+            <Lightbulb size={18} />
+            概念工坊
+          </button>
+          <button
             className={view === "studio" ? "active" : ""}
             onClick={() => {
               setView("studio");
@@ -540,13 +551,15 @@ export default function Home() {
             <span>我的工作空间</span>
             <ChevronRight size={13} />
             <strong>
-              {view === "studio"
-                ? "实验工作台"
-                : view === "path"
-                  ? "学习路径"
-                  : view === "datasets"
-                    ? "真实数据实验"
-                    : "学习档案"}
+              {view === "concepts"
+                ? "概念工坊"
+                : view === "studio"
+                  ? "实验工作台"
+                  : view === "path"
+                    ? "学习路径"
+                    : view === "datasets"
+                      ? "真实数据实验"
+                      : "学习档案"}
             </strong>
           </div>
           <div className="topbar-right">
@@ -563,6 +576,7 @@ export default function Home() {
         </header>
 
         <main className="content" id="main-content" tabIndex={-1}>
+          {view === "concepts" && <ConceptWorkshop onLearn={changeScene} />}
           {view === "datasets" && <DatasetLab onNotify={setToast} />}
           {view === "studio" && (
             <>

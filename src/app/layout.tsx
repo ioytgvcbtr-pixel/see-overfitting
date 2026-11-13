@@ -3,6 +3,7 @@ import "./globals.css";
 import "./datasets.css";
 import "./learning.css";
 import "./observatory.css";
+import "./concepts.css";
 
 export const metadata: Metadata = {
   title: "看见过拟合 · FitLab 交互实验室",

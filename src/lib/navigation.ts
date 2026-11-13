@@ -1,7 +1,11 @@
-export type AppView = "studio" | "datasets" | "path" | "history";
+export type AppView = "concepts" | "studio" | "datasets" | "path" | "history";
 export function viewFromHash(hash: string): AppView {
   const value = hash.replace(/^#/, "");
-  return value === "datasets" || value === "path" || value === "history"
+  if (!value) return "concepts";
+  return value === "concepts" ||
+    value === "datasets" ||
+    value === "path" ||
+    value === "history"
     ? value
     : "studio";
 }

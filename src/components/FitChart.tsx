@@ -36,7 +36,7 @@ export function FitChart({ result }: { result: Result | null }) {
       <svg
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label="拟合曲线：绿色圆点为训练样本，橙色方块为验证样本，蓝线为模型，灰色虚线为真实函数"
+        aria-label="拟合曲线：青色圆点为训练样本，珊瑚色方块为验证样本，紫线为模型，灰色虚线为真实函数"
       >
         <defs>
           <clipPath id={id}>
