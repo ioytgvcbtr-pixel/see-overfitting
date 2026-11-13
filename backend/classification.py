@@ -145,7 +145,7 @@ def _run(serialized):
         low, high = visible.min(axis=0), visible.max(axis=0)
         margin = np.maximum((high-low)*.08, .01)
         bounds = [float(low[0]-margin[0]), float(high[0]+margin[0]), float(low[1]-margin[1]), float(high[1]+margin[1])]
-    columns, rows = 96, 72
+    columns, rows = 160, 120
     grid_x = bounds[0] + (np.arange(columns)+.5)/columns*(bounds[1]-bounds[0])
     grid_y = bounds[3] - (np.arange(rows)+.5)/rows*(bounds[3]-bounds[2])
     mesh = np.stack(np.meshgrid(grid_x, grid_y), axis=-1).reshape(-1, 2)

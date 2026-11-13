@@ -12,6 +12,7 @@ import {
   CheckCheck,
   ChevronRight,
   CircleHelp,
+  Compass,
   Clock3,
   Database,
   FlaskConical,
@@ -48,13 +49,16 @@ import ActionArchive from "@/components/ActionArchive";
 import StudyNotebook from "@/components/StudyNotebook";
 import ConceptWorkshop from "@/components/ConceptWorkshop";
 import ClassificationLab from "@/components/ClassificationLab";
+import ExploreMap from "@/components/ExploreMap";
+import type { ConceptPanel } from "@/lib/concepts";
+import type { ClassRecipeId } from "@/lib/exploration";
 import {
   LearningMission,
   ObservationBoard,
   MetricHelp,
 } from "@/components/LearningGuide";
 import { lessonGuide, type ObservationSet } from "@/lib/learning-guide";
-import { viewFromHash, hashForView } from "@/lib/navigation";
+import { viewFromHash, hashForView, type AppView } from "@/lib/navigation";
 import {
   api,
   metric,
@@ -68,14 +72,16 @@ import {
   type Sweep,
 } from "@/lib/experiment";
 
-type View =
-  "concepts" | "classification" | "studio" | "path" | "history" | "datasets";
+type View = AppView;
 type Modal = "guide" | "save" | "report" | "final" | "sources" | null;
 const alphaLabel = (a: number) =>
   a < 0.001 ? a.toExponential(0).replace("e-", " × 10⁻") : String(a);
 
 export default function Home() {
-  const [view, setViewState] = useState<View>("concepts");
+  const [view, setViewState] = useState<View>("explore");
+  const [navigationReady, setNavigationReady] = useState(false);
+  const [classLaunch, setClassLaunch] = useState<ClassRecipeId | null>(null);
+  const [conceptLaunch, setConceptLaunch] = useState<ConceptPanel | null>(null);
   const [params, setParams] = useState<Parameters>(scenes[0].defaults);
   const [sceneReady, setSceneReady] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -156,6 +162,7 @@ export default function Home() {
     setViewState(next);
     if (window.location.hash !== hashForView(next))
       window.history.pushState(null, "", hashForView(next));
+    window.scrollTo({ top: 0, behavior: "instant" });
   }
   useEffect(() => {
     const stored = localStorage.getItem("fitlab-current-scene-v1");
@@ -166,6 +173,7 @@ export default function Home() {
   useEffect(() => {
     const apply = () => {
       setViewState(viewFromHash(window.location.hash));
+      setNavigationReady(true);
       setMobileMenu(false);
     };
     apply();
@@ -440,6 +448,16 @@ export default function Home() {
         </div>
         <nav className="main-nav" aria-label="主导航">
           <button
+            className={view === "explore" ? "active" : ""}
+            onClick={() => {
+              setView("explore");
+              setMobileMenu(false);
+            }}
+          >
+            <Compass size={18} />
+            探索地图
+          </button>
+          <button
             className={view === "concepts" ? "active" : ""}
             onClick={() => {
               setView("concepts");
@@ -501,34 +519,38 @@ export default function Home() {
             学习档案
           </button>
         </nav>
-        <div className="sidebar-divider" />
-        <div className="sidebar-label">
-          交互实验<span>三步建立直觉</span>
-        </div>
-        <div className="lesson-nav">
-          {scenes.map((s) => (
-            <button
-              key={s.id}
-              className={
-                view === "studio" && params.scene === s.id ? "selected" : ""
-              }
-              onClick={() => changeScene(s.id)}
-            >
-              <span
-                className={`lesson-number ${completed.includes(s.id) ? "done" : ""}`}
-              >
-                {completed.includes(s.id) ? <Check size={13} /> : s.number}
-              </span>
-              <span>
-                {s.short}
-                <small>{s.tag}</small>
-              </span>
-              {params.scene === s.id && view === "studio" && (
-                <ChevronRight size={14} />
-              )}
-            </button>
-          ))}
-        </div>
+        {(view === "studio" || view === "path") && (
+          <>
+            <div className="sidebar-divider" />
+            <div className="sidebar-label">
+              交互实验<span>三步建立直觉</span>
+            </div>
+            <div className="lesson-nav">
+              {scenes.map((s) => (
+                <button
+                  key={s.id}
+                  className={
+                    view === "studio" && params.scene === s.id ? "selected" : ""
+                  }
+                  onClick={() => changeScene(s.id)}
+                >
+                  <span
+                    className={`lesson-number ${completed.includes(s.id) ? "done" : ""}`}
+                  >
+                    {completed.includes(s.id) ? <Check size={13} /> : s.number}
+                  </span>
+                  <span>
+                    {s.short}
+                    <small>{s.tag}</small>
+                  </span>
+                  {params.scene === s.id && view === "studio" && (
+                    <ChevronRight size={14} />
+                  )}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <div className="sidebar-spacer" />
         <div className="journey-card">
           <div>
@@ -563,17 +585,19 @@ export default function Home() {
             <span>我的工作空间</span>
             <ChevronRight size={13} />
             <strong>
-              {view === "concepts"
-                ? "概念工坊"
-                : view === "classification"
-                  ? "分类边界实验室"
-                  : view === "studio"
-                    ? "实验工作台"
-                    : view === "path"
-                      ? "学习路径"
-                      : view === "datasets"
-                        ? "真实数据实验"
-                        : "学习档案"}
+              {view === "explore"
+                ? "探索地图"
+                : view === "concepts"
+                  ? "概念工坊"
+                  : view === "classification"
+                    ? "分类边界实验室"
+                    : view === "studio"
+                      ? "实验工作台"
+                      : view === "path"
+                        ? "学习路径"
+                        : view === "datasets"
+                          ? "真实数据实验"
+                          : "学习档案"}
             </strong>
           </div>
           <div className="topbar-right">
@@ -590,8 +614,37 @@ export default function Home() {
         </header>
 
         <main className="content" id="main-content" tabIndex={-1}>
-          {view === "concepts" && <ConceptWorkshop onLearn={changeScene} />}
-          {view === "classification" && <ClassificationLab />}
+          {!navigationReady && (
+            <div className="navigation-loading" role="status">
+              正在打开实验…
+            </div>
+          )}
+          {navigationReady && view === "explore" && (
+            <ExploreMap
+              onConcept={(panel) => {
+                setConceptLaunch(panel);
+                setView("concepts");
+              }}
+              onRecipe={(id) => {
+                setClassLaunch(id);
+                setView("classification");
+              }}
+              onStudy={() => setView("studio")}
+            />
+          )}
+          {view === "concepts" && (
+            <ConceptWorkshop
+              onLearn={changeScene}
+              launch={conceptLaunch}
+              onLaunchConsumed={() => setConceptLaunch(null)}
+            />
+          )}
+          {view === "classification" && (
+            <ClassificationLab
+              launch={classLaunch}
+              onLaunchConsumed={() => setClassLaunch(null)}
+            />
+          )}
           {view === "datasets" && <DatasetLab onNotify={setToast} />}
           {view === "studio" && (
             <>
@@ -1329,18 +1382,31 @@ export default function Home() {
                 <span className="modal-icon">
                   <BookOpen size={25} />
                 </span>
-                <h2 id="modal-title">一次实验，五个小步骤</h2>
+                <h2 id="modal-title">
+                  {["explore", "concepts", "classification"].includes(view)
+                    ? "先动手，再核对证据"
+                    : "一次实验，五个小步骤"}
+                </h2>
                 <p className="modal-description">
                   保持好奇，也给每个结论留下证据。
                 </p>
                 <ol className="guide-steps">
-                  {[
-                    "选择一个场景，先回答预测问题。",
-                    "一次改变一个参数，观察曲线与验证误差。",
-                    "保存几组实验，在档案中选择对比。",
-                    "请教练解释当前指标，完成迁移练习。",
-                    "确定模型后揭示独立测试，导出实验报告。",
-                  ].map((text, index) => (
+                  {(["explore", "concepts", "classification"].includes(view)
+                    ? [
+                        "从探索地图选一个问题，或直接进入实验配方。",
+                        "在概念工坊拖点、调参数，观察曲线与误差怎样联动。",
+                        "错分侦探中先检查空心验证点，再揭晓完整证据。",
+                        "A/B对照先定格A，再改变B；拖中线比较同一数据。",
+                        "探索不计课程成绩；进入学习工作台完成预测与迁移验证。",
+                      ]
+                    : [
+                        "选择一个场景，先回答预测问题。",
+                        "一次改变一个参数，观察曲线与验证误差。",
+                        "保存几组实验，在档案中选择对比。",
+                        "请教练解释当前指标，完成迁移练习。",
+                        "确定模型后揭示独立测试，导出实验报告。",
+                      ]
+                  ).map((text, index) => (
                     <li key={text}>
                       <span>{index + 1}</span>
                       {text}
@@ -1351,7 +1417,7 @@ export default function Home() {
                   className="button primary full-width"
                   onClick={() => setModal(null)}
                 >
-                  开始探索
+                  明白，返回画面
                   <ArrowRight size={16} />
                 </button>
               </>

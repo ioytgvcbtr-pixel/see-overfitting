@@ -63,9 +63,9 @@ test('free exploration is not counted as a guided condition',()=>{
   assert.equal(recordObservation(original,fixture({degree:6},.08)),original);
 });
 test('module links and unknown fragments resolve predictably',()=>{
-  for(const view of ['concepts','studio','datasets','path','history'])assert.equal(viewFromHash(hashForView(view)),view);
+  for(const view of ['explore','concepts','classification','studio','datasets','path','history'])assert.equal(viewFromHash(hashForView(view)),view);
   assert.equal(viewFromHash('#unknown'),'studio');
-  assert.equal(viewFromHash(''),'concepts');
+  assert.equal(viewFromHash(''),'explore');
 });
 test('concept edits replace one point, remain bounded, and have canonical request keys',()=>{
   let p=editConceptPoint(conceptDefaults,0,9);

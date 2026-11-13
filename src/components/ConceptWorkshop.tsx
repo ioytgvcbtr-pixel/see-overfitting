@@ -117,8 +117,12 @@ function Metric({
 
 export default function ConceptWorkshop({
   onLearn,
+  launch = null,
+  onLaunchConsumed,
 }: {
   onLearn: (scene: SceneId) => void;
+  launch?: ConceptPanel | null;
+  onLaunchConsumed?: () => void;
 }) {
   const [input, setInput] = useState<ConceptInput>(conceptDefaults);
   const [ready, setReady] = useState(false);
@@ -126,6 +130,13 @@ export default function ConceptWorkshop({
   const [dragging, setDragging] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
   const { result, error, pending, retry } = useConceptExperiment(input, ready);
+  useEffect(() => {
+    if (ready && launch) {
+      setInput((p) => ({ ...p, panel: launch }));
+      setDragging(false);
+      onLaunchConsumed?.();
+    }
+  }, [ready, launch, onLaunchConsumed]);
   useEffect(() => {
     const saved = readConceptInput(
       localStorage.getItem("fitlab-concept-session-v1"),
