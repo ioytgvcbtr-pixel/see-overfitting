@@ -44,3 +44,7 @@
 旧验收标签页连接失效后，改用同一Chrome的新标签页继续；未切换到其他自动化控制方式。截图有过绘制/平滑滚动中间帧，核对稳定位置和状态后再保存。
 
 最终五张截图在artifacts/screenshots：explore-map-v08.jpg、curtain-compare-v08.jpg、detective-task-v08.jpg、explore-mobile-v08.jpg、curtain-mobile-v08.jpg。最终侦探提示明确样本固定、点选检查，与实际只读行为一致。原工作区预览保留供继续体验。
+
+## Git记录完整性修复
+
+首次推送前，Git读取tool-events.jsonl对应的本地松散对象时解压校验失败。先把Git元数据备份至artifacts/local忽略目录，确认工作树文件经Git规范化后的哈希与该对象完全相同，再恢复同一个对象ID。修复前后HEAD均为ffdce0f；原提交内容、顺序与时间保留。完整git fsck检查通过，备份继续保留在本地。本地后续采用无压缩对象写入和单线程推送，并在重试前再次检查。
