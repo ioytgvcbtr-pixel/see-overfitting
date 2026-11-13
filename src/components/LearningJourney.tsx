@@ -12,34 +12,98 @@ import type { LearningAttempt } from "@/lib/learning-session";
 import type { Parameters } from "@/lib/experiment";
 
 export function JourneySteps({ attempt }: { attempt: LearningAttempt | null }) {
-  const current = !attempt ? 0 : attempt.stage === "experiment" ? 1 : 2;
+  const phase = !attempt ? 0 : attempt.stage === "experiment" ? 1 : 2;
+  const complete = attempt?.stage === "complete";
+  const labels = ["先作预测", "动手实验", "迁移验证"];
+  const notes = [
+    attempt ? "判断已锁定" : "留下你的直觉",
+    attempt ? `已观察 ${attempt.observations.length}/3` : "预测后解锁",
+    complete ? "本轮已完成" : attempt?.task ? "用新数据作答" : "三步后解锁",
+  ];
+  const positions = [
+    { left: "11%", top: "59%" },
+    { left: "50%", top: "28%" },
+    { left: "89%", top: "51%" },
+  ];
+  function jump(index: number) {
+    const id =
+      index === 0
+        ? attempt
+          ? "prediction-review"
+          : "prediction-title"
+        : index === 1
+          ? "experiment-chart"
+          : "transfer-title";
+    const target = document.getElementById(id);
+    if (!target) return;
+    target.scrollIntoView({
+      block: "start",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+    });
+    target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+  }
   return (
-    <ol className="journey-steps" aria-label="学习流程">
-      {["提交预测", "三步实验", "迁移验证"].map((text, i) => (
-        <li
-          key={text}
-          className={
-            attempt?.stage === "complete"
-              ? "done"
-              : i === current
-                ? "active"
-                : i < current
-                  ? "done"
-                  : ""
-          }
+    <nav className="journey-map" aria-label="学习流程">
+      <svg viewBox="0 0 440 230" aria-hidden="true">
+        <circle cx="258" cy="113" r="105" fill="#EEE8FA" />
+        <circle
+          cx="258"
+          cy="113"
+          r="78"
+          fill="none"
+          stroke="#D9CFF0"
+          strokeWidth="1"
+        />
+        <circle
+          cx="258"
+          cy="113"
+          r="51"
+          fill="none"
+          stroke="#D9CFF0"
+          strokeWidth="1"
+          strokeDasharray="3 7"
+        />
+        <path
+          d="M48 136 C106 136 112 65 220 65"
+          fill="none"
+          stroke={attempt ? "#8555D8" : "#D3C4EB"}
+          strokeWidth="8"
+          strokeLinecap="round"
+        />
+        <path
+          d="M220 65 C304 65 310 117 392 117"
+          fill="none"
+          stroke={attempt?.task ? "#178A88" : "#C2DDD9"}
+          strokeWidth="8"
+          strokeLinecap="round"
+        />
+        <circle cx="46" cy="44" r="7" fill="#F0BB4D" />
+        <path
+          d="M91 45h12m-6-6v12"
+          stroke="#BE634A"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+      {labels.map((label, i) => (
+        <button
+          key={label}
+          className={`journey-node node-${i} ${complete || i < phase ? "done" : i === phase ? "current" : ""}`}
+          style={positions[i]}
+          disabled={i === 1 ? !attempt : i === 2 ? !attempt?.task : false}
+          aria-current={!complete && i === phase ? "step" : undefined}
+          onClick={() => jump(i)}
+          aria-label={`${label}，${notes[i]}`}
         >
-          <span>
-            {i < current || attempt?.stage === "complete" ? (
-              <Check size={14} />
-            ) : (
-              i + 1
-            )}
-          </span>
-          {text}
-          {i < 2 && <ArrowRight size={14} />}
-        </li>
+          <span>{complete || i < phase ? <Check size={22} /> : i + 1}</span>
+          <strong>{label}</strong>
+          <small>{notes[i]}</small>
+        </button>
       ))}
-    </ol>
+    </nav>
   );
 }
 
@@ -195,7 +259,12 @@ export function PredictionReview({
 }) {
   const review = attempt.prediction_review;
   return (
-    <section className="prediction-review" aria-label="本轮预测记录">
+    <section
+      className="prediction-review"
+      id="prediction-review"
+      data-attempt-id={attempt.id}
+      aria-label="本轮预测记录"
+    >
       <div>
         <span>你的预测</span>
         <strong>{attempt.prediction.label}</strong>

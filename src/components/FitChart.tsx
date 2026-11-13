@@ -101,7 +101,7 @@ export function FitChart({ result }: { result: Result | null }) {
               height="6"
               rx=".7"
               fill="#fff3ed"
-              stroke="#b84b2c"
+              stroke="var(--coral)"
               strokeWidth="1.3"
             />
           ))}
@@ -111,7 +111,7 @@ export function FitChart({ result }: { result: Result | null }) {
               cx={x(p.x)}
               cy={y(p.y)}
               r="4.6"
-              fill="#087e75"
+              fill="var(--teal)"
               fillOpacity=".86"
               stroke="white"
               strokeWidth="1.4"
@@ -120,7 +120,7 @@ export function FitChart({ result }: { result: Result | null }) {
           <path
             d={path("fit")}
             fill="none"
-            stroke="#175bdd"
+            stroke="var(--blue)"
             strokeWidth="3"
             strokeLinecap="round"
           />
@@ -131,14 +131,14 @@ export function FitChart({ result }: { result: Result | null }) {
                 x2={x(selected.x)}
                 y1={top}
                 y2={height - bottom}
-                stroke="#175bdd"
+                stroke="var(--blue)"
                 strokeDasharray="3 4"
               />
               <circle
                 cx={x(selected.x)}
                 cy={y(selected.fit)}
                 r="5"
-                fill="#175bdd"
+                fill="var(--blue)"
                 stroke="white"
                 strokeWidth="2"
               />
@@ -283,13 +283,13 @@ export function ErrorChart({
         />
         <path
           d={path("train_mse")}
-          stroke="#087e75"
+          stroke="var(--teal)"
           strokeWidth="2"
           fill="none"
         />
         <path
           d={path("validation_mse")}
-          stroke="#b84b2c"
+          stroke="var(--coral)"
           strokeWidth="2.5"
           fill="none"
         />
@@ -299,7 +299,7 @@ export function ErrorChart({
               cx={x(p.degree)}
               cy={y(p.validation_mse)}
               r={p.degree === current ? 4 : 2.5}
-              fill="#b84b2c"
+              fill="var(--coral)"
             />
             {(width > 550 || [1, 4, 8, 12, 15].includes(p.degree)) && (
               <text

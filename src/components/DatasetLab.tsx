@@ -35,6 +35,7 @@ import {
 import { LearningChart, PredictionChart } from "@/components/BenchCharts";
 import { MetricHelp } from "./LearningGuide";
 import ActionExperiment from "./ActionExperiment";
+import { readBenchSession } from "@/lib/bench-session";
 
 type Display =
   "parity" | "residual" | "feature" | "learning" | "compare" | "stability";
@@ -62,6 +63,7 @@ export default function DatasetLab({
 }) {
   const [catalog, setCatalog] = useState<Dataset[]>([]);
   const [params, setParams] = useState<BenchParameters>(initialBench);
+  const [paramsReady, setParamsReady] = useState(false);
   const [result, setResult] = useState<BenchResult | null>(null);
   const [loading, setBusy] = useState(true),
     [error, setError] = useState("");
@@ -108,6 +110,15 @@ export default function DatasetLab({
   }, [retry]);
   useEffect(() => {
     try {
+      const restored = readBenchSession(
+        localStorage.getItem("fitlab-bench-session-v1"),
+      );
+      if (restored) {
+        setParams(restored.parameters);
+        setDisplay(restored.display);
+        setFeature(restored.feature);
+        setShowTraining(restored.showTraining);
+      }
       const rows = JSON.parse(
         localStorage.getItem("fitlab-bench-records") || "[]",
       );
@@ -120,9 +131,17 @@ export default function DatasetLab({
           seen.filter((id) => ["wine", "auto", "concrete"].includes(id)),
         );
     } catch {}
+    setParamsReady(true);
   }, []);
   useEffect(() => {
-    if (!catalog.length) return;
+    if (paramsReady)
+      localStorage.setItem(
+        "fitlab-bench-session-v1",
+        JSON.stringify({ parameters: params, display, feature, showTraining }),
+      );
+  }, [paramsReady, params, display, feature, showTraining]);
+  useEffect(() => {
+    if (!catalog.length || !paramsReady) return;
     const controller = new AbortController();
     analysisAbort.current?.abort();
     coachAbort.current?.abort();
@@ -160,7 +179,7 @@ export default function DatasetLab({
       coachAbort.current?.abort();
       finalAbort.current?.abort();
     };
-  }, [params, catalog.length, retry]);
+  }, [params, catalog.length, retry, paramsReady]);
 
   const update = <K extends keyof BenchParameters>(
     key: K,
@@ -272,7 +291,7 @@ export default function DatasetLab({
           <h1>
             用真实数据检验你的判断<span className="level-badge">进阶探索</span>
           </h1>
-          <p>先看预测，再比较模型，最后复核结论。</p>
+          <p>先看预测对照，再比较模型，最后复核结论。</p>
         </div>
         <div className="heading-actions">
           <button
@@ -923,16 +942,14 @@ export default function DatasetLab({
                   <button
                     className="text-button bench-action-link"
                     onClick={() =>
-                      document
-                        .getElementById("bench-action")
-                        ?.scrollIntoView({
-                          block: "start",
-                          behavior: window.matchMedia(
-                            "(prefers-reduced-motion: reduce)",
-                          ).matches
-                            ? "instant"
-                            : "smooth",
-                        })
+                      document.getElementById("bench-action")?.scrollIntoView({
+                        block: "start",
+                        behavior: window.matchMedia(
+                          "(prefers-reduced-motion: reduce)",
+                        ).matches
+                          ? "instant"
+                          : "smooth",
+                      })
                     }
                   >
                     用实验检验一个建议

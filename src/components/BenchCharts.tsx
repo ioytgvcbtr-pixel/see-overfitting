@@ -157,7 +157,7 @@ export function PredictionChart({
         )}
         {points.map(({ point, training }) => {
           const common = {
-            fill: training ? "#087e75" : "#175bdd",
+            fill: training ? "var(--teal)" : "var(--coral)",
             fillOpacity: 0.82,
             stroke: "white",
             strokeWidth: 0.6,
@@ -291,7 +291,7 @@ export function LearningChart({
           <g key={key}>
             <path
               d={path(key)}
-              stroke={index ? "#b84b2c" : "#087e75"}
+              stroke={index ? "var(--coral)" : "var(--teal)"}
               strokeWidth="2.5"
               fill="none"
             />
@@ -301,7 +301,7 @@ export function LearningChart({
                 cx={x(p.samples)}
                 cy={y(p[key])}
                 r="4"
-                fill={index ? "#b84b2c" : "#087e75"}
+                fill={index ? "var(--coral)" : "var(--teal)"}
                 stroke="white"
                 strokeWidth="1.5"
               >

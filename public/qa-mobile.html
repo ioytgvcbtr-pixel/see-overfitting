@@ -54,4 +54,20 @@
     <p>390px 独立浏览上下文<br />检查窄屏布局、导航与主要操作。</p>
   </aside>
   <iframe src="/" title="390px移动端实验工作台"></iframe>
+  <script>
+    const requestedWidth = Number(
+      new URLSearchParams(location.search).get("width"),
+    );
+    if (
+      Number.isFinite(requestedWidth) &&
+      requestedWidth >= 320 &&
+      requestedWidth <= 1440
+    ) {
+      const frame = document.querySelector("iframe");
+      frame.style.width = `${Math.round(requestedWidth)}px`;
+      frame.title = `${Math.round(requestedWidth)}px布局核验`;
+      if (requestedWidth >= 600)
+        document.querySelector("aside").style.display = "none";
+    }
+  </script>
 </html>

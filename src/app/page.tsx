@@ -45,6 +45,7 @@ import {
 import { useLearningJourney } from "@/components/useLearningJourney";
 import ActionExperiment from "@/components/ActionExperiment";
 import ActionArchive from "@/components/ActionArchive";
+import StudyNotebook from "@/components/StudyNotebook";
 import {
   LearningMission,
   ObservationBoard,
@@ -87,6 +88,9 @@ export default function Home() {
   const [records, setRecords] = useState<SavedRecord[]>([]);
   const [actionIds, setActionIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<number[]>([]);
+  const [archiveTab, setArchiveTab] = useState<
+    "learning" | "actions" | "saved"
+  >("learning");
   const [completed, setCompleted] = useState<SceneId[]>([]);
   const [modal, setModal] = useState<Modal>(null);
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -129,6 +133,16 @@ export default function Home() {
       ]),
     ),
   };
+  const nextObservation = guide.steps.find(
+    (step) => !observations.items[String(step.value)],
+  );
+  const jumpToTransfer = () =>
+    document.getElementById("transfer-title")?.scrollIntoView({
+      block: "start",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+    });
   const currentCondition =
     guide.control === "degree"
       ? `${params.degree}阶模型`
@@ -329,7 +343,7 @@ export default function Home() {
       });
       setRecords(await api<SavedRecord[]>("/records"));
       setModal(null);
-      setToast("实验已保存，可在实验档案中回放与比较。");
+      setToast("实验已保存，可在学习档案中回放与比较。");
     } catch (e) {
       setToast((e as Error).message);
     } finally {
@@ -380,7 +394,7 @@ export default function Home() {
   }
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-scene={params.scene}>
       <a
         href="#main-content"
         className="skip-link"
@@ -461,10 +475,7 @@ export default function Home() {
             }}
           >
             <FolderOpen size={18} />
-            实验档案
-            {records.length > 0 && (
-              <span className="nav-count">{records.length}</span>
-            )}
+            学习档案
           </button>
         </nav>
         <div className="sidebar-divider" />
@@ -505,7 +516,7 @@ export default function Home() {
             <span style={{ width: `${(completed.length / 3) * 100}%` }} />
           </div>
           <footer>
-            <span>学习闭环进度</span>
+            <span>已完成课程</span>
             <strong>{completed.length} / 3</strong>
           </footer>
         </div>
@@ -535,7 +546,7 @@ export default function Home() {
                   ? "学习路径"
                   : view === "datasets"
                     ? "真实数据实验"
-                    : "实验档案"}
+                    : "学习档案"}
             </strong>
           </div>
           <div className="topbar-right">
@@ -555,44 +566,48 @@ export default function Home() {
           {view === "datasets" && <DatasetLab onNotify={setToast} />}
           {view === "studio" && (
             <>
-              <div className="page-heading">
-                <div>
-                  <div className="eyebrow">
-                    <span>学习主题 {scene.number}</span>
-                    <span className="eyebrow-sep">/</span>
-                    <span>机器学习基础</span>
+              <div
+                className={`studio-intro ${canReveal ? "is-experiment" : ""}`}
+              >
+                <div className="page-heading">
+                  <div>
+                    <div className="eyebrow">
+                      <span>学习主题 {scene.number}</span>
+                      <span className="eyebrow-sep">/</span>
+                      <span>机器学习基础</span>
+                    </div>
+                    <h1>
+                      {scene.title}
+                      <span className="level-badge">基础探索</span>
+                    </h1>
+                    <p>{scene.description}</p>
                   </div>
-                  <h1>
-                    {scene.title}
-                    <span className="level-badge">基础探索</span>
-                  </h1>
-                  <p>{scene.description}</p>
+                  <div className="heading-actions">
+                    <button
+                      className="button secondary"
+                      disabled={!result || busy}
+                      onClick={() => {
+                        setTitle(`${scene.short} · ${currentCondition}`);
+                        setNote("");
+                        setModal("save");
+                      }}
+                    >
+                      <Save size={16} />
+                      保存实验
+                    </button>
+                    <button
+                      className="button secondary"
+                      disabled={!result || busy}
+                      onClick={() => setModal("report")}
+                    >
+                      <ArrowDownToLine size={16} />
+                      导出报告
+                    </button>
+                  </div>
                 </div>
-                <div className="heading-actions">
-                  <button
-                    className="button secondary"
-                    disabled={!result || busy}
-                    onClick={() => {
-                      setTitle(`${scene.short} · ${currentCondition}`);
-                      setNote("");
-                      setModal("save");
-                    }}
-                  >
-                    <Save size={16} />
-                    保存实验
-                  </button>
-                  <button
-                    className="button secondary"
-                    disabled={!result || busy}
-                    onClick={() => setModal("report")}
-                  >
-                    <ArrowDownToLine size={16} />
-                    导出报告
-                  </button>
-                </div>
-              </div>
 
-              <JourneySteps attempt={journey.attempt} />
+                <JourneySteps attempt={journey.attempt} />
+              </div>
               {journey.error && (
                 <div className="error-banner" role="alert">
                   {journey.error}
@@ -609,13 +624,6 @@ export default function Home() {
                 />
               ) : (
                 <>
-                  <LearningMission
-                    guide={guide}
-                    params={params}
-                    observations={observations}
-                    onSelect={selectGuidedValue}
-                  />
-
                   {error && (
                     <div className="error-banner" role="alert">
                       <span>{error}</span>
@@ -698,7 +706,7 @@ export default function Home() {
                             <span className="panel-dot" />
                             看见模型如何拟合
                           </h2>
-                          <p>调整实验参数，观察曲线与误差的变化</p>
+                          <p>{guide.prompt}</p>
                         </div>
                         <span className="live-badge">
                           {busy ? (
@@ -729,6 +737,12 @@ export default function Home() {
                             复杂度扫描
                           </button>
                         </div>
+                        <LearningMission
+                          guide={guide}
+                          params={params}
+                          observations={observations}
+                          onSelect={selectGuidedValue}
+                        />
                         <span className="chart-hint">
                           {chartTab === "fit"
                             ? "悬停探索数据点"
@@ -806,6 +820,35 @@ export default function Home() {
                       }
                       onReset={() => setParams({ ...scene.defaults })}
                     />
+                  </div>
+                  <div className="experiment-next">
+                    <span className="observation-count">
+                      {journey.attempt!.observations.length}
+                      <small>/3</small>
+                    </span>
+                    <div>
+                      <strong>
+                        {nextObservation
+                          ? `下一步观察：${nextObservation.label}`
+                          : "三次对照已齐，换一批数据检验理解"}
+                      </strong>
+                      <p>
+                        {nextObservation
+                          ? "保留其他条件，看看这次验证误差怎样变化。"
+                          : "把实际结果与你的预测放在一起，再完成迁移判断。"}
+                      </p>
+                    </div>
+                    <button
+                      className="button primary"
+                      onClick={() =>
+                        nextObservation
+                          ? selectGuidedValue(nextObservation.value)
+                          : jumpToTransfer()
+                      }
+                    >
+                      {nextObservation ? "观察下一组" : "进入迁移验证"}
+                      <ArrowRight size={16} />
+                    </button>
                   </div>
                   <ObservationBoard
                     guide={guide}
@@ -1057,139 +1100,172 @@ export default function Home() {
                   继续实验
                 </button>
               </div>
-              <ActionArchive />
-              {comparison.length > 0 && (
-                <section className="panel comparison-panel">
-                  <div className="panel-heading compact">
-                    <h2>
-                      <Layers3 size={17} />
-                      实验对比
-                    </h2>
-                    <button
-                      className="text-button"
-                      onClick={() => setSelected([])}
-                    >
-                      清空选择
-                    </button>
-                  </div>
-                  <div className="comparison-scroll">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>实验</th>
-                          <th>阶数</th>
-                          <th>样本</th>
-                          <th>噪声</th>
-                          <th>正则 α</th>
-                          <th>种子</th>
-                          <th>训练 MSE</th>
-                          <th>验证 MSE</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {comparison.map((r) => (
-                          <tr key={r.id}>
-                            <td>{r.title}</td>
-                            <td>{r.result.parameters.degree}</td>
-                            <td>{r.result.parameters.samples}</td>
-                            <td>{r.result.parameters.noise}</td>
-                            <td>{alphaLabel(r.result.parameters.alpha)}</td>
-                            <td>{r.result.parameters.seed}</td>
-                            <td>{metric(r.result.metrics.train_mse)}</td>
-                            <td>{metric(r.result.metrics.validation_mse)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="muted small-copy">
-                    最多对比三组。比较单一因素时，记得保持种子及其他参数一致。已选记录也将包含在导出报告中。
-                  </p>
-                </section>
+              <div className="archive-tabs" aria-label="档案分类">
+                <button
+                  aria-pressed={archiveTab === "learning"}
+                  onClick={() => setArchiveTab("learning")}
+                >
+                  学习足迹
+                </button>
+                <button
+                  aria-pressed={archiveTab === "actions"}
+                  onClick={() => setArchiveTab("actions")}
+                >
+                  AI核验
+                </button>
+                <button
+                  aria-pressed={archiveTab === "saved"}
+                  onClick={() => setArchiveTab("saved")}
+                >
+                  已保存实验（{records.length}）
+                </button>
+              </div>
+              {archiveTab === "actions" && <ActionArchive />}
+
+              {archiveTab === "learning" && (
+                <StudyNotebook
+                  onOpen={async (id, fresh) => {
+                    if (await journey.resume(id, fresh)) setView("studio");
+                  }}
+                />
               )}
-              {records.length === 0 ? (
-                <section className="panel empty-history">
-                  <FolderOpen size={42} strokeWidth={1} />
-                  <h2>你的第一份实验记录，等你来写</h2>
-                  <p>在工作台点击“保存实验”，留下参数、结果与思考。</p>
-                  <button
-                    className="button primary"
-                    onClick={() => setView("studio")}
-                  >
-                    去做一次实验
-                    <ArrowRight size={15} />
-                  </button>
-                </section>
-              ) : (
-                <div className="record-grid">
-                  {records.map((r) => (
-                    <article className="panel record-card" key={r.id}>
-                      <div className="record-card-top">
-                        <span className="eyebrow">
-                          {
-                            scenes.find(
-                              (s) => s.id === r.result.parameters.scene,
-                            )?.short
-                          }
-                        </span>
-                        <label className="compare-check">
-                          <input
-                            type="checkbox"
-                            checked={selected.includes(r.id)}
-                            disabled={
-                              !selected.includes(r.id) && selected.length >= 3
-                            }
-                            onChange={(e) =>
-                              setSelected((ids) =>
-                                e.target.checked
-                                  ? [...ids, r.id]
-                                  : ids.filter((id) => id !== r.id),
-                              )
-                            }
-                          />
-                          对比
-                        </label>
-                      </div>
-                      <h2>{r.title}</h2>
-                      <p className="record-time">
-                        <Clock3 size={12} />
-                        {new Date(r.created_at).toLocaleString("zh-CN")}
-                      </p>
-                      <div className="record-values">
-                        <span>
-                          训练 MSE
-                          <strong>{metric(r.result.metrics.train_mse)}</strong>
-                        </span>
-                        <span>
-                          验证 MSE
-                          <strong>
-                            {metric(r.result.metrics.validation_mse)}
-                          </strong>
-                        </span>
-                      </div>
-                      <p className="record-note">
-                        {r.note ||
-                          `${r.result.parameters.degree} 阶 · ${r.result.parameters.samples} 样本 · 噪声 ${r.result.parameters.noise}`}
-                      </p>
+
+              <div className="saved-archive" hidden={archiveTab !== "saved"}>
+                {comparison.length > 0 && (
+                  <section className="panel comparison-panel">
+                    <div className="panel-heading compact">
+                      <h2>
+                        <Layers3 size={17} />
+                        实验对比
+                      </h2>
                       <button
                         className="text-button"
-                        onClick={() => {
-                          journey.reset(r.result.parameters.scene);
-                          setParams({ ...r.result.parameters });
-                          setView("studio");
-                          setChartTab("fit");
-                          setToast(
-                            "已恢复实验条件；先记录本轮判断，这是已见条件的复习。",
-                          );
-                        }}
+                        onClick={() => setSelected([])}
                       >
-                        载入并回放
-                        <ArrowUpRight size={15} />
+                        清空选择
                       </button>
-                    </article>
-                  ))}
-                </div>
-              )}
+                    </div>
+                    <div className="comparison-scroll">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>实验</th>
+                            <th>阶数</th>
+                            <th>样本</th>
+                            <th>噪声</th>
+                            <th>正则 α</th>
+                            <th>种子</th>
+                            <th>训练 MSE</th>
+                            <th>验证 MSE</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {comparison.map((r) => (
+                            <tr key={r.id}>
+                              <td>{r.title}</td>
+                              <td>{r.result.parameters.degree}</td>
+                              <td>{r.result.parameters.samples}</td>
+                              <td>{r.result.parameters.noise}</td>
+                              <td>{alphaLabel(r.result.parameters.alpha)}</td>
+                              <td>{r.result.parameters.seed}</td>
+                              <td>{metric(r.result.metrics.train_mse)}</td>
+                              <td>{metric(r.result.metrics.validation_mse)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="muted small-copy">
+                      最多对比三组。比较单一因素时，记得保持种子及其他参数一致。已选记录也将包含在导出报告中。
+                    </p>
+                  </section>
+                )}
+                {records.length === 0 ? (
+                  <section className="panel empty-history">
+                    <FolderOpen size={42} strokeWidth={1} />
+                    <h2>你的第一份实验记录，等你来写</h2>
+                    <p>在工作台点击“保存实验”，留下参数、结果与思考。</p>
+                    <button
+                      className="button primary"
+                      onClick={() => setView("studio")}
+                    >
+                      去做一次实验
+                      <ArrowRight size={15} />
+                    </button>
+                  </section>
+                ) : (
+                  <div className="record-grid">
+                    {records.map((r) => (
+                      <article className="panel record-card" key={r.id}>
+                        <div className="record-card-top">
+                          <span className="eyebrow">
+                            {
+                              scenes.find(
+                                (s) => s.id === r.result.parameters.scene,
+                              )?.short
+                            }
+                          </span>
+                          <label className="compare-check">
+                            <input
+                              type="checkbox"
+                              checked={selected.includes(r.id)}
+                              disabled={
+                                !selected.includes(r.id) && selected.length >= 3
+                              }
+                              onChange={(e) =>
+                                setSelected((ids) =>
+                                  e.target.checked
+                                    ? [...ids, r.id]
+                                    : ids.filter((id) => id !== r.id),
+                                )
+                              }
+                            />
+                            对比
+                          </label>
+                        </div>
+                        <h2>{r.title}</h2>
+                        <p className="record-time">
+                          <Clock3 size={12} />
+                          {new Date(r.created_at).toLocaleString("zh-CN")}
+                        </p>
+                        <div className="record-values">
+                          <span>
+                            训练 MSE
+                            <strong>
+                              {metric(r.result.metrics.train_mse)}
+                            </strong>
+                          </span>
+                          <span>
+                            验证 MSE
+                            <strong>
+                              {metric(r.result.metrics.validation_mse)}
+                            </strong>
+                          </span>
+                        </div>
+                        <p className="record-note">
+                          {r.note ||
+                            `${r.result.parameters.degree} 阶 · ${r.result.parameters.samples} 样本 · 噪声 ${r.result.parameters.noise}`}
+                        </p>
+                        <button
+                          className="text-button"
+                          onClick={() => {
+                            journey.reset(r.result.parameters.scene);
+                            setParams({ ...r.result.parameters });
+                            setView("studio");
+                            setChartTab("fit");
+                            setToast(
+                              "已恢复实验条件；先记录本轮判断，这是已见条件的复习。",
+                            );
+                          }}
+                        >
+                          载入并回放
+                          <ArrowUpRight size={15} />
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
             </>
           )}
         </main>
@@ -1294,7 +1370,7 @@ export default function Home() {
                   ) : (
                     <Save size={16} />
                   )}{" "}
-                  {saving ? "正在保存…" : "保存到实验档案"}
+                  {saving ? "正在保存…" : "保存到学习档案"}
                 </button>
               </>
             )}
@@ -1305,7 +1381,7 @@ export default function Home() {
                 </span>
                 <h2 id="modal-title">带走你的实验成果</h2>
                 <p className="modal-description">
-                  报告包含参数、真实指标、数据指纹、本轮预测与迁移作答、本页建议核验及已选对比记录。
+                  报告包含参数、真实指标、数据指纹、本轮预测与迁移作答、本轮AI核验及已选对比记录。
                 </p>
                 <div className="report-preview">
                   <div>

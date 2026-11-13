@@ -59,3 +59,39 @@ export function hasAttemptFor(
     (key) => key === attempt.control || params[key] === attempt.parameters[key],
   );
 }
+
+export function readLearningDraft(raw: string | null): Parameters | null {
+  try {
+    const p = JSON.parse(raw || "null");
+    if (!p || !["complexity", "samples", "regularization"].includes(p.scene))
+      return null;
+    if (
+      !Number.isInteger(p.degree) ||
+      p.degree < 1 ||
+      p.degree > 15 ||
+      !Number.isInteger(p.samples) ||
+      p.samples < 12 ||
+      p.samples > 160 ||
+      !Number.isFinite(p.noise) ||
+      p.noise < 0 ||
+      p.noise > 0.6 ||
+      !Number.isFinite(p.alpha) ||
+      p.alpha < 1e-8 ||
+      p.alpha > 100 ||
+      !Number.isInteger(p.seed) ||
+      p.seed < 0 ||
+      p.seed > 999999
+    )
+      return null;
+    return {
+      scene: p.scene,
+      degree: p.degree,
+      samples: p.samples,
+      noise: p.noise,
+      alpha: p.alpha,
+      seed: p.seed,
+    };
+  } catch {
+    return null;
+  }
+}

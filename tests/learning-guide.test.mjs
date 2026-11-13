@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {lessonGuide,recordObservation,lowestObserved} from '../src/lib/learning-guide.ts';
 import {viewFromHash,hashForView} from '../src/lib/navigation.ts';
-import {hasAttemptFor} from '../src/lib/learning-session.ts';
+import {hasAttemptFor,readLearningDraft} from '../src/lib/learning-session.ts';
 import {parameterKey} from '../src/lib/actions.ts';
+import {readBenchSession} from '../src/lib/bench-session.ts';
 
 const parameters={scene:'complexity',degree:4,samples:12,noise:.22,alpha:1e-8,seed:42};
 const fixture=(overrides,error)=>({parameters:{...parameters,...overrides},metrics:{train_mse:error/2,validation_mse:error}});
@@ -51,4 +52,18 @@ test('a result cannot be revealed without a prediction for the same fixed condit
 test('action applicability uses values rather than object property order',()=>{
   assert.equal(parameterKey(parameters),parameterKey(Object.fromEntries(Object.entries(parameters).reverse())));
   assert.notEqual(parameterKey(parameters),parameterKey({...parameters,seed:43}));
+});
+test('real data session restores valid conditions but rejects broken numerical settings',()=>{
+  const parameters={dataset:'auto',model:'forest',fraction:.75,depth:12,alpha:1,seed:43};
+  assert.deepEqual(readBenchSession(JSON.stringify({parameters,display:'residual',feature:2,showTraining:true})),{parameters,display:'residual',feature:2,showTraining:true});
+  assert.equal(readBenchSession('{broken'),null);
+  assert.equal(readBenchSession(JSON.stringify({parameters:{...parameters,depth:99}})),null);
+  assert.equal(readBenchSession(JSON.stringify({parameters:{...parameters,dataset:'unknown'}})),null);
+});
+test('unsubmitted practice restores its new seed without adding unsupported fields',()=>{
+  const draft={...parameters,seed:656,unexpected:'discard'};
+  assert.deepEqual(readLearningDraft(JSON.stringify(draft)),{...parameters,seed:656});
+  assert.equal(readLearningDraft(JSON.stringify({...parameters,seed:1000001})),null);
+  assert.equal(readLearningDraft(JSON.stringify({...parameters,scene:'unknown'})),null);
+  assert.equal(readLearningDraft('broken'),null);
 });

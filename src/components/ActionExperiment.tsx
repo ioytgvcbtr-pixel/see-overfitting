@@ -246,8 +246,36 @@ export default function ActionExperiment({
       {verification && (
         <>
           <VerificationResult value={verification} />
+          <div className="verification-controls" aria-label="核验条件切换">
+            <p aria-live="polite">
+              工作台当前：
+              {key === parameterKey(verification.before.parameters)
+                ? "执行前条件"
+                : key === parameterKey(verification.after.parameters)
+                  ? "执行后条件"
+                  : "其他条件"}
+            </p>
+            <button
+              className="button secondary"
+              disabled={
+                !enabled || key === parameterKey(verification.before.parameters)
+              }
+              onClick={() => onApply(verification.before.parameters)}
+            >
+              恢复执行前条件
+            </button>
+            <button
+              className="text-button"
+              disabled={
+                !enabled || key === parameterKey(verification.after.parameters)
+              }
+              onClick={() => onApply(verification.after.parameters)}
+            >
+              回看执行后条件
+            </button>
+          </div>
           <p className="small-copy muted">
-            核验记录已保存在实验档案中，刷新后仍可查看。
+            核验记录已保存在学习档案的“AI核验”中，刷新后仍可查看。
           </p>
         </>
       )}

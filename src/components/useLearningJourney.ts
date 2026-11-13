@@ -1,9 +1,14 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { api, type Parameters, type Result } from "@/lib/experiment";
-import { hasAttemptFor, type LearningAttempt } from "@/lib/learning-session";
+import {
+  hasAttemptFor,
+  readLearningDraft,
+  type LearningAttempt,
+} from "@/lib/learning-session";
 
 const storageKey = (scene: string) => `fitlab-learning-attempt-v1:${scene}`;
+const draftKey = (scene: string) => `fitlab-learning-draft-v1:${scene}`;
 
 export function useLearningJourney(
   params: Parameters,
@@ -26,6 +31,10 @@ export function useLearningJourney(
     setError("");
     const id = localStorage.getItem(storageKey(params.scene));
     if (!id) {
+      const draft = readLearningDraft(
+        localStorage.getItem(draftKey(params.scene)),
+      );
+      if (draft?.scene === params.scene) onRestore(draft);
       setReady(true);
       return () => {
         controller.abort();
@@ -75,6 +84,7 @@ export function useLearningJourney(
       );
       if (controller.signal.aborted) return;
       localStorage.setItem(storageKey(params.scene), value.id);
+      localStorage.removeItem(draftKey(params.scene));
       setAttempt(value);
     } catch (e) {
       if ((e as Error).name !== "AbortError") setError((e as Error).message);
@@ -138,9 +148,52 @@ export function useLearningJourney(
     operation.current?.abort();
     setWorking(false);
     localStorage.removeItem(storageKey(scene));
+    localStorage.removeItem(draftKey(scene));
     localStorage.setItem("fitlab-current-scene-v1", scene);
     setAttempt(null);
     setError("");
+  }
+  async function resume(id: string, fresh = false) {
+    operation.current?.abort();
+    const controller = new AbortController();
+    operation.current = controller;
+    setWorking(true);
+    setError("");
+    try {
+      if (fresh) {
+        const value = await api<{ parameters: Parameters }>(
+          `/learning/attempts/${id}/practice`,
+          {},
+          controller.signal,
+        );
+        if (controller.signal.aborted) return false;
+        reset(value.parameters.scene);
+        localStorage.setItem(
+          draftKey(value.parameters.scene),
+          JSON.stringify(value.parameters),
+        );
+        onRestore(value.parameters);
+      } else {
+        const value = await api<LearningAttempt>(
+          `/learning/attempts/${id}`,
+          undefined,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return false;
+        localStorage.setItem(storageKey(value.parameters.scene), value.id);
+        localStorage.removeItem(draftKey(value.parameters.scene));
+        localStorage.setItem("fitlab-current-scene-v1", value.parameters.scene);
+        setAttempt(value);
+        onRestore(value.last_parameters || value.parameters);
+      }
+      return true;
+    } catch (e) {
+      if ((e as Error).name === "AbortError") return false;
+      setError((e as Error).message);
+      throw e;
+    } finally {
+      setWorking(false);
+    }
   }
   return {
     attempt: activeId ? attempt : null,
@@ -153,5 +206,6 @@ export function useLearningJourney(
     transfer,
     retryTransfer,
     reset,
+    resume,
   };
 }
