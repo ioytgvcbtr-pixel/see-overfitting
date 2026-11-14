@@ -24,9 +24,23 @@
 - [0.10实际验收](docs/VALIDATION_V10.md)
 - [0.11界面规范与后续细节](docs/UI_POLISH_V11.md)
 - [0.11实际验收](docs/VALIDATION_V11.md)
+- [0.12挑战续接与角色反馈](docs/LEARNING_COMPANION_V12.md)
+- [0.12实际验收](docs/VALIDATION_V12.md)
 - [AI开发记录](docs/ai-process/README.md)
 
-当前为本地可运行的0.11版，默认进入插画式模型群岛，岛内物件与真实计算联动；从探索再进入正式学习工作台。界面使用稳定数字槽位、同心圆角、分组淡入与轻柔阴影，说明按需打开。计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[0.11验收](docs/VALIDATION_V11.md)、[0.10验收](docs/VALIDATION_V10.md)和[此前记录](docs/VALIDATION.md)。
+当前为本地可运行的0.12版，默认进入插画式模型群岛，岛内物件与真实计算联动；从探索再进入正式学习工作台。挑战支持续接、分层提示与向导反馈，界面延续稳定数字、同心圆角、分组淡入和轻柔阴影。计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[0.12验收](docs/VALIDATION_V12.md)、[0.11验收](docs/VALIDATION_V11.md)和[此前记录](docs/VALIDATION.md)。
+
+## 回来后，接着发现
+
+四岛各保留最近一次挑战的参数、选点、作答与提示层级。离开后从首页继续，刷新时重新计算起点和当前结果，再核对判断；暂存后可以自由探索，切换案例也会暂存旧任务。浏览器不保存可信指标或成绩，续接仍需要本地计算服务。
+
+错答后先提示去哪里看，再按需展开真实数值。原创Q版向导回应寻找证据、核验成功和继续挑战，动作可以关闭，并尊重系统减少动态效果。场景与控件上下相邻，角色独立占位；主要触控目标至少44px，按钮图标20～24px，手机无需挤着小图标操作。
+
+![向导回应与实算挑战](artifacts/screenshots/companion-success-v12.jpg)
+
+[两级提示](artifacts/screenshots/companion-hint-v12.jpg) · [继续挑战](artifacts/screenshots/challenge-continue-v12.jpg) · [森林救援](artifacts/screenshots/companion-forest-v12.jpg) · [手机反馈](artifacts/screenshots/companion-mobile-v12.jpg)
+
+两张新姿态通过内置image_gen生成并固定到项目；[素材用途与完整提示词](public/illustrations/companion-v12/README.md)保留。角色图案不表示模型结果。
 
 ## 安静的界面，按需的说明
 
@@ -47,7 +61,7 @@
 
 ![森林投递与错分救援实机画面](artifacts/screenshots/island-forest-v10.jpg)
 
-所有物件由代码驱动，不修改静态插画来伪造模型结果。更新中明确区分输入预览和最近实算，当前参数未匹配时暂停判分。任务起点独立请求后端，因此布置后立即调参也能完成起点计算；改变比较条件会使旧结论失效。任务可返回原实验，核验后复制含参数、指纹与实际数值的发现回执；探索任务仅留在本页，不计正式课程成绩。精确图表可以展开，原正式预测/迁移流程保留。
+所有物件由代码驱动，不修改静态插画来伪造模型结果。更新中明确区分输入预览和最近实算，当前参数未匹配时暂停判分。任务起点独立请求后端，因此布置后立即调参也能完成起点计算；改变比较条件会使旧结论失效。任务可返回原实验，核验后复制含参数、指纹与实际数值的发现回执；探索草稿保存在当前浏览器，不计正式课程成绩。精确图表可以展开，原正式预测/迁移流程保留。
 
 [浮标与残差](artifacts/screenshots/island-error-v10.jpg) · [双道路](artifacts/screenshots/island-roads-v10.jpg) · [系数花园](artifacts/screenshots/island-garden-v10.jpg) · [手机场景](artifacts/screenshots/island-mobile-v10.jpg)
 
