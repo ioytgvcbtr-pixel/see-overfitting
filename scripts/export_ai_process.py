@@ -10,6 +10,19 @@ from privacy import redact
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def omit_binary_previews(value):
+    """Keep textual evidence when an async result contains image previews."""
+    if isinstance(value, list):
+        return [omit_binary_previews(item) for item in value]
+    if isinstance(value, dict):
+        if value.get('type') in ('input_image', 'output_image', 'image'):
+            return {'type': 'input_text', 'text': '[Image preview omitted; project screenshots and generated assets are saved separately.]'}
+        return {key: omit_binary_previews(item) for key, item in value.items()}
+    if isinstance(value, str):
+        return re.sub(r'data:image/[^;\s]+;base64,[A-Za-z0-9+/=]+', '[Image preview omitted]', value)
+    return value
+
+
 def read_entries(paths):
     """Merge rollout parts without duplicating the handoff user message."""
     entries = []
@@ -68,11 +81,11 @@ def main():
         elif active and kind in ('function_call', 'function_call_output', 'custom_tool_call', 'custom_tool_call_output'):
             # Discovery inventories and agent instructions are not project evidence.
             command = str(payload.get('input', payload.get('arguments', '')))
-            if 'web__run' in command or 'web_run' in str(payload.get('name', '')) or any(marker in command for marker in ('tfReference', 'theoryReference', 'courseReference', 'rulesReviewTab', 'museumMathRef', 'museumExploreRef', 'conceptTheoryRef', 'conceptMomentumRef', 'rulesV07', 'playRef', 'canvasRef', 'node_modules/next/dist/docs')) or ('ui-ux-pro-max' in command and 'search.py' in command):
+            if 'web__run' in command or 'web_run' in str(payload.get('name', '')) or any(marker in command for marker in ('tfReference', 'theoryReference', 'courseReference', 'rulesReviewTab', 'museumMathRef', 'museumExploreRef', 'conceptTheoryRef', 'conceptMomentumRef', 'rulesV07', 'playRef', 'canvasRef', 'visualStudyRef', 'duoVisualRef', 'phetVisualRef', 'codeSceneRef', 'visualCodeRef', 'nativeStudyChrome', 'node_modules/next/dist/docs')) or ('ui-ux-pro-max' in command and 'search.py' in command):
                 reference_calls.add(payload.get('call_id'))
             if 'image_gen__imagegen' in command:
                 asset_calls.add(payload.get('call_id'))
-            if any(marker in command for marker in ('ALL_TOOLS', 'cua.getState(', 'cua.listApps(', 'cua.listWindows(', 'cua.listTabs(', 'browser.user.openTabs(', 'browser.tabs.list(', 'SKILL.md', 'RUNTIME-MATRIX.md', 'pro-rules.md', 'quick-reference.md', 'browser-troubleshooting')):
+            if any(marker in command for marker in ('ALL_TOOLS', 'cua.getState(', 'cua.getApp(', 'cua.listBrowsers(', 'cua.listApps(', 'cua.listWindows(', 'cua.listTabs(', 'browser.user.openTabs(', 'browser.tabs.list(', 'SKILL.md', 'RUNTIME-MATRIX.md', 'pro-rules.md', 'quick-reference.md', 'browser-troubleshooting')):
                 omitted_calls.add(payload.get('call_id'))
                 continue
             if payload.get('call_id') in omitted_calls:
@@ -84,6 +97,8 @@ def main():
                 cleaned['output'] = '[Generated asset preview omitted; prompts retained in call and final assets in public/illustrations.]'
             if 'output' in cleaned and any(marker in str(cleaned['output']) for marker in ('# Browser Safety', '## Computer Use', '## How to use the API')):
                 cleaned['output'] = '[Tool runtime documentation omitted; project actions preserved in subsequent events.]'
+            if 'output' in cleaned:
+                cleaned['output'] = omit_binary_previews(cleaned['output'])
             events.append(redact(json.dumps({'timestamp': entry.get('timestamp'), **cleaned}, ensure_ascii=False)))
     if not active:
         raise SystemExit('Project start prompt not found; existing evidence files were not modified.')

@@ -10,6 +10,8 @@ import {
 import type { LessonGuide } from "@/lib/learning-guide";
 import type { LearningAttempt } from "@/lib/learning-session";
 import type { Parameters } from "@/lib/experiment";
+import SceneArtwork from "./SceneArtwork";
+import { lessonVisual } from "@/lib/visual-scenes";
 
 export function JourneySteps({ attempt }: { attempt: LearningAttempt | null }) {
   const phase = !attempt ? 0 : attempt.stage === "experiment" ? 1 : 2;
@@ -133,9 +135,12 @@ export function PredictionGate({
       aria-labelledby="prediction-title"
     >
       <div className="prediction-gate-intro">
-        <span className="gate-symbol">
-          <Target size={30} />
-        </span>
+        <SceneArtwork
+          scene={lessonVisual[parameters.scene]}
+          className="prediction-scene"
+          sizes="(max-width:760px) 82px, 145px"
+          eager
+        />
         <div>
           <h2 id="prediction-title">先留下你的判断，再让实验回答</h2>
           <p>{guide.prompt}你预测哪个条件的验证误差最低？</p>

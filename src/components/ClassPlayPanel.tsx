@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
+import { playVisuals } from "@/lib/visual-scenes";
 import {
   Search,
   Columns2,
-  Move,
   SlidersHorizontal,
   ArrowRight,
   Camera,
@@ -53,18 +54,34 @@ export default function ClassPlayPanel({
         <div className="play-modes" role="group" aria-label="选择探索玩法">
           {(
             [
-              { id: "explore", name: "自由探索", Icon: Move },
-              { id: "detective", name: "错分侦探", Icon: Search },
-              { id: "compare", name: "A/B对照", Icon: Columns2 },
+              { id: "explore", name: "自由探索" },
+              { id: "detective", name: "错分侦探" },
+              { id: "compare", name: "A/B对照" },
             ] as const
-          ).map(({ id, name, Icon }) => (
+          ).map(({ id, name }) => (
             <button
               key={id}
+              className="illustrated-mode-choice"
+              aria-label={name}
+              aria-describedby={`play-visual-${id}`}
               aria-pressed={play.mode === id}
               onClick={() => play.setMode(id)}
             >
-              <Icon size={16} aria-hidden="true" />
-              {name}
+              <span className={`mode-choice-art art-${id}`} aria-hidden="true">
+                <Image
+                  src={playVisuals[id].src}
+                  alt=""
+                  fill
+                  sizes="(max-width:760px) 80px, 100px"
+                  style={{ objectFit: "contain" }}
+                />
+              </span>
+              <span className="mode-choice-label">
+                <strong>{name}</strong>
+                <small id={`play-visual-${id}`}>
+                  {playVisuals[id].description}
+                </small>
+              </span>
             </button>
           ))}
         </div>

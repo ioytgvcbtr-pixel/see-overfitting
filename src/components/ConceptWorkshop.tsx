@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import SceneArtwork from "./SceneArtwork";
+import { visualScenes } from "@/lib/visual-scenes";
 import {
   ArrowRight,
   Copy,
@@ -217,12 +218,11 @@ export default function ConceptWorkshop({
         <div>
           <p className="concept-kicker">可操纵的机器学习概念</p>
           <div className="concept-title-with-guide">
-            <Image
-              src="/illustrations/fitlab-guide-v1.png"
-              alt=""
-              width={61}
-              height={56}
-              sizes="(max-width:760px) 42px, 61px"
+            <SceneArtwork
+              scene={input.panel}
+              className="chapter-scene"
+              sizes="(max-width:760px) 76px, 120px"
+              eager
             />
             <h1>把概念，拖到眼前。</h1>
           </div>
@@ -253,15 +253,25 @@ export default function ConceptWorkshop({
       <span className="sr-only" role="status">
         {copyStatus}
       </span>
-      <nav className="concept-tabs" aria-label="选择概念面板">
-        {panels.map((row, i) => (
+      <nav
+        className="concept-tabs illustrated-topic-tabs"
+        aria-label="选择概念面板"
+      >
+        {panels.map((row) => (
           <button
             key={row.id}
             aria-pressed={input.panel === row.id}
+            aria-label={row.title}
+            aria-describedby={`topic-hint-${row.id}`}
             onClick={() => selectPanel(row.id)}
           >
-            <span>{i + 1}</span>
-            {row.title}
+            <SceneArtwork scene={row.id} className="topic-scene" sizes="80px" />
+            <div className="topic-choice-label">
+              <strong>{row.title}</strong>
+              <small id={`topic-hint-${row.id}`}>
+                {visualScenes[row.id].topic}
+              </small>
+            </div>
           </button>
         ))}
       </nav>

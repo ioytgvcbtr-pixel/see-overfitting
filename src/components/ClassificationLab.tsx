@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import SceneArtwork from "./SceneArtwork";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -293,13 +293,11 @@ export default function ClassificationLab({
             同一组数据，五种模型。看看它们在哪里分开类别，又在哪里判断失误。
           </p>
         </div>
-        <Image
-          className="class-garden"
-          src="/illustrations/case-garden-v1.png"
-          alt=""
-          width={174}
-          height={116}
-          sizes="(max-width:760px) 96px, 174px"
+        <SceneArtwork
+          scene="classification"
+          className="class-scene-cover"
+          sizes="(max-width:760px) 100px, 150px"
+          eager
         />
       </header>
       <nav ref={casesRef} className="class-cases" aria-label="选择分类案例">
@@ -624,6 +622,48 @@ export default function ClassificationLab({
                     ))}
                   </select>
                 </label>
+              )}
+              {play.mode === "detective" && play.found.length > 0 && (
+                <div
+                  className="found-specimens"
+                  aria-label="最近定位的错分样本"
+                >
+                  <span>最近定位</span>
+                  <div>
+                    {play.found.slice(-6).map((id) => {
+                      const specimen = result.validation.find(
+                        (p) => p.row === id,
+                      )!;
+                      return (
+                        <button
+                          key={id}
+                          aria-label={`回看错分点${id + 1}`}
+                          aria-pressed={selected === id}
+                          onClick={() => {
+                            choosePoint(id);
+                            requestAnimationFrame(showCanvas);
+                          }}
+                        >
+                          <i
+                            style={{
+                              background: classColors[specimen.label],
+                              borderRadius: specimen.label === 0 ? "50%" : 0,
+                              clipPath:
+                                specimen.label === 1
+                                  ? "polygon(50% 0,100% 100%,0 100%)"
+                                  : undefined,
+                            }}
+                          />
+                          <strong>点{id + 1}</strong>
+                          <small>
+                            {result.dataset.classes[specimen.label]} →{" "}
+                            {result.dataset.classes[specimen.prediction]}
+                          </small>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </>
           ) : (

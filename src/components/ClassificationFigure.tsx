@@ -155,6 +155,7 @@ export default function ClassificationFigure({
     const px = x(edit?.x ?? p.x),
       py = y(edit?.y ?? p.y),
       color = classColors[p.label];
+    const tokenFill = training ? `url(#${id}-token-${p.label})` : "#fff";
     const draggable = training && result.dataset.synthetic && allowTrainingDrag;
     const label = `${training ? "训练" : "验证"}点 ${p.row + 1}，真实${result.dataset.classes[p.label]}，${baseline ? side + "区域" : ""}预测${result.dataset.classes[shown.prediction]}${draggable ? "，可拖动或方向键移动" : ""}`;
     return (
@@ -251,14 +252,14 @@ export default function ClassificationFigure({
             cx={px}
             cy={py}
             r="4.6"
-            fill={training ? color : "#fff"}
+            fill={tokenFill}
             stroke={color}
             strokeWidth="1.5"
           />
         ) : p.label === 1 ? (
           <path
             d={`M${px},${py - 5.3}L${px + 5.3},${py + 4.2}L${px - 5.3},${py + 4.2}Z`}
-            fill={training ? color : "#fff"}
+            fill={tokenFill}
             stroke={color}
             strokeWidth="1.3"
           />
@@ -268,7 +269,7 @@ export default function ClassificationFigure({
             y={py - 4.5}
             width="9"
             height="9"
-            fill={training ? color : "#fff"}
+            fill={tokenFill}
             stroke={color}
             strokeWidth="1.5"
           />
@@ -307,6 +308,19 @@ export default function ClassificationFigure({
         aria-label="分类决策区域与训练验证样本"
       >
         <defs>
+          {classColors.map((color, i) => (
+            <radialGradient
+              key={color}
+              id={`${id}-token-${i}`}
+              cx="32%"
+              cy="22%"
+              r="85%"
+            >
+              <stop offset="0" stopColor="#fff" stopOpacity=".85" />
+              <stop offset=".42" stopColor={color} />
+              <stop offset="1" stopColor={color} />
+            </radialGradient>
+          ))}
           <clipPath id={id}>
             <rect x={left} y={top} width={w} height={h} />
           </clipPath>

@@ -265,13 +265,23 @@ export function ConceptFitPlot({
                 fill="transparent"
               />
               {i === selected && (
-                <circle
-                  cx={x(point.x)}
-                  cy={y(point.y)}
-                  r="10"
-                  fill="var(--teal)"
-                  fillOpacity=".12"
-                />
+                <g aria-hidden="true" pointerEvents="none">
+                  <path
+                    d={`M${x(point.x) - 4},${y(point.y) - 16}l4-4 4 4M${x(point.x) - 4},${y(point.y) + 16}l4 4 4-4`}
+                    fill="none"
+                    stroke="var(--teal)"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <circle
+                    cx={x(point.x)}
+                    cy={y(point.y)}
+                    r="10"
+                    fill="var(--teal)"
+                    fillOpacity=".12"
+                  />
+                </g>
               )}
               <circle
                 cx={x(point.x)}

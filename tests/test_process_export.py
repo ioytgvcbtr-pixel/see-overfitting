@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from export_ai_process import read_entries
+from export_ai_process import read_entries, omit_binary_previews
 
 
 def event(at, kind='message', **payload):
@@ -33,3 +33,17 @@ def test_exact_tool_replays_are_removed_and_distinct_output_chunks_preserved(tmp
     first=save(tmp_path/'first.jsonl',[a,b])
     second=save(tmp_path/'second.jsonl',[a,b,c])
     assert list(read_entries([first,second]))==[a,b,c]
+
+
+def test_async_image_preview_is_removed_without_losing_text_or_failure_evidence():
+    output = [
+        {'type': 'input_text', 'text': 'Generation finished; saved project asset.'},
+        {'type': 'input_image', 'image_url': 'data:image/png;base64,aGVsbG8=', 'detail': 'original'},
+        {'type': 'input_text', 'text': 'Previous request failed; retry succeeded.'},
+        {'metadata': {'preview': 'data:image/webp;base64,aGVsbG8=', 'width': 1536}},
+    ]
+    cleaned = omit_binary_previews(output)
+    assert cleaned[0] == output[0] and cleaned[2] == output[2]
+    assert cleaned[3]['metadata']['width'] == 1536
+    assert 'data:image/' not in json.dumps(cleaned)
+    assert output[1]['image_url'].startswith('data:image/')

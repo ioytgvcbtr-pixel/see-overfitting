@@ -27,7 +27,6 @@ import {
   Plus,
   RotateCcw,
   Save,
-  Settings2,
   ShieldCheck,
   Sparkles,
   Target,
@@ -50,6 +49,8 @@ import StudyNotebook from "@/components/StudyNotebook";
 import ConceptWorkshop from "@/components/ConceptWorkshop";
 import ClassificationLab from "@/components/ClassificationLab";
 import ExploreMap from "@/components/ExploreMap";
+import SceneArtwork from "@/components/SceneArtwork";
+import { lessonVisual } from "@/lib/visual-scenes";
 import type { ConceptPanel } from "@/lib/concepts";
 import type { ClassRecipeId } from "@/lib/exploration";
 import {
@@ -163,6 +164,9 @@ export default function Home() {
     if (window.location.hash !== hashForView(next))
       window.history.pushState(null, "", hashForView(next));
     window.scrollTo({ top: 0, behavior: "instant" });
+    requestAnimationFrame(() =>
+      document.getElementById("main-content")?.focus({ preventScroll: true }),
+    );
   }
   useEffect(() => {
     const stored = localStorage.getItem("fitlab-current-scene-v1");
@@ -1116,18 +1120,23 @@ export default function Home() {
                 </div>
               </div>
               <div className="path-grid">
-                {scenes.map((s, index) => (
+                {scenes.map((s) => (
                   <section className="panel path-card" key={s.id}>
-                    <div className={`path-illustration illustration-${index}`}>
-                      {index === 0 ? (
-                        <Layers3 size={32} />
-                      ) : index === 1 ? (
-                        <Database size={32} />
-                      ) : (
-                        <Settings2 size={32} />
-                      )}
-                      <span>{s.number}</span>
-                    </div>
+                    <button
+                      className={`path-scene-cover cover-${s.id}`}
+                      aria-label={`进入${s.short}`}
+                      onClick={() => changeScene(s.id)}
+                    >
+                      <SceneArtwork
+                        scene={lessonVisual[s.id]}
+                        sizes="(max-width:760px) 80vw, 360px"
+                        eager
+                      />
+                      <span>
+                        进入课程
+                        <ArrowRight size={15} />
+                      </span>
+                    </button>
                     <div className="path-card-body">
                       <div className="eyebrow">
                         实验 {s.number} · {s.tag}
