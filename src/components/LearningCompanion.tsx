@@ -57,6 +57,7 @@ export default function LearningCompanion({
       >
         <Image
           src={source}
+          loading="eager"
           alt=""
           fill
           sizes="(max-width:600px) 80px, 96px"

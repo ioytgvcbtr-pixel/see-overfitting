@@ -127,7 +127,7 @@ export default function ConceptIsland({
       aria-label={`${visualScenes[input.panel].name}互动场景`}
     >
       <header className="island-stage-heading">
-        <SceneArtwork scene={input.panel} sizes="76px" />
+        <SceneArtwork scene={input.panel} sizes="76px" eager />
         <div>
           <h2>{title}</h2>
         </div>

@@ -288,7 +288,7 @@ export default function ConceptWorkshop({
             aria-describedby={`topic-hint-${row.id}`}
             onClick={() => selectPanel(row.id)}
           >
-            <SceneArtwork scene={row.id} className="topic-scene" sizes="80px" />
+            <SceneArtwork scene={row.id} className="topic-scene" sizes="80px" eager />
             <div className="topic-choice-label">
               <strong>{row.title}</strong>
               <small id={`topic-hint-${row.id}`}>

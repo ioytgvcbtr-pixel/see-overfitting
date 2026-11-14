@@ -24,6 +24,7 @@ export default function ContinueChallenge({
       <div className="continue-guide">
         <Image
           src="/illustrations/fitlab-guide-v1.png"
+          loading="eager"
           alt=""
           fill
           sizes="96px"
