@@ -27,7 +27,7 @@ export const visualScenes = {
     src: "/illustrations/world-v09/island-classification-v1.png",
     name: "边界森林",
     topic: "类别、边界与错分",
-    verb: "开始错分侦探",
+    verb: "投递与救援",
     hint: "穿过分类边界，找出被模型看错的点。",
   },
 } as const;

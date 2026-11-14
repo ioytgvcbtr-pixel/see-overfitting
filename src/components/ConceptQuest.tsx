@@ -10,6 +10,7 @@ import {
 } from "@/lib/concepts";
 import { observeQuest } from "@/lib/island-experiments";
 import { api } from "@/lib/experiment";
+import HelpHint from "./HelpHint";
 
 const titles = {
   error: "驶入最小误差港",
@@ -118,15 +119,16 @@ export default function ConceptQuest({
       <div className="island-quest-heading">
         <Flag size={17} />
         <h3>{titles[input.panel]}</h3>
-        <span>探索任务</span>
+        <HelpHint title="关于观察任务">
+          <p>
+            布置一组固定条件，操作物件，再按实际结果作答。可返回开始前的实验，核验后可复制发现回执。任务只保留在本页，不计正式课程成绩；离开模块后重新开始。
+          </p>
+        </HelpHint>
       </div>
       {taskError && <p role="alert">{taskError}</p>}
       {copyError && <p role="status">{copyError}</p>}
       {!baseline && !target ? (
         <>
-          <p>
-            布置一组固定条件，操作物件，再用实际数值回答。可随时返回原实验。
-          </p>
           <button
             className="button primary"
             disabled={!matched}
@@ -147,7 +149,7 @@ export default function ConceptQuest({
             </p>
             {observation.progress !== undefined && (
               <label className="quest-progress">
-                可减少训练误差已消除{" "}
+                可减少误差已消除{" "}
                 <output>{Math.round(observation.progress * 100)}%</output>
                 <progress max="1" value={observation.progress} />
               </label>
@@ -194,9 +196,16 @@ export default function ConceptQuest({
                 </strong>
                 <p>
                   {input.panel === "sensitivity"
-                    ? `A变化RMS ${conceptNumber(result.pairs![0].shift_rms)}，B ${conceptNumber(result.pairs![1].shift_rms)}。同一扰动的影响取决于阶数与约束。`
-                    : `验证MSE：${conceptNumber(observation.evidence.before_validation_mse)} → ${conceptNumber(observation.evidence.validation_mse)}。训练更贴合或系数收缩，都不能代替验证表现。`}
+                    ? `变化RMS：A ${conceptNumber(result.pairs![0].shift_rms)} / B ${conceptNumber(result.pairs![1].shift_rms)}`
+                    : `验证MSE：${conceptNumber(observation.evidence.before_validation_mse)} → ${conceptNumber(observation.evidence.validation_mse)}`}
                 </p>
+                <HelpHint title="这次发现能说明什么">
+                  <p>
+                    {input.panel === "sensitivity"
+                      ? "同一扰动的影响取决于阶数与约束。这次比较不能证明高阶总是更敏感。"
+                      : "训练更贴合或系数收缩，都不能代替验证表现。任务只比较相同条件下的本次结果。"}
+                  </p>
+                </HelpHint>
                 {correct && (
                   <button className="text-button" onClick={() => void copy()}>
                     <Copy size={14} />
@@ -230,7 +239,6 @@ export default function ConceptQuest({
           返回原实验
         </button>
       )}
-      <small>本页练习不计正式课程成绩；离开模块后任务重新开始。</small>
     </section>
   );
 }

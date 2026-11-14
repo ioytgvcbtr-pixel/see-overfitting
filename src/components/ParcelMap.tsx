@@ -6,6 +6,7 @@ import {
   type ClassPoint,
   type ClassResult,
 } from "@/lib/classification";
+import HelpHint from "./HelpHint";
 
 export default function ParcelMap({
   result,
@@ -67,16 +68,20 @@ export default function ParcelMap({
         aria-label={`当前模型区域与包裹位置，横坐标${point.x.toFixed(3)}，纵坐标${point.y.toFixed(3)}`}
       />
       <div>
-        <strong>包裹标签 · 点{point.row + 1}</strong>
+        <div className="parcel-map-heading">
+          <strong>点{point.row + 1}</strong>
+          <HelpHint title="如何读包裹小地图">
+            <p>
+              底色是模型预测区域，圆环是当前包裹的位置。先看位置，再判断投递门。底图按格心计算，在边缘处可能与原样本的实际判断不同；投递核验以原样本预测为准。
+            </p>
+          </HelpHint>
+        </div>
         <span>
           {result.dataset.features[0]} = {point.x.toFixed(3)}
         </span>
         <span>
           {result.dataset.features[1]} = {point.y.toFixed(3)}
         </span>
-        <small>
-          小地图底色为模型区域，圆环是包裹位置。先看位置，再判断投递门。格心近似与原样本判断可能在边缘不同。
-        </small>
       </div>
     </div>
   );

@@ -1,0 +1,773 @@
+:root {
+  --bg: #f8f9fc;
+  --ink: #30263d;
+  --muted: #6b6175;
+  --surface-inset: 20px;
+  --surface-inner-radius: 20px;
+  --surface-radius: calc(var(--surface-inner-radius) + var(--surface-inset));
+  --shadow-surface:
+    0 1px 2px rgb(42 29 61 / 0.025), 0 8px 24px rgb(42 29 61 / 0.035),
+    0 24px 60px rgb(42 29 61 / 0.025);
+  --shadow-control:
+    0 1px 2px rgb(42 29 61 / 0.035), 0 3px 9px rgb(42 29 61 / 0.035);
+  --shadow-floating:
+    0 2px 5px rgb(42 29 61 / 0.04), 0 12px 32px rgb(42 29 61 / 0.08),
+    0 30px 64px rgb(42 29 61 / 0.035);
+}
+body {
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+input,
+output,
+select,
+table,
+svg text,
+.nav-count,
+.concept-metric strong,
+.class-metrics strong,
+.metric-value,
+.forest-real-metrics b,
+.island-readouts b {
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+h1,
+h2,
+h3,
+h4,
+legend {
+  text-wrap: balance;
+}
+h1,
+h2,
+h3 {
+  overflow-wrap: break-word;
+}
+.content {
+  padding-top: 34px;
+  padding-bottom: 54px;
+}
+.topbar {
+  background: rgb(248 249 252 / 0.94);
+  border-bottom: 0;
+  box-shadow: 0 1px 0 rgb(72 51 92 / 0.035);
+}
+.button {
+  border-radius: 14px;
+  min-height: 44px;
+}
+.button.secondary {
+  border-color: transparent;
+  background: #fff;
+  box-shadow: var(--shadow-control);
+}
+.button.primary {
+  box-shadow:
+    0 1px 3px rgb(89 52 148 / 0.08),
+    0 6px 15px rgb(89 52 148 / 0.08);
+}
+.button:not(:disabled):hover {
+  filter: brightness(1.015);
+}
+.button:disabled {
+  box-shadow: none;
+}
+.island-workbench,
+.class-workspace,
+.bench-workspace,
+.prediction-gate,
+.chart-panel,
+.path-grid .path-card {
+  border: 0;
+  box-shadow: var(--shadow-surface);
+  background: var(--paper);
+}
+.island-workbench {
+  padding: var(--surface-inset);
+  border-radius: var(--surface-radius);
+  margin-top: 22px;
+  overflow: visible;
+}
+.island-stage-heading {
+  padding: 0 0 20px;
+  gap: 12px;
+}
+.island-stage-heading > .scene-artwork {
+  width: 60px;
+  height: 40px;
+}
+.island-stage-heading > div:not(.scene-artwork) {
+  flex: 1;
+}
+.island-stage-heading h2 {
+  font-size: 22px;
+  max-width: 28em;
+}
+.island-stage-heading .island-freshness {
+  font-size: 12px;
+  background: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  line-height: 1.7;
+  white-space: normal;
+}
+.island-freshness::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #2a8d7c;
+}
+.island-freshness.pending::before {
+  background: #bd8649;
+}
+.island-stage-heading .island-freshness.pending {
+  background: none;
+}
+.island-workbench-grid {
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+.island-scene-column {
+  padding: 0 20px 0 0;
+}
+.island-live-scene {
+  margin: 0;
+  border-radius: var(--surface-inner-radius);
+}
+.island-control-desk {
+  border: 0;
+  padding: 0 0 0 20px;
+}
+.island-object-controls {
+  gap: 14px;
+}
+.island-select select {
+  border-radius: 12px;
+  min-height: 44px;
+  border-color: var(--control-border);
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(42 29 61 / 0.025);
+}
+.island-range > span,
+.concept-range > span {
+  align-items: baseline;
+}
+.island-range output,
+.concept-range output {
+  display: inline-block;
+  inline-size: 10.5ch;
+  flex: 0 0 10.5ch;
+  text-align: end;
+  white-space: nowrap;
+}
+.island-readouts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 24px;
+  margin-top: 22px;
+}
+.island-readouts > span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  font-size: 12px;
+}
+.island-readouts b {
+  display: block;
+  width: 100%;
+  min-height: 1.5em;
+  font-size: 22px;
+  white-space: nowrap;
+}
+.forest-real-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  border: 0;
+  margin-top: 18px;
+  padding: 0;
+}
+.forest-real-metrics b {
+  min-height: 1.5em;
+  white-space: nowrap;
+}
+.island-quest {
+  border: 0;
+  padding-top: 22px;
+  margin-top: 22px;
+}
+.island-quest-heading {
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.island-quest-heading h3 {
+  flex: 1;
+  font-size: 16px;
+}
+.island-quest-heading .help-hint-trigger {
+  margin: -10px -10px -10px 0;
+}
+.island-quest .button {
+  margin-top: 4px;
+}
+.island-quest fieldset {
+  margin-top: 18px;
+}
+.island-quest p {
+  margin-top: 8px;
+}
+.quest-choices {
+  gap: 8px;
+}
+.quest-choices button {
+  border-color: transparent;
+  background: #f6f3fa;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgb(42 29 61 / 0.025);
+}
+.quest-choices button[aria-pressed="true"] {
+  border-color: transparent;
+  box-shadow: inset 0 0 0 2px #8d70ad;
+  background: #efe6f8;
+}
+.quest-choices button:disabled {
+  border-color: transparent;
+  background: #f8f7fa;
+}
+.quest-progress {
+  display: grid;
+  grid-template-columns: 1fr 4ch;
+  gap: 6px;
+  align-items: center;
+}
+.quest-progress output {
+  float: none;
+  min-width: 4ch;
+  text-align: end;
+}
+.quest-progress progress {
+  grid-column: 1/-1;
+  margin-top: 0;
+}
+.quest-verdict {
+  border: 0;
+  padding-top: 14px;
+  position: relative;
+}
+.quest-verdict > p {
+  font-variant-numeric: tabular-nums;
+}
+.quest-verdict > .help-hint-trigger {
+  position: absolute;
+  right: -8px;
+  top: 2px;
+}
+.quest-verdict > strong {
+  padding-right: 26px;
+}
+.coefficient-disclosure {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.coefficient-disclosure summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: #71518a;
+}
+.garden-zoom {
+  gap: 8px;
+  margin-top: 8px;
+}
+.garden-zoom > span {
+  white-space: nowrap;
+}
+.garden-zoom b {
+  display: inline-block;
+  min-width: 8.5ch;
+  text-align: end;
+}
+.island-precision {
+  border: 0;
+  margin: 24px 0 12px;
+}
+.island-precision > summary {
+  padding: 14px 4px;
+}
+.forest-gate-buttons {
+  gap: 10px;
+}
+.forest-gate-buttons button {
+  background: #f6f3fa;
+  border-color: transparent;
+  border-radius: 14px;
+  box-shadow: var(--shadow-control);
+}
+.forest-sample-tag {
+  border: 0;
+  padding-top: 0;
+  margin-top: 24px;
+  gap: 20px;
+}
+.forest-sample-tag canvas {
+  border-radius: 14px;
+}
+.parcel-map-heading {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.parcel-map-heading strong {
+  margin-bottom: 0;
+}
+.forest-sample-tag .parcel-map-heading {
+  display: flex;
+}
+.parcel-map-heading .help-hint-trigger {
+  margin: -8px 0;
+}
+.forest-model-title {
+  margin: 20px 0 12px;
+  font-size: 14px;
+}
+.forest-model-choices button {
+  background: #f6f3fa;
+  border-color: transparent;
+}
+.forest-model-choices button[aria-pressed="true"] {
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1.5px #8d70ad;
+  background: #ede2f5;
+}
+.forest-delivery-verdict {
+  padding-top: 20px;
+}
+.class-workspace {
+  border-radius: 28px;
+  padding: 20px;
+  gap: 20px;
+}
+.class-map-pane,
+.class-controls {
+  box-shadow: none;
+  border: 0;
+}
+.class-plot-note,
+.class-split-note {
+  color: var(--muted);
+}
+.bench-workspace {
+  border-radius: 32px;
+  padding: 20px;
+  gap: 20px;
+}
+.bench-workspace > .panel {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+}
+.prediction-gate {
+  padding: 28px;
+  border-radius: 32px;
+}
+.chart-panel {
+  padding: 24px;
+  border-radius: 28px;
+}
+.path-grid {
+  gap: 26px;
+}
+.path-grid .path-card {
+  border-radius: 28px;
+}
+.path-grid .path-card .path-scene-cover {
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.path-grid .path-card-body {
+  padding: 24px;
+  gap: 16px;
+}
+.path-card-body > .eyebrow {
+  display: none;
+}
+.path-grid .path-card-body h2 {
+  font-size: 21px;
+}
+.dataset-card {
+  border: 0;
+  border-radius: 16px;
+  box-shadow: var(--shadow-control);
+}
+.dataset-card.chosen {
+  box-shadow:
+    inset 0 0 0 1.5px #8d70ad,
+    var(--shadow-control);
+  background: #f2ebfa;
+}
+.world-heading {
+  margin-bottom: 22px;
+}
+.world-heading h1 {
+  font-size: 36px;
+}
+.world-preview {
+  border: 0;
+  gap: 12px;
+  padding: 16px 0 20px;
+  margin-bottom: 18px;
+}
+.world-preview-question {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.world-preview h2 {
+  font-size: 22px;
+  margin: 0;
+}
+.world-play-shelf {
+  border: 0;
+  padding-bottom: 24px;
+  gap: 26px;
+}
+.world-study {
+  border: 0;
+  padding-top: 20px;
+}
+.world-study > p {
+  flex: 1;
+}
+.world-study .text-button {
+  margin-left: 0;
+}
+.concept-footer {
+  justify-content: flex-end;
+  gap: 12px;
+}
+.compact-metric-help {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  border: 0;
+  padding: 0;
+  margin: 0 0 6px;
+}
+.dataset-lab .page-heading .eyebrow,
+.dataset-lab .page-heading .level-badge {
+  display: none;
+}
+.class-map-title > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.help-hint-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  inline-size: 40px;
+  block-size: 40px;
+  min-width: 40px;
+  padding: 0;
+  vertical-align: middle;
+  border: 0;
+  border-radius: 50%;
+  color: #8a789a;
+  background: none;
+  box-shadow: none;
+  touch-action: manipulation;
+}
+.help-hint-trigger:hover,
+.help-hint-trigger[aria-expanded="true"] {
+  color: #7044b3;
+  background: #eee7f6;
+}
+.help-hint-panel {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 20px;
+  width: 300px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 0;
+  border-radius: 24px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: var(--shadow-floating);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.9;
+  font-variant-numeric: tabular-nums;
+}
+.help-hint-panel:popover-open {
+  animation: help-appear 140ms ease-out;
+}
+.help-hint-panel::backdrop {
+  background: transparent;
+}
+.help-hint-panel > strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #4d365e;
+}
+.help-hint-panel p + p {
+  margin-top: 10px;
+}
+.help-hint-panel ol {
+  display: block;
+  margin: 0;
+  padding-left: 20px;
+}
+.compact-metric-help > .help-hint-panel {
+  padding: 20px;
+  border: 0;
+  border-radius: 24px;
+  max-width: calc(100vw - 32px);
+  line-height: 1.9;
+}
+.help-hint-panel dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px 16px;
+  margin: 0 0 12px;
+}
+.help-hint-panel dd {
+  margin: 0;
+  text-align: end;
+  font-family: var(--font-number);
+}
+@keyframes quiet-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes help-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.world-heading,
+.concept-heading,
+.class-heading,
+.page-heading,
+.world-scene-grid > .world-scene,
+.concept-tabs,
+.class-cases,
+.dataset-cards,
+.concept-data-bar,
+.class-toolbar,
+.island-workbench,
+.class-workspace,
+.prediction-gate,
+.path-grid,
+.study-list,
+.bench-workspace {
+  --enter-step: 0;
+  animation: quiet-enter 280ms ease-out backwards;
+  animation-delay: calc(var(--enter-step) * 100ms);
+}
+.concept-tabs,
+.class-cases,
+.dataset-cards {
+  --enter-step: 1;
+}
+.concept-data-bar,
+.class-toolbar,
+.bench-workspace {
+  --enter-step: 2;
+}
+.island-workbench,
+.class-workspace,
+.prediction-gate,
+.path-grid,
+.study-list {
+  --enter-step: 3;
+}
+.world-scene-grid > .world-scene:nth-child(2) {
+  --enter-step: 1;
+}
+.world-scene-grid > .world-scene:nth-child(3) {
+  --enter-step: 2;
+}
+.world-scene-grid > .world-scene:nth-child(4) {
+  --enter-step: 3;
+}
+@media (max-width: 1100px) {
+  .island-workbench-grid {
+    grid-template-columns: minmax(0, 1fr) 270px;
+  }
+  .island-stage-heading h2 {
+    font-size: 20px;
+  }
+  .island-stage-heading .island-freshness {
+    margin-left: auto;
+  }
+  .island-readouts {
+    gap: 16px;
+  }
+}
+@media (max-width: 1000px) {
+  .island-workbench-grid {
+    grid-template-columns: 1fr;
+  }
+  .island-scene-column {
+    padding: 0;
+  }
+  .island-control-desk {
+    padding: 24px 0 0;
+    margin: 0;
+  }
+  .island-object-controls {
+    column-gap: 24px;
+  }
+  .class-workspace,
+  .bench-workspace {
+    padding: 18px;
+    border-radius: 28px;
+  }
+}
+@media (max-width: 600px) {
+  :root {
+    --surface-inset: 12px;
+    --surface-inner-radius: 16px;
+  }
+  .content {
+    padding-top: 22px;
+    padding-bottom: 40px;
+  }
+  .island-workbench {
+    padding: var(--surface-inset);
+    border-radius: var(--surface-radius);
+  }
+  .island-stage-heading {
+    padding: 4px 0 16px;
+    gap: 8px;
+  }
+  .island-stage-heading h2 {
+    font-size: 18px;
+  }
+  .island-stage-heading > .scene-artwork {
+    width: 48px;
+    height: 32px;
+  }
+  .island-stage-heading .island-freshness {
+    margin-left: 0;
+  }
+  .island-stage-heading .help-hint-trigger {
+    margin-left: auto;
+  }
+  .island-control-desk {
+    padding-top: 22px;
+  }
+  .island-readouts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 18px;
+  }
+  .island-readouts b {
+    font-size: 20px;
+  }
+  .island-object-controls {
+    grid-template-columns: 1fr;
+  }
+  .island-quest {
+    padding-top: 18px;
+    margin-top: 16px;
+  }
+  .world-preview {
+    display: flex;
+    align-items: center;
+    padding: 16px 0;
+    margin: 0 0 18px;
+  }
+  .world-preview h2 {
+    font-size: 20px;
+  }
+  .world-preview-question {
+    flex: 1;
+  }
+  .world-play-shelf {
+    gap: 14px;
+  }
+  .world-study {
+    gap: 8px;
+    align-items: center;
+  }
+  .world-study > p {
+    min-width: 0;
+    font-size: 13px;
+  }
+  .world-study > .text-button {
+    margin-left: 0;
+  }
+  .world-heading h1 {
+    font-size: 29px;
+  }
+  .help-hint-trigger {
+    inline-size: 44px;
+    block-size: 44px;
+    min-width: 44px;
+    flex-basis: 44px;
+  }
+  .path-grid .path-card {
+    border-radius: 24px;
+  }
+  .path-grid .path-card .path-scene-cover {
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+  }
+  .path-grid .path-card-body {
+    padding: 20px;
+  }
+  .prediction-gate {
+    padding: 20px;
+    border-radius: 28px;
+  }
+  .chart-panel,
+  .class-workspace,
+  .bench-workspace {
+    padding: 14px;
+    border-radius: 24px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .world-heading,
+  .concept-heading,
+  .class-heading,
+  .page-heading,
+  .world-scene-grid > .world-scene,
+  .concept-tabs,
+  .class-cases,
+  .dataset-cards,
+  .concept-data-bar,
+  .class-toolbar,
+  .island-workbench,
+  .class-workspace,
+  .prediction-gate,
+  .path-grid,
+  .study-list,
+  .bench-workspace,
+  .help-hint-panel:popover-open {
+    animation: none !important;
+    opacity: 1;
+  }
+}

@@ -1,4 +1,5 @@
 "use client";
+import HelpHint from "./HelpHint";
 import { Check, ChevronRight, Lightbulb } from "lucide-react";
 import type { Parameters } from "@/lib/experiment";
 import { metric } from "@/lib/experiment";
@@ -126,9 +127,8 @@ export function MetricHelp({
   unit?: string;
 }) {
   return (
-    <details className="metric-help">
-      <summary>这些误差和指标怎么看？</summary>
-      <div>
+    <div className="metric-help compact-metric-help">
+      <HelpHint title="这些误差和指标怎么看">
         <p>
           <strong>训练误差：</strong>模型在用于学习的数据上表现怎样。
           <strong>验证误差：</strong>换一批数据后的表现，用来比较参数。
@@ -148,7 +148,7 @@ export function MetricHelp({
             : ""}
           训练误差低，不代表验证表现一定好。独立测试应留到完成选参后再查看。
         </p>
-      </div>
-    </details>
+      </HelpHint>
+    </div>
   );
 }

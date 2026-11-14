@@ -8,6 +8,7 @@ import "./classification.css";
 import "./exploration.css";
 import "./illustrated.css";
 import "./islands.css";
+import "./polish.css";
 
 export const metadata: Metadata = {
   title: "看见过拟合 · FitLab 交互实验室",

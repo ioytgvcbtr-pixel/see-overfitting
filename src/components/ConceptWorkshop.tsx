@@ -2,13 +2,9 @@
 import { useEffect, useState } from "react";
 import SceneArtwork from "./SceneArtwork";
 import ConceptIsland from "./ConceptIsland";
+import HelpHint from "./HelpHint";
 import { visualScenes } from "@/lib/visual-scenes";
-import {
-  ArrowRight,
-  Copy,
-  RotateCcw,
-  SlidersHorizontal,
-} from "lucide-react";
+import { ArrowRight, Copy, RotateCcw, SlidersHorizontal } from "lucide-react";
 import {
   ConceptFitPlot,
   LossLandscape,
@@ -215,7 +211,6 @@ export default function ConceptWorkshop({
     <section className="concept-workshop" aria-label="概念工坊">
       <header className="concept-heading">
         <div>
-          <p className="concept-kicker">可操纵的机器学习概念</p>
           <div className="concept-title-with-guide">
             <SceneArtwork
               scene={input.panel}
@@ -275,10 +270,20 @@ export default function ConceptWorkshop({
         ))}
       </nav>
       <div className="concept-data-bar">
-        <span>探索数据 seed {input.seed}</span>
-        <span>训练 {input.samples} 点</span>
-        <span>验证 80 点</span>
-        <span>噪声 σ={input.noise.toFixed(2)}</span>
+        <span>{input.samples}个训练样本</span>
+        <HelpHint title="当前实验条件">
+          <dl>
+            <dt>数据种子</dt>
+            <dd>{input.seed}</dd>
+            <dt>验证样本</dt>
+            <dd>80</dd>
+            <dt>噪声 σ</dt>
+            <dd>{input.noise.toFixed(2)}</dd>
+          </dl>
+          <p>
+            验证样本固定，独立测试不参与。可从“数据条件”调整；改变比较条件会使当前任务失去可比性。
+          </p>
+        </HelpHint>
         <details className="concept-data-settings">
           <summary>
             <SlidersHorizontal size={15} />
@@ -344,327 +349,345 @@ export default function ConceptWorkshop({
             selected={selected}
             pending={waiting}
             onSelect={setSelected}
-            onInput={(next) => { setDragging(false); setInput(next); setSelected((i)=>Math.min(i,next.samples-1)); }}
+            onInput={(next) => {
+              setDragging(false);
+              setInput(next);
+              setSelected((i) => Math.min(i, next.samples - 1));
+            }}
             onPoint={point}
             onDrag={setDragging}
           />
-          <details className="island-precision" key={`precision-${input.panel}`}>
-            <summary>展开精确图表与模型依据<span>相同样本、相同实算结果</span></summary>
+          <details
+            className="island-precision"
+            key={`precision-${input.panel}`}
+          >
+            <summary>
+              精确图表
+            </summary>
             <p className="concept-figure-note">{panel.instruction}</p>
-          {result.linear && (
-            <>
-              <div className="concept-stage">
-                <section className="concept-pane">
-                  <div className="concept-pane-title">
-                    <h3>数据空间</h3>
-                    <span>
-                      ŷ = {input.slope.toFixed(3)} x{" "}
-                      {input.intercept >= 0 ? "+" : "−"}{" "}
-                      {Math.abs(input.intercept).toFixed(3)}
-                    </span>
-                  </div>
-                  <ConceptFitPlot
-                    {...fitProps}
-                    curve={result.linear.curve}
-                    residuals
-                    label="线性拟合与残差平方，可上下拖动训练点"
-                  />
-                  <ErrorContributions
-                    result={result}
-                    selected={selected}
-                    onSelect={(index) =>
-                      setSelected(Math.min(index, input.samples - 1))
-                    }
-                  />
-                </section>
-                <section className="concept-pane landscape-pane">
-                  <div className="concept-pane-title">
-                    <h3>参数空间：训练误差地形</h3>
-                    <button
-                      className="text-button"
-                      disabled={!result.linear.optimum.in_view}
-                      onClick={() =>
-                        setInput((old) => ({
-                          ...old,
-                          slope: result.linear!.optimum.slope,
-                          intercept: result.linear!.optimum.intercept,
-                        }))
-                      }
-                    >
-                      移到最小二乘解
-                      <ArrowRight size={14} />
-                    </button>
-                  </div>
-                  <LossLandscape
-                    result={result}
-                    input={input}
-                    onWeights={(a, b) =>
-                      setInput((old) => ({ ...old, slope: a, intercept: b }))
-                    }
-                    onDrag={setDragging}
-                  />
-                  <div className="concept-weight-controls">
-                    <Range
-                      label="直线斜率a"
-                      value={input.slope}
-                      display={input.slope.toFixed(3)}
-                      min={-4}
-                      max={4}
-                      step={0.001}
-                      onChange={(n) => number("slope", n)}
-                      onDrag={setDragging}
-                    />
-                    <Range
-                      label="直线截距b"
-                      value={input.intercept}
-                      display={input.intercept.toFixed(3)}
-                      min={-2}
-                      max={2}
-                      step={0.001}
-                      onChange={(n) => number("intercept", n)}
-                      onDrag={setDragging}
-                    />
-                  </div>
-                </section>
-              </div>
-              <div className="concept-evidence-row">
-                <Metric label="训练 MSE" value={result.linear.train_mse} />
-                <Metric label="验证 MSE" value={result.linear.validation_mse} />
-                <Metric
-                  label={`训练点${selected + 1}的残差 e`}
-                  value={result.linear.residuals[selected]?.error ?? 0}
-                />
-                <Metric
-                  label="选中平方项 e²"
-                  value={result.linear.residuals[selected]?.squared ?? 0}
-                />
-              </div>
-              <div className="concept-explanation">
-                <strong>从距离，到损失函数</strong>
-                <p>
-                  残差是 y −
-                  ŷ；图中的方块面积对应选中残差的平方。把所有平方项相加，再除以训练点数：
-                  <b>
-                    {conceptNumber(result.linear.sse)} ÷ {result.train.length} ={" "}
-                    {conceptNumber(result.linear.train_mse)}
-                  </b>
-                  。移到最小二乘解只优化这条直线，弯曲规律可能仍然拟合不好。
-                </p>
-              </div>
-            </>
-          )}
-          {result.pairs && (
-            <>
-              <div className="concept-stage sensitivity-stage">
-                {result.pairs.map((pair, i) => (
-                  <section className="concept-pane" key={i}>
+            {result.linear && (
+              <>
+                <div className="concept-stage">
+                  <section className="concept-pane">
                     <div className="concept-pane-title">
-                      <h3>
-                        {i === 0
-                          ? "参考A：固定3阶"
-                          : `观察B：${pair.edited.degree}阶`}
-                      </h3>
-                      <span>同一扰动、同一验证集</span>
+                      <h3>数据空间</h3>
+                      <span>
+                        ŷ = {input.slope.toFixed(3)} x{" "}
+                        {input.intercept >= 0 ? "+" : "−"}{" "}
+                        {Math.abs(input.intercept).toFixed(3)}
+                      </span>
                     </div>
                     <ConceptFitPlot
                       {...fitProps}
-                      curve={pair.edited.curve}
-                      baseline={pair.baseline.curve}
-                      label={`${i === 0 ? "参考A" : "观察B"}扰动前后拟合对照，可拖动训练点`}
+                      curve={result.linear.curve}
+                      residuals
+                      label="线性拟合与残差平方，可上下拖动训练点"
                     />
-                    <ShiftRibbon
-                      difference={pair.difference}
-                      maximum={result.max_shift!}
+                    <ErrorContributions
+                      result={result}
+                      selected={selected}
+                      onSelect={(index) =>
+                        setSelected(Math.min(index, input.samples - 1))
+                      }
                     />
-                    <p className="concept-figure-note">
-                      颜色越深，当前x处的预测变化越大；两组共用色标。
-                    </p>
-                    <div className="concept-mini-metrics">
-                      <Metric label="整条曲线变化 RMS" value={pair.shift_rms} />
-                      <Metric
-                        label="验证MSE变化"
-                        value={pair.validation_delta}
+                  </section>
+                  <section className="concept-pane landscape-pane">
+                    <div className="concept-pane-title">
+                      <h3>参数空间：训练误差地形</h3>
+                      <button
+                        className="text-button"
+                        disabled={!result.linear.optimum.in_view}
+                        onClick={() =>
+                          setInput((old) => ({
+                            ...old,
+                            slope: result.linear!.optimum.slope,
+                            intercept: result.linear!.optimum.intercept,
+                          }))
+                        }
+                      >
+                        移到最小二乘解
+                        <ArrowRight size={14} />
+                      </button>
+                    </div>
+                    <LossLandscape
+                      result={result}
+                      input={input}
+                      onWeights={(a, b) =>
+                        setInput((old) => ({ ...old, slope: a, intercept: b }))
+                      }
+                      onDrag={setDragging}
+                    />
+                    <div className="concept-weight-controls">
+                      <Range
+                        label="直线斜率a"
+                        value={input.slope}
+                        display={input.slope.toFixed(3)}
+                        min={-4}
+                        max={4}
+                        step={0.001}
+                        onChange={(n) => number("slope", n)}
+                        onDrag={setDragging}
                       />
-                      <Metric
-                        label="当前验证MSE"
-                        value={pair.edited.validation_mse}
+                      <Range
+                        label="直线截距b"
+                        value={input.intercept}
+                        display={input.intercept.toFixed(3)}
+                        min={-2}
+                        max={2}
+                        step={0.001}
+                        onChange={(n) => number("intercept", n)}
+                        onDrag={setDragging}
                       />
                     </div>
                   </section>
-                ))}
-              </div>
-              <div className="concept-explanation">
-                <strong>
-                  {!input.edits.length
-                    ? "先拖动一个训练点，再比较模型的反应"
-                    : result.pairs[1].shift_rms > result.pairs[0].shift_rms
-                      ? "本次观察B的整体变化更大"
-                      : "本次观察B没有显示更大的整体变化"}
-                </strong>
-                <p>
-                  RMS衡量161个固定x位置上预测变化的均方根，不是统计置信区间。相同的训练标签扰动，会因模型容量和约束不同而产生不同影响；一次实验不证明阶数越高就一定更敏感。
-                </p>
-              </div>
-            </>
-          )}
-          {result.regularization && (
-            <>
-              <div className="concept-stage">
-                <section className="concept-pane">
-                  <div className="concept-pane-title">
-                    <h3>弱约束与当前约束</h3>
-                    <span>
-                      虚线 α=1e-8；实线 α=
-                      {alphaText(result.regularization.current.alpha)}
-                    </span>
-                  </div>
-                  <ConceptFitPlot
-                    {...fitProps}
-                    curve={result.regularization.current.curve}
-                    baseline={result.regularization.weak.curve}
-                    label="弱约束与当前正则化拟合，可拖动训练点"
+                </div>
+                <div className="concept-evidence-row">
+                  <Metric label="训练 MSE" value={result.linear.train_mse} />
+                  <Metric
+                    label="验证 MSE"
+                    value={result.linear.validation_mse}
                   />
-                  <div className="concept-objective">
-                    <strong>当前优化目标 = SSE + α ‖w‖²</strong>
-                    <div className="objective-bars">
-                      <span
-                        style={{
-                          flex:
-                            (100 * result.regularization.current.sse) /
-                            Math.max(
-                              result.regularization.current.objective,
-                              1e-12,
-                            ),
-                        }}
+                  <Metric
+                    label={`训练点${selected + 1}的残差 e`}
+                    value={result.linear.residuals[selected]?.error ?? 0}
+                  />
+                  <Metric
+                    label="选中平方项 e²"
+                    value={result.linear.residuals[selected]?.squared ?? 0}
+                  />
+                </div>
+                <div className="concept-explanation">
+                  <strong>从距离，到损失函数</strong>
+                  <p>
+                    残差是 y −
+                    ŷ；图中的方块面积对应选中残差的平方。把所有平方项相加，再除以训练点数：
+                    <b>
+                      {conceptNumber(result.linear.sse)} ÷ {result.train.length}{" "}
+                      = {conceptNumber(result.linear.train_mse)}
+                    </b>
+                    。移到最小二乘解只优化这条直线，弯曲规律可能仍然拟合不好。
+                  </p>
+                </div>
+              </>
+            )}
+            {result.pairs && (
+              <>
+                <div className="concept-stage sensitivity-stage">
+                  {result.pairs.map((pair, i) => (
+                    <section className="concept-pane" key={i}>
+                      <div className="concept-pane-title">
+                        <h3>
+                          {i === 0
+                            ? "参考A：固定3阶"
+                            : `观察B：${pair.edited.degree}阶`}
+                        </h3>
+                        <span>同一扰动、同一验证集</span>
+                      </div>
+                      <ConceptFitPlot
+                        {...fitProps}
+                        curve={pair.edited.curve}
+                        baseline={pair.baseline.curve}
+                        label={`${i === 0 ? "参考A" : "观察B"}扰动前后拟合对照，可拖动训练点`}
                       />
-                      <span
-                        style={{
-                          flex:
-                            (100 * result.regularization.current.penalty) /
-                            Math.max(
-                              result.regularization.current.objective,
-                              1e-12,
-                            ),
-                        }}
+                      <ShiftRibbon
+                        difference={pair.difference}
+                        maximum={result.max_shift!}
                       />
+                      <p className="concept-figure-note">
+                        颜色越深，当前x处的预测变化越大；两组共用色标。
+                      </p>
+                      <div className="concept-mini-metrics">
+                        <Metric
+                          label="整条曲线变化 RMS"
+                          value={pair.shift_rms}
+                        />
+                        <Metric
+                          label="验证MSE变化"
+                          value={pair.validation_delta}
+                        />
+                        <Metric
+                          label="当前验证MSE"
+                          value={pair.edited.validation_mse}
+                        />
+                      </div>
+                    </section>
+                  ))}
+                </div>
+                <div className="concept-explanation">
+                  <strong>
+                    {!input.edits.length
+                      ? "先拖动一个训练点，再比较模型的反应"
+                      : result.pairs[1].shift_rms > result.pairs[0].shift_rms
+                        ? "本次观察B的整体变化更大"
+                        : "本次观察B没有显示更大的整体变化"}
+                  </strong>
+                  <p>
+                    RMS衡量161个固定x位置上预测变化的均方根，不是统计置信区间。相同的训练标签扰动，会因模型容量和约束不同而产生不同影响；一次实验不证明阶数越高就一定更敏感。
+                  </p>
+                </div>
+              </>
+            )}
+            {result.regularization && (
+              <>
+                <div className="concept-stage">
+                  <section className="concept-pane">
+                    <div className="concept-pane-title">
+                      <h3>弱约束与当前约束</h3>
+                      <span>
+                        虚线 α=1e-8；实线 α=
+                        {alphaText(result.regularization.current.alpha)}
+                      </span>
                     </div>
-                    <p>
-                      数据误差{" "}
-                      {conceptNumber(result.regularization.current.sse)} +
-                      惩罚项{" "}
-                      {conceptNumber(result.regularization.current.penalty)} ={" "}
-                      {conceptNumber(result.regularization.current.objective)}
-                    </p>
-                  </div>
-                </section>
-                <section className="concept-pane">
-                  <div className="concept-pane-title">
-                    <h3>系数真的在怎样变化？</h3>
-                    <span>相同标准化特征基</span>
-                  </div>
-                  <CoefficientBars
-                    weak={result.regularization.weak}
-                    current={result.regularization.current}
+                    <ConceptFitPlot
+                      {...fitProps}
+                      curve={result.regularization.current.curve}
+                      baseline={result.regularization.weak.curve}
+                      label="弱约束与当前正则化拟合，可拖动训练点"
+                    />
+                    <div className="concept-objective">
+                      <strong>当前优化目标 = SSE + α ‖w‖²</strong>
+                      <div className="objective-bars">
+                        <span
+                          style={{
+                            flex:
+                              (100 * result.regularization.current.sse) /
+                              Math.max(
+                                result.regularization.current.objective,
+                                1e-12,
+                              ),
+                          }}
+                        />
+                        <span
+                          style={{
+                            flex:
+                              (100 * result.regularization.current.penalty) /
+                              Math.max(
+                                result.regularization.current.objective,
+                                1e-12,
+                              ),
+                          }}
+                        />
+                      </div>
+                      <p>
+                        数据误差{" "}
+                        {conceptNumber(result.regularization.current.sse)} +
+                        惩罚项{" "}
+                        {conceptNumber(result.regularization.current.penalty)} ={" "}
+                        {conceptNumber(result.regularization.current.objective)}
+                      </p>
+                    </div>
+                  </section>
+                  <section className="concept-pane">
+                    <div className="concept-pane-title">
+                      <h3>系数真的在怎样变化？</h3>
+                      <span>相同标准化特征基</span>
+                    </div>
+                    <CoefficientBars
+                      weak={result.regularization.weak}
+                      current={result.regularization.current}
+                    />
+                    <NormPath
+                      path={result.regularization.path}
+                      alpha={input.alpha}
+                      onAlpha={(n) => number("alpha", n)}
+                    />
+                  </section>
+                </div>
+                <div className="concept-evidence-row">
+                  <Metric
+                    label="弱约束系数范数"
+                    value={result.regularization.weak.weight_norm}
                   />
-                  <NormPath
-                    path={result.regularization.path}
-                    alpha={input.alpha}
-                    onAlpha={(n) => number("alpha", n)}
+                  <Metric
+                    label="当前系数范数"
+                    value={result.regularization.current.weight_norm}
                   />
-                </section>
-              </div>
-              <div className="concept-evidence-row">
-                <Metric
-                  label="弱约束系数范数"
-                  value={result.regularization.weak.weight_norm}
-                />
-                <Metric
-                  label="当前系数范数"
-                  value={result.regularization.current.weight_norm}
-                />
-                <Metric
-                  label="训练 MSE"
-                  value={result.regularization.current.train_mse}
-                />
-                <Metric
-                  label="验证 MSE"
-                  value={result.regularization.current.validation_mse}
-                />
-              </div>
-              <div className="concept-explanation">
-                <strong>
-                  {result.regularization.current.validation_mse >
-                  result.regularization.weak.validation_mse
-                    ? "这次约束更强，验证误差却更高"
-                    : "观察系数收缩，再核对验证误差"}
-                </strong>
-                <p>
-                  {result.regularization.basis}
-                  整体范数受到约束，单个系数可能非单调变化。不同α的目标定义不同，选择模型仍看验证表现。当前目标中的数据项是SSE，不把MSE与α‖w‖²直接相加。
-                </p>
-              </div>
-            </>
-          )}
-          <div className="concept-point-editor">
-            <label>
-              选择训练点
-              <select
-                aria-label="选择工坊训练点"
-                value={selected}
+                  <Metric
+                    label="训练 MSE"
+                    value={result.regularization.current.train_mse}
+                  />
+                  <Metric
+                    label="验证 MSE"
+                    value={result.regularization.current.validation_mse}
+                  />
+                </div>
+                <div className="concept-explanation">
+                  <strong>
+                    {result.regularization.current.validation_mse >
+                    result.regularization.weak.validation_mse
+                      ? "这次约束更强，验证误差却更高"
+                      : "观察系数收缩，再核对验证误差"}
+                  </strong>
+                  <p>
+                    {result.regularization.basis}
+                    整体范数受到约束，单个系数可能非单调变化。不同α的目标定义不同，选择模型仍看验证表现。当前目标中的数据项是SSE，不把MSE与α‖w‖²直接相加。
+                  </p>
+                </div>
+              </>
+            )}
+            <div className="concept-point-editor">
+              <label>
+                选择训练点
+                <select
+                  aria-label="选择工坊训练点"
+                  value={selected}
+                  disabled={!compatible}
+                  onChange={(e) => setSelected(Number(e.target.value))}
+                >
+                  {result.train.map((p, i) => (
+                    <option key={i} value={i}>
+                      点{i + 1} · x={p.x.toFixed(3)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Range
+                label="选中训练点的y"
+                value={bounded(selectedY, -3, 3)}
+                display={selectedY.toFixed(3)}
+                min={-3}
+                max={3}
+                step={0.01}
+                onChange={(n) => point(selected, n)}
+                onDrag={setDragging}
+              />
+              <button
+                className="button secondary"
                 disabled={!compatible}
-                onChange={(e) => setSelected(Number(e.target.value))}
+                onClick={() => point(selected, selectedY + 0.5)}
               >
-                {result.train.map((p, i) => (
-                  <option key={i} value={i}>
-                    点{i + 1} · x={p.x.toFixed(3)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Range
-              label="选中训练点的y"
-              value={bounded(selectedY, -3, 3)}
-              display={selectedY.toFixed(3)}
-              min={-3}
-              max={3}
-              step={0.01}
-              onChange={(n) => point(selected, n)}
-              onDrag={setDragging}
-            />
-            <button
-              className="button secondary"
-              disabled={!compatible}
-              onClick={() => point(selected, selectedY + 0.5)}
-            >
-              向上扰动0.5
-            </button>
-            <button
-              className="text-button"
-              onClick={() =>
-                setInput((old) => ({
-                  ...old,
-                  edits: old.edits.filter((edit) => edit.index !== selected),
-                }))
-              }
-            >
-              还原本点
-            </button>
-            <button
-              className="text-button"
-              onClick={() => setInput((old) => ({ ...old, edits: [] }))}
-            >
-              还原所有样本
-            </button>
-          </div>
+                向上扰动0.5
+              </button>
+              <button
+                className="text-button"
+                onClick={() =>
+                  setInput((old) => ({
+                    ...old,
+                    edits: old.edits.filter((edit) => edit.index !== selected),
+                  }))
+                }
+              >
+                还原本点
+              </button>
+              <button
+                className="text-button"
+                onClick={() => setInput((old) => ({ ...old, edits: [] }))}
+              >
+                还原所有样本
+              </button>
+            </div>
           </details>
           <footer className="concept-footer">
-            <p>
-              自由探索与当前学习轮次分开。验证样本不参与拖拽，独立测试未参与。
-              <span>
-                数据 {result.data_fingerprint} · 验证{" "}
-                {result.validation_fingerprint.slice(0, 8)}
-              </span>
-            </p>
+            <HelpHint title="实验范围与复现">
+              <p>自由探索与正式学习轮次分开，验证样本只读，独立测试未参与。</p>
+              <dl>
+                <dt>数据指纹</dt>
+                <dd>{result.data_fingerprint}</dd>
+                <dt>验证指纹</dt>
+                <dd>{result.validation_fingerprint.slice(0, 8)}</dd>
+              </dl>
+              <p>可在实算依据中查看参数。</p>
+            </HelpHint>
             <button
               className="button primary"
               onClick={() =>

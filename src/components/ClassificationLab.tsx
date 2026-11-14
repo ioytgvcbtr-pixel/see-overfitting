@@ -1,6 +1,7 @@
 "use client";
 import SceneArtwork from "./SceneArtwork";
 import ForestDelivery from "./ForestDelivery";
+import HelpHint from "./HelpHint";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -382,10 +383,17 @@ export default function ClassificationLab({
       <span className="class-sr-status" role="status">
         {copyStatus}
       </span>
-      {result && <ForestDelivery
-        input={input} result={result} selected={selected} pending={pending || dragging}
-        onInput={setInput} onSelect={setSelected} onRescue={()=>play.setMode("explore")}
-      />}
+      {result && (
+        <ForestDelivery
+          input={input}
+          result={result}
+          selected={selected}
+          pending={pending || dragging}
+          onInput={setInput}
+          onSelect={setSelected}
+          onRescue={() => play.setMode("explore")}
+        />
+      )}
       <ClassPlayPanel
         play={play}
         result={result}
@@ -434,6 +442,29 @@ export default function ClassificationLab({
               </p>
               <h2>{result?.dataset.question ?? "正在准备这一案例…"}</h2>
             </div>
+            <HelpHint title="如何读取分类边界">
+              <p>
+                底色表示模型预测的类别，不代表置信度。实心是训练点，空心是验证点，×是当前模型错分。
+              </p>
+              <p>
+                {play.mode === "compare"
+                  ? "A保持不变，B随参数变化，左右各显示自己的实算预测。"
+                  : play.mode === "detective"
+                    ? "点选空心验证点检查，位置在任务中固定。"
+                    : synthetic
+                      ? "合成训练点可拖动，也可用方向键微调。"
+                      : "公开样本只读，模型仅使用图中两个特征。"}
+              </p>
+              {result && (
+                <p>
+                  平衡准确率是各类别召回率的平均值。当前训练
+                  {result.split.training}/{result.split.training_pool}，验证
+                  {result.split.validation}，测试仍封存。训练与验证差值
+                  {(result.metrics.gap * 100).toFixed(1)}
+                  个百分点，单次差值不能单独判定过拟合。
+                </p>
+              )}
+            </HelpHint>
             <span
               className={`canvas-result-status ${pending ? "pending" : ""}`}
               role="status"
@@ -519,16 +550,6 @@ export default function ClassificationLab({
                     : "实心=训练 · 空心=验证 · ×=当前区域模型的错分"}
                 </span>
               </div>
-              <p className="class-plot-note">
-                底色表示模型预测的类别，不代表置信度。
-                {play.mode === "compare"
-                  ? "A已定格，B随参数变化；对照时样本位置保持一致。"
-                  : play.mode === "detective"
-                    ? "当前任务固定样本位置，点选空心验证点检查。"
-                    : synthetic
-                      ? "可拖动合成训练点；选中后用方向键微调。"
-                      : "公开样本只读；模型只用图中两个特征。"}
-              </p>
               <div className="class-point-note" aria-live="polite">
                 {activePoint ? (
                   <>
@@ -788,14 +809,6 @@ export default function ClassificationLab({
       </div>
       {result && (
         <>
-          <p className="class-metric-note">
-            {play.paired ? "以下是当前B的证据。" : ""}
-            平衡准确率是各类别召回率的平均值。当前使用{result.split.training}/
-            {result.split.training_pool}个训练池样本；验证集
-            {result.split.validation}个，独立测试仍封存。训练与验证差值为
-            {(result.metrics.gap * 100).toFixed(1)}
-            个百分点，单次差值不能单独判定过拟合。
-          </p>
           <div className="class-review-grid">
             {play.mode === "detective" && !play.revealed && (
               <section className="detective-hints">

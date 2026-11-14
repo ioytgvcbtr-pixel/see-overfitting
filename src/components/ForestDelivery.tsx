@@ -16,6 +16,7 @@ import { deliveryGate, rescueObservation } from "@/lib/island-experiments";
 import { useChartWidth } from "./useChartWidth";
 import { LittleTree, SceneRange } from "./IslandControls";
 import ParcelMap from "./ParcelMap";
+import HelpHint from "./HelpHint";
 
 export default function ForestDelivery({
   input,
@@ -128,14 +129,21 @@ export default function ForestDelivery({
     >
       <header className="island-stage-heading">
         <div>
-          <span>边界森林 · 模型投递站</span>
-          <h2>这一枚，会被送到哪道门？</h2>
+          <h2>包裹会去哪道门？</h2>
         </div>
+        <HelpHint title="怎样投递与救援">
+          <p>
+            先看样本特征和区域小地图，猜模型会把包裹投向哪类。把包裹拖到门前，或按门按钮、用左右键和Enter投递；再核对真实类别。
+          </p>
+          <p>
+            包裹移动不修改验证数据。发现错分后可固定样本、只换模型或参数尝试救援，同时核对整体准确率。探索任务仅保留本页，不计正式成绩。
+          </p>
+        </HelpHint>
         <span
           className={`island-freshness ${matched ? "" : "pending"}`}
           role="status"
         >
-          {matched ? "投递站已匹配实算" : "更新中 · 读数为最近实算"}
+          {matched ? "已实算" : "更新中 · 上次结果"}
         </span>
       </header>
       <div className="island-workbench-grid">
@@ -342,9 +350,6 @@ export default function ForestDelivery({
             ))}
           </div>
           <ParcelMap result={result} point={point} />
-          <p className="island-scale-note">
-            门代表模型输出类别。包裹移动只是投递操作，不改变验证点的特征或标签；真实边界图在下方。
-          </p>
           {hint && (
             <p className="forest-delivery-hint" role="status">
               {hint}
@@ -487,10 +492,12 @@ export default function ForestDelivery({
             <section className="island-quest" aria-label="错分救援任务">
               <div className="island-quest-heading">
                 <h3>固定点{rescue.row + 1}，尝试修复</h3>
+                <HelpHint title="救援的比较条件">
+                  <p>
+                    只换模型或其参数，保持训练和验证数据不变。修好一个样本也要核对整体准确率；改变数据后暂停判定，可返回起点恢复。
+                  </p>
+                </HelpHint>
               </div>
-              <p>
-                只换模型或其参数，保持数据条件，观察它的判断和全体验证表现。
-              </p>
               <div
                 className={`quest-verdict ${rescued?.fixed ? "success" : ""}`}
                 role="status"
@@ -512,7 +519,7 @@ export default function ForestDelivery({
                 {rescued && (
                   <p>
                     全体验证准确率 {classPercent(rescued.before_accuracy)} →{" "}
-                    {classPercent(rescued.accuracy)}。修好一个点也要核对整体。
+                    {classPercent(rescued.accuracy)}
                   </p>
                 )}
               </div>
@@ -532,11 +539,7 @@ export default function ForestDelivery({
                 结束救援
               </button>
             </section>
-          ) : (
-            <p className="forest-task-invitation">
-              先预测模型会把包裹投向哪类，再投递核对。发现错分后，可固定样本并尝试救援。
-            </p>
-          )}
+          ) : null}
           {(current || rescued?.fixed) && (
             <button
               className="text-button"
@@ -547,9 +550,6 @@ export default function ForestDelivery({
               {copied ? "发现回执已复制" : "复制发现回执"}
             </button>
           )}
-          <small className="forest-grade-note">
-            探索玩法不计正式成绩，任务仅保留在本页。
-          </small>
         </aside>
       </div>
     </section>

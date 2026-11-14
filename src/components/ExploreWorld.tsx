@@ -1,43 +1,44 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
-import { ArrowRight, Compass, Play, FlaskConical } from "lucide-react";
+import { ArrowRight, Play, FlaskConical } from "lucide-react";
 import type { ConceptPanel } from "@/lib/concepts";
 import type { ClassRecipeId } from "@/lib/exploration";
 import { visualScenes, type VisualSceneId } from "@/lib/visual-scenes";
 import SceneArtwork from "./SceneArtwork";
+import HelpHint from "./HelpHint";
 
 const places = [
   {
     id: "error",
     title: "离得远，为什么惩罚更重？",
     steps: [
-      "上下拖动训练点",
-      "看选中点的残差方块",
-      "移动参数标记，找更低的误差",
+      "上下拖动训练浮标",
+      "调船帆与船身，改变模型预测",
+      "比较残差、训练与验证误差",
     ],
   },
   {
     id: "sensitivity",
     title: "一个点，能牵动多远？",
     steps: [
-      "把同一个训练点拖远",
-      "比较3阶与高阶变化",
-      "调节约束，再核对变化RMS",
+      "移动同一枚训练路钉",
+      "比较3阶A与可调B",
+      "用变化RMS核对反应",
     ],
   },
   {
     id: "regularization",
     title: "给模型一点约束，会怎样？",
-    steps: ["从较弱的α开始", "点击正则化路径", "一起观察系数与验证误差"],
+    steps: ["转动α旋钮", "观察系数枝条与范数", "核对验证误差的变化"],
   },
   {
     id: "classification",
     title: "模型把谁看错了？",
     steps: [
-      "辨认空心验证点",
-      "找出类别与底色不一致的位置",
-      "检查发现，再揭晓全图",
+      "先看包裹特征与区域图",
+      "选门投递，核对预测和真实类别",
+      "固定错分样本尝试救援",
     ],
   },
 ] as const;
@@ -62,10 +63,6 @@ export default function ExploreWorld({
     <section className="illustrated-world" aria-label="模型探索地图">
       <header className="world-heading">
         <div>
-          <span className="world-subject">
-            <Compass size={17} aria-hidden="true" />
-            机器学习可视化探索
-          </span>
           <h1>下一站，模型群岛。</h1>
           <p>从误差、过拟合到分类边界，选一处场景，亲手看见规律。</p>
         </div>
@@ -77,7 +74,6 @@ export default function ExploreWorld({
             height={75}
             sizes="82px"
           />
-          <span>今天，想弄懂哪一个？</span>
         </div>
       </header>
       <div
@@ -127,10 +123,7 @@ export default function ExploreWorld({
                 <div className="world-scene-caption">
                   <span className="world-topic">{art.topic}</span>
                   <strong>{art.name}</strong>
-                  <span
-                    id={`world-hint-${row.id}`}
-                    className="world-scene-hint"
-                  >
+                  <span id={`world-hint-${row.id}`} className="sr-only">
                     {art.hint}
                   </span>
                   <span className="world-enter">
@@ -145,20 +138,20 @@ export default function ExploreWorld({
       </div>
       <aside className="world-preview" aria-label="场景玩法预告">
         <div className="world-preview-question" aria-live="polite">
-          <span>{visual.name} · 玩法预告</span>
           <h2>{place.title}</h2>
         </div>
-        <ol>
-          {place.steps.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
-        <span className="world-preview-note">点击图案或按Enter进入</span>
+        <HelpHint title={`${visual.name}怎么操作`}>
+          <ol>
+            {place.steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+          <p>点击图案或按Enter直接进入。</p>
+        </HelpHint>
       </aside>
       <section className="world-play-shelf" aria-labelledby="world-play-title">
         <div className="world-play-intro">
           <h2 id="world-play-title">把观察，变成一次发现。</h2>
-          <p>换一种方式，同样用证据回答。</p>
         </div>
         <button className="world-mission" onClick={() => onRecipe("detective")}>
           <div className="world-mission-art mascot">
@@ -193,10 +186,12 @@ export default function ExploreWorld({
         <FlaskConical size={22} />
         <p>
           <strong>准备检验自己的理解？</strong>
-          <span>
-            进入学习工作台，完成预测、实验与新数据迁移。探索玩法不计正式课程成绩。
-          </span>
         </p>
+        <HelpHint title="从探索进入正式学习">
+          <p>
+            工作台依次完成预测、实验和新数据迁移。岛内探索不计正式成绩，课程完成状态由实际学习记录决定。
+          </p>
+        </HelpHint>
         <button className="text-button" onClick={onStudy}>
           进入学习工作台
           <ArrowRight size={16} />

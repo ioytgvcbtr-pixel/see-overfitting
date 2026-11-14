@@ -14,6 +14,7 @@ import { useChartWidth } from "./useChartWidth";
 import { LittleTree, SceneHandle, SceneRange } from "./IslandControls";
 import SceneArtwork from "./SceneArtwork";
 import ConceptQuest from "./ConceptQuest";
+import HelpHint from "./HelpHint";
 
 export default function ConceptIsland({
   input,
@@ -62,10 +63,10 @@ export default function ConceptIsland({
   };
   const title =
     input.panel === "error"
-      ? "把两种高度，放在同一把尺上。"
+      ? "浮标与模型小船"
       : input.panel === "sensitivity"
-        ? "拉动路钉，两条路一起回应。"
-        : "转动约束，看枝条怎样收缩。";
+        ? "同一扰动，两条路"
+        : "系数花园";
   const plant = result.regularization;
   const indices = plant
     ? plant.weak.weights
@@ -95,14 +96,30 @@ export default function ConceptIsland({
       <header className="island-stage-heading">
         <SceneArtwork scene={input.panel} sizes="76px" />
         <div>
-          <span>{visualScenes[input.panel].name} · 动手观察</span>
           <h2>{title}</h2>
         </div>
+        <HelpHint title="如何读取这个场景">
+          {input.panel === "error" ? (
+            <p>
+              浮标是训练观测，小船是模型预测，共享y刻度。当前点{pointIndex + 1}
+              ，x={p.x.toFixed(3)}
+              。拖浮标改变训练标签，调整船帆与船身改变直线；残差与误差等待后端实算。
+            </p>
+          ) : input.panel === "sensitivity" ? (
+            <p>
+              两条道路来自161个固定x处的实际预测，共用±3窗口，超窗另作提示。虚线保留扰动前的路，两枚路钉修改同一训练点。比较RMS判断整体变化，不预设高阶一定更敏感。
+            </p>
+          ) : (
+            <p>
+              茎高表示标准化系数绝对值，正负另作标记；当前枝条和弱约束虚影共用线性刻度。显示较大的系数，完整系数可展开查看。系数收缩后仍需核对验证误差。
+            </p>
+          )}
+        </HelpHint>
         <span
           className={`island-freshness ${pending ? "pending" : ""}`}
           role="status"
         >
-          {pending ? "输入预览 · 读数为最近实算" : "场景已匹配实算"}
+          {pending ? "更新中 · 上次结果" : "已实算"}
         </span>
       </header>
       <div className="island-workbench-grid">
@@ -617,11 +634,13 @@ export default function ConceptIsland({
                 {zoomScale === null ? "放大当前枝条" : "恢复全量刻度"}
               </button>
               <span>
-                线性窗口 |w| ≤ {conceptNumber(maximum)}
-                {zoomScale !== null
-                  ? "；↑表示超出窗口，缩放后不跨视图比高度。"
-                  : "；当前与虚影共用刻度。"}
+                |w| ≤ <b>{conceptNumber(maximum)}</b>
               </span>
+              <HelpHint title="系数刻度与放大">
+                <p>
+                  当前与弱约束虚影共用线性窗口，↑表示超出窗口。点击放大后冻结当时的窗口；缩放前后不要直接比较图上高度，数值不受缩放影响。
+                </p>
+              </HelpHint>
             </div>
           )}
           <div className="island-readouts" aria-label="场景实算读数">
@@ -675,21 +694,17 @@ export default function ConceptIsland({
               </>
             )}
           </div>
-          <p className="island-scale-note">
-            {input.panel === "error"
-              ? `放大观察点${pointIndex + 1}（x=${p.x.toFixed(3)}）；浮标和小船共享y刻度，残差取自最近实算。`
-              : input.panel === "sensitivity"
-                ? "道路形状来自161个固定x处的真实预测；两枚路钉操作同一训练点。"
-                : "茎高＝|系数|，当前与弱约束共用线性刻度；显示较大的系数，正负另作标记。枝条太小时可放大，完整系数在下方。"}
-          </p>
           {plant && (
-            <p className="island-coefficient-key">
-              {indices.map((i) => (
-                <span key={i}>
-                  w{i + 1} = {conceptNumber(plant.current.weights[i])}
-                </span>
-              ))}
-            </p>
+            <details className="coefficient-disclosure">
+              <summary>系数读数</summary>
+              <p className="island-coefficient-key">
+                {indices.map((i) => (
+                  <span key={i}>
+                    w{i + 1} = {conceptNumber(plant.current.weights[i])}
+                  </span>
+                ))}
+              </p>
+            </details>
           )}
         </div>
         <aside className="island-control-desk" aria-label="场景操作与任务">
