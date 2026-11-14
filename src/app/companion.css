@@ -219,9 +219,9 @@ summary > svg,
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.6;
-  color: #85768f;
+  color: var(--muted);
   position: relative;
 }
 .quest-milestones li > span {
