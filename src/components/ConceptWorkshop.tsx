@@ -25,6 +25,11 @@ import {
   type ConceptPanel,
 } from "@/lib/concepts";
 import type { SceneId } from "@/lib/experiment";
+import {
+  readProgress,
+  pauseProgress,
+  type ConceptDraft,
+} from "@/lib/island-progress";
 
 const panels = [
   {
@@ -125,6 +130,8 @@ export default function ConceptWorkshop({
   const [selected, setSelected] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
+  const [questResume, setQuestResume] = useState<ConceptDraft | null>(null);
+  const [questGeneration, setQuestGeneration] = useState(0);
   const { result, error, pending, retry } = useConceptExperiment(input, ready);
   useEffect(() => {
     if (ready && launch) {
@@ -137,7 +144,13 @@ export default function ConceptWorkshop({
     const saved = readConceptInput(
       localStorage.getItem("fitlab-concept-session-v1"),
     );
-    if (saved) setInput(saved);
+    const wanted = launch ?? saved?.panel ?? conceptDefaults.panel;
+    const progress = readProgress(wanted);
+    if (progress?.kind === "concept" && progress.active) {
+      setInput(progress.current);
+      setSelected(progress.selected);
+      setQuestResume(progress);
+    } else if (saved) setInput(saved);
     setReady(true);
   }, []);
   useEffect(() => {
@@ -176,7 +189,15 @@ export default function ConceptWorkshop({
   }
   function selectPanel(value: ConceptPanel) {
     setDragging(false);
-    setInput((old) => ({ ...old, panel: value }));
+    const progress = readProgress(value);
+    if (progress?.kind === "concept" && progress.active) {
+      setInput(progress.current);
+      setSelected(progress.selected);
+      setQuestResume(progress);
+    } else {
+      setQuestResume(null);
+      setInput((old) => ({ ...old, panel: value }));
+    }
   }
   async function copy() {
     try {
@@ -226,6 +247,14 @@ export default function ConceptWorkshop({
           <button
             className="button secondary"
             onClick={() => {
+              for (const id of [
+                "error",
+                "sensitivity",
+                "regularization",
+              ] as const)
+                pauseProgress(id);
+              setQuestResume(null);
+              setQuestGeneration((n) => n + 1);
               setInput({ ...conceptDefaults });
               setSelected(0);
               setDragging(false);
@@ -343,7 +372,7 @@ export default function ConceptWorkshop({
       ) : (
         <>
           <ConceptIsland
-            key={input.panel}
+            key={`${input.panel}:${questGeneration}`}
             input={input}
             result={result}
             selected={selected}
@@ -356,14 +385,21 @@ export default function ConceptWorkshop({
             }}
             onPoint={point}
             onDrag={setDragging}
+            resume={
+              questResume?.current.panel === input.panel ? questResume : null
+            }
+            onResumeConsumed={() => setQuestResume(null)}
+            onResumeRequest={(draft) => {
+              setInput(draft.current);
+              setSelected(draft.selected);
+              setQuestResume(draft);
+            }}
           />
           <details
             className="island-precision"
             key={`precision-${input.panel}`}
           >
-            <summary>
-              精确图表
-            </summary>
+            <summary>精确图表</summary>
             <p className="concept-figure-note">{panel.instruction}</p>
             {result.linear && (
               <>

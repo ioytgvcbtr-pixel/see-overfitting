@@ -7,6 +7,8 @@ import type { ClassRecipeId } from "@/lib/exploration";
 import { visualScenes, type VisualSceneId } from "@/lib/visual-scenes";
 import SceneArtwork from "./SceneArtwork";
 import HelpHint from "./HelpHint";
+import ContinueChallenge from "./ContinueChallenge";
+import type { ChallengeId } from "@/lib/island-progress";
 
 const places = [
   {
@@ -21,11 +23,7 @@ const places = [
   {
     id: "sensitivity",
     title: "一个点，能牵动多远？",
-    steps: [
-      "移动同一枚训练路钉",
-      "比较3阶A与可调B",
-      "用变化RMS核对反应",
-    ],
+    steps: ["移动同一枚训练路钉", "比较3阶A与可调B", "用变化RMS核对反应"],
   },
   {
     id: "regularization",
@@ -47,10 +45,12 @@ export default function ExploreWorld({
   onConcept,
   onRecipe,
   onStudy,
+  onContinue,
 }: {
   onConcept: (panel: ConceptPanel) => void;
   onRecipe: (id: ClassRecipeId) => void;
   onStudy: () => void;
+  onContinue: (id: ChallengeId) => void;
 }) {
   const [preview, setPreview] = useState<VisualSceneId>("classification");
   const place = places.find((p) => p.id === preview)!;
@@ -76,6 +76,7 @@ export default function ExploreWorld({
           />
         </div>
       </header>
+      <ContinueChallenge onContinue={onContinue} />
       <div
         className="world-atlas"
         role="group"

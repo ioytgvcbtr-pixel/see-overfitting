@@ -114,7 +114,7 @@ export default function HelpHint({
           else show(true);
         }}
       >
-        <CircleHelp size={17} aria-hidden="true" />
+        <CircleHelp size={20} aria-hidden="true" />
       </button>
       <div
         ref={panel}

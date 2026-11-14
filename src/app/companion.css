@@ -1,0 +1,560 @@
+/* Learning objects and feedback have their own space; values stay on the existing grid. */
+button > svg,
+summary > svg,
+.world-enter > svg {
+  width: 20px;
+  height: 20px;
+}
+.help-hint-trigger {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  flex-basis: 44px;
+}
+.island-stage-heading > .scene-artwork {
+  width: 72px;
+  height: 48px;
+}
+.island-scene-column > .island-object-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 26px;
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid #ece7f0;
+}
+.island-object-controls .island-select,
+.island-object-controls .island-range {
+  font-size: 14px;
+}
+.island-range input,
+.concept-range input {
+  height: 44px;
+}
+.island-select select {
+  min-height: 48px;
+  font-size: 14px;
+}
+.island-nudges {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  grid-column: 1/-1;
+}
+.island-nudges button {
+  display: flex;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: #f7f4fa;
+}
+.island-nudges button > svg {
+  width: 20px;
+  height: 20px;
+}
+.island-sensitivity .island-readouts,
+.island-regularization .island-readouts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.island-readouts .metric-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.island-readouts .metric-token {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  color: #7044b3;
+  background: #efe7f8;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 700;
+}
+.island-readouts [data-evidence] {
+  border-radius: 14px;
+  outline: 3px solid transparent;
+  outline-offset: 6px;
+  scroll-margin-top: 110px;
+}
+.island-workbench[data-hint-focus="validation"] [data-evidence="validation"],
+.island-workbench[data-hint-focus="norm"] [data-evidence="norm"],
+.island-workbench[data-hint-focus="shift"] [data-evidence="shift"],
+.island-workbench[data-hint-focus="map"] .forest-sample-tag,
+.island-workbench[data-hint-focus="models"] .forest-model-choices {
+  outline: 3px solid #9b7cbb;
+  outline-offset: 6px;
+  animation: evidence-attention 700ms ease-out;
+}
+.forest-sample-tag,
+.forest-model-choices {
+  border-radius: 16px;
+  scroll-margin-top: 110px;
+}
+.island-forest .text-button {
+  min-height: 44px;
+  font-size: 13px;
+}
+.guided-quest {
+  margin-top: 0;
+  padding-top: 0;
+}
+.quest-emblem {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: #eee7f7;
+  color: #7044b3;
+}
+.quest-emblem > svg {
+  width: 24px;
+  height: 24px;
+}
+.learning-companion {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  margin: 18px 0 22px;
+}
+.companion-portrait {
+  position: relative;
+  width: 96px;
+  height: 108px;
+  isolation: isolate;
+}
+.companion-portrait::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  top: 18px;
+  bottom: 4px;
+  border-radius: 50%;
+  background: #f0ebf7;
+  z-index: -1;
+}
+.mood-celebrate .companion-portrait::before {
+  background: #e8f4ed;
+}
+.mood-thinking .companion-portrait::before {
+  background: #f5efdf;
+}
+.companion-portrait img {
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+.companion-message {
+  min-width: 0;
+  padding-top: 3px;
+}
+.companion-message strong {
+  display: block;
+  color: #463052;
+  font-size: 16px;
+  line-height: 1.6;
+  text-wrap: balance;
+}
+.companion-message p,
+.island-quest .companion-message p {
+  font-size: 13px;
+  line-height: 1.85;
+  color: #6b5b75;
+  margin: 7px 0 0;
+}
+.companion-motion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 8px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #75627f;
+  border-radius: 10px;
+}
+.companion-motion:hover {
+  background: #f2edf7;
+}
+.companion-badge {
+  position: absolute;
+  right: -1px;
+  bottom: 1px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: #806197;
+  box-shadow: var(--shadow-control);
+}
+.mood-celebrate .companion-badge {
+  color: #087e75;
+}
+.companion-portrait.responding {
+  animation: companion-reply 520ms ease-out;
+}
+.mood-thinking .companion-portrait.responding {
+  animation: companion-think 520ms ease-out;
+}
+.quest-milestones {
+  display: flex;
+  list-style: none;
+  margin: 22px 0;
+  padding: 0;
+  gap: 8px;
+}
+.quest-milestones li {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #85768f;
+  position: relative;
+}
+.quest-milestones li > span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #f4f0f8;
+}
+.quest-milestones li[aria-current="step"] {
+  color: #7044b3;
+}
+.quest-milestones li[aria-current="step"] > span {
+  background: #eae0f5;
+  box-shadow: inset 0 0 0 1.5px #a48bbb;
+}
+.quest-milestones li[data-done="true"] {
+  color: #087e75;
+}
+.quest-milestones li[data-done="true"] > span {
+  background: #e7f3ed;
+}
+.challenge-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.challenge-actions .button {
+  flex: 1;
+  min-width: 112px;
+}
+.pause-challenge {
+  min-height: 44px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.layered-hint {
+  margin-top: 20px;
+}
+.hint-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f1edf8;
+  color: #6b4589;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.hint-action > svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.hint-message {
+  padding: 12px 4px 2px;
+}
+.hint-message p,
+.island-quest .hint-message p {
+  font-size: 13px;
+  line-height: 1.9;
+  margin: 0;
+  color: #675271;
+}
+.continue-forest {
+  width: 100%;
+  margin: 0 0 18px;
+}
+.continue-challenge {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+  margin: 20px 0 28px;
+  padding: 16px 24px 16px 16px;
+  background: #fff;
+  border-radius: 32px;
+  box-shadow: var(--shadow-surface);
+}
+.continue-guide {
+  width: 96px;
+  height: 96px;
+  position: relative;
+  border-radius: 16px;
+  background: #f3eef8;
+}
+.continue-challenge-copy {
+  min-width: 0;
+}
+.continue-challenge h2 {
+  font-size: 22px;
+  line-height: 1.5;
+  margin: 0;
+}
+.continue-challenge p {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #694d7c;
+  margin: 8px 0 0;
+}
+.continue-challenge p span {
+  font-size: 12px;
+  color: #7d6a88;
+}
+.continue-challenge .button {
+  min-height: 48px;
+}
+.forest-model-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.forest-model-choices button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  font-size: 13px;
+  padding: 10px 8px;
+}
+.forest-model-choices button:last-child {
+  grid-column: 1/-1;
+}
+.rescue-comparison {
+  margin-top: 24px;
+  padding: 18px;
+  border-radius: var(--surface-inner-radius);
+  background: #f4f7f4;
+}
+.rescue-comparison h3 {
+  font-size: 15px;
+  line-height: 1.7;
+  margin: 0 0 14px;
+}
+.rescue-comparison > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.rescue-comparison section {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.rescue-comparison small {
+  display: block;
+  color: #776781;
+  font-size: 12px;
+}
+.rescue-comparison strong {
+  display: block;
+  color: #4f3b5f;
+  font-size: 14px;
+}
+.rescue-comparison b {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 15px;
+}
+.rescue-class-token {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 16px;
+}
+@keyframes companion-reply {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-5px) scale(1.025);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes companion-think {
+  0% {
+    transform: rotate(0);
+  }
+  40% {
+    transform: rotate(-4deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+@keyframes evidence-attention {
+  from {
+    outline-color: #6e3fa3;
+    background: #eee5fa;
+  }
+  to {
+    outline-color: #9b7cbb;
+  }
+}
+@media (max-width: 1000px) {
+  .island-control-desk {
+    padding-top: 26px;
+  }
+  .learning-companion {
+    max-width: 520px;
+  }
+  .island-control-desk > .learning-companion {
+    max-width: 520px;
+  }
+  .guided-quest > .learning-companion {
+    max-width: 520px;
+  }
+  .forest-model-choices {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .forest-model-choices button:last-child {
+    grid-column: auto;
+  }
+}
+@media (max-width: 600px) {
+  .island-stage-heading {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 8px;
+  }
+  .island-stage-heading > .scene-artwork {
+    grid-column: 1;
+  }
+  .island-stage-heading > div:not(.scene-artwork):not(.help-hint-panel) {
+    grid-column: 2;
+  }
+  .island-stage-heading > .help-hint-trigger {
+    grid-column: 3;
+  }
+  .island-stage-heading > .island-freshness {
+    grid-column: 1/-1;
+    justify-self: start;
+  }
+  .island-forest .island-stage-heading {
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+  .island-forest .island-stage-heading > div:not(.help-hint-panel) {
+    grid-column: 1;
+  }
+  .island-forest .island-stage-heading > .help-hint-trigger {
+    grid-column: 2;
+  }
+  .island-stage-heading > .scene-artwork {
+    width: 56px;
+    height: 40px;
+  }
+  .island-scene-column > .island-object-controls {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-top: 22px;
+    padding-top: 18px;
+  }
+  .island-nudges {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .island-nudges button:last-child {
+    grid-column: 1/-1;
+  }
+  .learning-companion {
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .companion-portrait {
+    width: 80px;
+    height: 96px;
+  }
+  .companion-message strong {
+    font-size: 15px;
+  }
+  .continue-challenge {
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 12px 16px;
+    padding: 16px;
+    border-radius: 32px;
+  }
+  .continue-guide {
+    width: 80px;
+    height: 96px;
+  }
+  .continue-challenge .button {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .continue-challenge h2 {
+    font-size: 20px;
+  }
+  .continue-challenge p {
+    font-size: 13px;
+  }
+  .continue-challenge p span {
+    flex-basis: 100%;
+  }
+  .forest-model-choices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .forest-model-choices button:last-child {
+    grid-column: 1/-1;
+  }
+  .rescue-comparison {
+    padding: 14px;
+    border-radius: var(--surface-inner-radius);
+  }
+  .rescue-comparison > div {
+    gap: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .companion-portrait.responding,
+  .island-workbench [data-evidence],
+  .island-workbench .forest-sample-tag,
+  .island-workbench .forest-model-choices {
+    animation: none !important;
+  }
+}

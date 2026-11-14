@@ -61,7 +61,7 @@ export default function ParcelMap({
     ctx.stroke();
   }, [result, point]);
   return (
-    <div className="forest-sample-tag">
+    <div className="forest-sample-tag" role="group" aria-label="包裹的图上证据" tabIndex={-1}>
       <canvas
         ref={canvas}
         role="img"

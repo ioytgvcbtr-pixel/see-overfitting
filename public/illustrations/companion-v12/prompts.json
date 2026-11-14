@@ -1,0 +1,15 @@
+{
+  "mode": "built-in image_gen",
+  "reference": "../fitlab-guide-v1.png",
+  "saved_on": "2026-11-15",
+  "assets": [
+    {
+      "file": "guide-thinking-v1.png",
+      "prompt": "Use case: identity-preserve. Asset type: transparent web learning companion for the existing FitLab university machine-learning app. The reference image is the original approved ivory fox guide. Preserve this exact original character identity: ivory fur, rounded face and ears, plum eyes, coral cheeks, teal goggles on forehead with plum strap, purple academic cape and teal clasp, fluffy curled tail. Preserve the soft matte clay-and-paper texture, refined restrained palette, full-body centered composition, clean readable silhouette and real transparent alpha background. No background, floor, cards, text, labels, letters, numbers, logo, watermarks, graph data, or additional characters. Generous transparent margins, no cropping. Change the pose to thoughtful and encouraging: sitting or standing comfortably, one paw softly touching its chin, the other holding its familiar teal magnifier near the side, curious slightly raised eyebrows, a gentle closed-mouth smile. This is patient exploration after a learner's mistaken guess, never sad or disappointed. Clear silhouette at 96px."
+    },
+    {
+      "file": "guide-celebrate-v1.png",
+      "prompt": "Use case: identity-preserve. Asset type: transparent web learning companion for the existing FitLab university machine-learning app. The reference image is the original approved ivory fox guide. Preserve this exact original character identity: ivory fur, rounded face and ears, plum eyes, coral cheeks, teal goggles on forehead with plum strap, purple academic cape and teal clasp, fluffy curled tail. Preserve the soft matte clay-and-paper texture, refined restrained palette, full-body centered composition, clean readable silhouette and real transparent alpha background. No background, floor, cards, text, labels, letters, numbers, logo, watermarks, graph data, or additional characters. Generous transparent margins, no cropping. Change the pose to a restrained joyful discovery celebration: both little paws lifted in delight, bright happy eyes and warm smile, a very small jaunty upward body gesture, curled tail visible, teal magnifier securely held in one paw. No confetti clutter or floating text. This is the same original guide responding to a genuinely verified discovery. Clear silhouette at 96px."
+    }
+  ]
+}

@@ -50,6 +50,7 @@ import ConceptWorkshop from "@/components/ConceptWorkshop";
 import ClassificationLab from "@/components/ClassificationLab";
 import ExploreMap from "@/components/ExploreMap";
 import SceneArtwork from "@/components/SceneArtwork";
+import { activateProgress } from "@/lib/island-progress";
 import { lessonVisual } from "@/lib/visual-scenes";
 import type { ConceptPanel } from "@/lib/concepts";
 import type { ClassRecipeId } from "@/lib/exploration";
@@ -634,6 +635,16 @@ export default function Home() {
                 setView("classification");
               }}
               onStudy={() => setView("studio")}
+              onContinue={(id) => {
+                activateProgress(id);
+                if (id === "forest") {
+                  setClassLaunch(null);
+                  setView("classification");
+                } else {
+                  setConceptLaunch(id);
+                  setView("concepts");
+                }
+              }}
             />
           )}
           {view === "concepts" && (

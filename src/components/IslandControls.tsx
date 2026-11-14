@@ -152,13 +152,13 @@ export function SceneHandle({
         onDrag(false);
       }}
     >
-      <circle cx={x} cy={y} r={dial ? 47 : 23} fill="transparent" />
+      <circle cx={x} cy={y} r={dial ? 47 : 28} fill="transparent" />
       {children}
       <circle
         className="handle-focus-ring"
         cx={x}
         cy={y}
-        r={dial ? 50 : 25}
+        r={dial ? 50 : 30}
         fill="none"
         strokeWidth="3"
       />

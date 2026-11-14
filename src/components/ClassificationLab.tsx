@@ -2,6 +2,11 @@
 import SceneArtwork from "./SceneArtwork";
 import ForestDelivery from "./ForestDelivery";
 import HelpHint from "./HelpHint";
+import {
+  readProgress,
+  pauseProgress,
+  type ForestDraft,
+} from "@/lib/island-progress";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -120,6 +125,8 @@ export default function ClassificationLab({
   );
   const play = useClassPlay(input, setInput, result, pending, ready);
   const [canvasFocus, setCanvasFocus] = useState(false);
+  const [forestResume, setForestResume] = useState<ForestDraft | null>(null),
+    [forestGeneration, setForestGeneration] = useState(0);
   useEffect(() => {
     if (ready && launch) {
       startRecipe(launch);
@@ -130,7 +137,12 @@ export default function ClassificationLab({
     const saved = readClassInput(
       localStorage.getItem("fitlab-classification-session-v1"),
     );
-    if (saved) setInput(saved);
+    const progress = readProgress("forest");
+    if (!launch && progress?.kind === "forest" && progress.active) {
+      setInput(progress.current);
+      setSelected(progress.row);
+      setForestResume(progress);
+    } else if (saved) setInput(saved);
     setReady(true);
   }, []);
   useEffect(() => {
@@ -196,6 +208,9 @@ export default function ClassificationLab({
     target?.focus({ preventScroll: true });
   }
   function startRecipe(id: ClassRecipeId) {
+    pauseProgress("forest");
+    setForestResume(null);
+    setForestGeneration((n) => n + 1);
     setSelected(null);
     setDragging(false);
     setCanvasFocus(false);
@@ -219,6 +234,11 @@ export default function ClassificationLab({
     if (compatible) setInput((p) => editClassPoint(p, row, x, y));
   }
   function condition(patch: Partial<ClassInput>) {
+    if (patch.dataset !== undefined && patch.dataset !== input.dataset) {
+      pauseProgress("forest");
+      setForestResume(null);
+      setForestGeneration((n) => n + 1);
+    }
     setSelected(null);
     setDragging(false);
     setInput((p) => ({ ...p, ...patch, edits: [] }));
@@ -367,6 +387,9 @@ export default function ClassificationLab({
           <button
             className="text-button"
             onClick={() => {
+              pauseProgress("forest");
+              setForestResume(null);
+              setForestGeneration((n) => n + 1);
               setSelected(null);
               setDragging(false);
               setInput({ ...classDefaults });
@@ -385,6 +408,7 @@ export default function ClassificationLab({
       </span>
       {result && (
         <ForestDelivery
+          key={forestGeneration}
           input={input}
           result={result}
           selected={selected}
@@ -392,6 +416,13 @@ export default function ClassificationLab({
           onInput={setInput}
           onSelect={setSelected}
           onRescue={() => play.setMode("explore")}
+          resume={forestResume}
+          onResumeConsumed={() => setForestResume(null)}
+          onResumeRequest={(draft) => {
+            setInput(draft.current);
+            setSelected(draft.row);
+            setForestResume(draft);
+          }}
         />
       )}
       <ClassPlayPanel

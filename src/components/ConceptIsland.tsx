@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, useRef } from "react";
 import { ArrowDown, ArrowUp, RotateCcw } from "lucide-react";
 import {
   alphaText,
@@ -15,6 +15,7 @@ import { LittleTree, SceneHandle, SceneRange } from "./IslandControls";
 import SceneArtwork from "./SceneArtwork";
 import ConceptQuest from "./ConceptQuest";
 import HelpHint from "./HelpHint";
+import type { ConceptDraft } from "@/lib/island-progress";
 
 export default function ConceptIsland({
   input,
@@ -25,6 +26,9 @@ export default function ConceptIsland({
   onInput,
   onPoint,
   onDrag,
+  resume,
+  onResumeConsumed,
+  onResumeRequest,
 }: {
   input: ConceptInput;
   result: ConceptResult;
@@ -34,10 +38,37 @@ export default function ConceptIsland({
   onInput: (p: ConceptInput) => void;
   onPoint: (i: number, y: number) => void;
   onDrag: (v: boolean) => void;
+  resume: ConceptDraft | null;
+  onResumeConsumed: () => void;
+  onResumeRequest: (d: ConceptDraft) => void;
 }) {
   const { ref, width } = useChartWidth(),
     id = useId().replace(/:/g, "");
   const [zoomScale, setZoomScale] = useState<number | null>(null);
+  const stageRef = useRef<HTMLElement>(null);
+  const [spotlight, setSpotlight] = useState<string | null>(null);
+  useEffect(() => setSpotlight(null), [input]);
+  function locate(level: number) {
+    const target =
+      input.panel === "sensitivity"
+        ? "shift"
+        : input.panel === "regularization" && level === 1
+          ? "norm"
+          : "validation";
+    setSpotlight(target);
+    requestAnimationFrame(() => {
+      const el = stageRef.current?.querySelector<HTMLElement>(
+        `[data-evidence="${target}"]`,
+      );
+      el?.scrollIntoView({
+        block: "center",
+        behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
+      el?.focus({ preventScroll: true });
+    });
+  }
   useEffect(() => setZoomScale(null), [input.degree, result.data_fingerprint]);
   const p = result.train[selected] ?? result.train[0],
     pointIndex = p === result.train[selected] ? selected : 0;
@@ -90,6 +121,8 @@ export default function ConceptIsland({
       : 1);
   return (
     <section
+      ref={stageRef}
+      data-hint-focus={spotlight}
       className={`island-workbench island-${input.panel}`}
       aria-label={`${visualScenes[input.panel].name}互动场景`}
     >
@@ -409,14 +442,6 @@ export default function ConceptIsland({
                             strokeWidth="2"
                           />
                         </SceneHandle>
-                        <text
-                          x={width - 36}
-                          y={bottom - 8}
-                          textAnchor="end"
-                          className="island-svg-label"
-                        >
-                          RMS {conceptNumber(pair.shift_rms)}
-                        </text>
                         {pair.edited.curve.some((v) => Math.abs(v) > 3) && (
                           <text
                             x="40"
@@ -671,11 +696,20 @@ export default function ConceptIsland({
                 <span>
                   训练MSE <b>{conceptNumber(result.linear.train_mse)}</b>
                 </span>
-                <span>
+                <span data-evidence="validation" tabIndex={-1}>
                   验证MSE <b>{conceptNumber(result.linear.validation_mse)}</b>
                 </span>
               </>
             )}
+            {result.pairs &&
+              result.pairs.map((pair, i) => (
+                <span key={`shift-${i}`} data-evidence="shift" tabIndex={-1}>
+                  <span className="metric-label">
+                    <i className="metric-token">{i ? "B" : "A"}</i>变化RMS
+                  </span>
+                  <b>{conceptNumber(pair.shift_rms)}</b>
+                </span>
+              ))}
             {result.pairs &&
               result.pairs.map((pair, i) => (
                 <span key={i}>
@@ -685,10 +719,10 @@ export default function ConceptIsland({
               ))}
             {plant && (
               <>
-                <span>
+                <span data-evidence="norm" tabIndex={-1}>
                   当前系数范数 <b>{conceptNumber(plant.current.weight_norm)}</b>
                 </span>
-                <span>
+                <span data-evidence="validation" tabIndex={-1}>
                   验证MSE <b>{conceptNumber(plant.current.validation_mse)}</b>
                 </span>
               </>
@@ -706,8 +740,6 @@ export default function ConceptIsland({
               </p>
             </details>
           )}
-        </div>
-        <aside className="island-control-desk" aria-label="场景操作与任务">
           <div className="island-object-controls">
             {input.panel !== "regularization" && (
               <>
@@ -816,11 +848,18 @@ export default function ConceptIsland({
               </>
             )}
           </div>
+        </div>
+        <aside className="island-control-desk" aria-label="场景操作与任务">
           <ConceptQuest
             input={input}
             result={result}
             pending={pending}
             onInput={onInput}
+            selected={pointIndex}
+            resume={resume}
+            onResumeConsumed={onResumeConsumed}
+            onResumeRequest={onResumeRequest}
+            onLocate={locate}
           />
         </aside>
       </div>
