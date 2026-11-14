@@ -6,7 +6,7 @@
 
 从合成曲线建立直觉，再到公开数据比较模型。支持参数干预、固定条件对照、配对划分复核，以及基于真实指标的AI解释。
 
-![问题驱动的模型探索地图](artifacts/screenshots/explore-map-v08.jpg)
+![可直接进入的模型群岛](artifacts/screenshots/illustrated-world-v09.jpg)
 
 - [功能设计](docs/FUNCTIONAL_DESIGN.md)
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
@@ -18,17 +18,23 @@
 - [0.7实际验收](docs/VALIDATION_V07.md)
 - [0.8界面自评与参考](docs/UI_REVIEW_V08.md)
 - [0.8实际验收](docs/VALIDATION_V08.md)
+- [0.9场景设计与教学网站参考](docs/SCENE_DESIGN_V09.md)
+- [0.9实际验收](docs/VALIDATION_V09.md)
 - [AI开发记录](docs/ai-process/README.md)
 
-当前为本地可运行的0.8版，默认进入探索地图，从问题选择概念工坊、分类玩法或正式学习工作台。按初学者的学习顺序组织操作、证据、预测和迁移验证；计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[0.8验收](docs/VALIDATION_V08.md)、[0.7验收](docs/VALIDATION_V07.md)和[此前记录](docs/VALIDATION.md)。
+当前为本地可运行的0.9版，默认进入插画式模型群岛，从场景直接进入概念工坊、分类玩法或正式学习工作台。按初学者的学习顺序组织操作、证据、预测和迁移验证；计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[0.9验收](docs/VALIDATION_V09.md)、[0.8验收](docs/VALIDATION_V08.md)和[此前记录](docs/VALIDATION.md)。
 
 ## 从一个问题开始玩
 
-地图中的误差湖、曲线山、约束花园和边界森林分别对应残差、样本扰动、正则化与分类。选中岛屿后，旁边说明要观察什么、怎样操作，再进入相应场景。地图是导航示意，实验结果在进入后由后端实际计算。
+误差湖的放大镜、曲线山的两条道路、约束花园的旋钮与藤蔓、边界森林的分类围栏，分别提示残差、样本扰动、正则化与分类。整个场景都是按钮，点击或Enter直接进入；悬停或聚焦时预告问题和操作。相同插画延续到概念选择器、课程封面、预测入口及玩法图卡。图片是概念比喻，实验结果由后端实际计算。
+
+本轮参考[Duolingo官方设计文章](https://blog.duolingo.com/core-tabs-redesign/)的统一功能视觉、[Code.org/CodeAI学生入口](https://code.org/en-US/students)的插画课程和[PhET模拟目录](https://phet.colorado.edu/en/simulations/filter?subjects=math-and-statistics&type=html)的对象预览。使用内置image_gen制作四张原创微缩场景，原始透明PNG、用途与完整提示词保存在[场景素材目录](public/illustrations/world-v09/README.md)。未复制参考网站资产。
+
+[插画概念页](artifacts/screenshots/illustrated-concepts-v09.jpg) · [课程封面](artifacts/screenshots/illustrated-course-v09.jpg) · [玩法入口](artifacts/screenshots/illustrated-play-v09.jpg) · [手机群岛](artifacts/screenshots/illustrated-mobile-v09.jpg)
 
 | 玩法 | 操作与反馈 |
 |---|---|
-| 错分侦探 | 先隐藏全部错分标记，寻找空心验证点；点选或按编号检查后，按当前后端预测核验。已定位点去重、可刷新恢复，参数变化后重新开始；揭晓后开放完整矩阵 |
+| 错分侦探 | 先隐藏全部错分标记，寻找空心验证点；点选或按编号检查后，按当前后端预测核验。已定位点去重、可刷新恢复，最近六个发现成为可回看的样本标本；参数变化后重新开始，揭晓后开放完整矩阵 |
 | A/B边界掀幕 | 定格实算A，换模型或参数生成B，拖中线或原生滑块比较；左右区域各显示对应模型的判断与错分。只有数据指纹、坐标范围一致才启用 |
 | 实验配方 | 一键进入XOR错分侦探、月牙对照或花瓣辨认；每个配方说明要发现的现象 |
 | 放大画布 | 暂时收起参数区，用紧邻画布的模型选择器切换；合成点另有方向按钮，拖拽不再是唯一移动方式 |
@@ -53,7 +59,7 @@ Q版向导出现在概念标题和观察提示旁，花朵与麦穗呼应公开�
 
 ## 把概念拖到眼前
 
-默认进入概念工坊，三个面板共用训练条件与样本编辑：
+从地图或导航进入概念工坊，三个面板共用训练条件与样本编辑：
 
 | 面板 | 直接操作 | 联动证据 |
 |---|---|---|
