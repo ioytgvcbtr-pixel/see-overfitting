@@ -1,6 +1,6 @@
 {
   "name": "see-overfitting",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1",
     "typecheck": "tsc --noEmit",
-    "test:ui": "node --test tests/learning-guide.test.mjs tests/exploration.test.mjs"
+    "test:ui": "node --test tests/learning-guide.test.mjs tests/exploration.test.mjs tests/island-experiments.test.mjs"
   },
   "dependencies": {
     "next": "16.4.6",

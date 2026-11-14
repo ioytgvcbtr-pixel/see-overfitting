@@ -1,5 +1,6 @@
 "use client";
 import SceneArtwork from "./SceneArtwork";
+import ForestDelivery from "./ForestDelivery";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -381,6 +382,10 @@ export default function ClassificationLab({
       <span className="class-sr-status" role="status">
         {copyStatus}
       </span>
+      {result && <ForestDelivery
+        input={input} result={result} selected={selected} pending={pending || dragging}
+        onInput={setInput} onSelect={setSelected} onRescue={()=>play.setMode("explore")}
+      />}
       <ClassPlayPanel
         play={play}
         result={result}

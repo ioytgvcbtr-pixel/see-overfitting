@@ -54,7 +54,7 @@ export function ConceptFitPlot({
   const displayed = result.train.map((p, index) => ({
     ...p,
     y: compatible
-      ? (input.edits.find((edit) => edit.index === index)?.y ?? p.y)
+      ? (input.edits.find((edit) => edit.index === index)?.y ?? p.original_y)
       : p.y,
   }));
   const path = (values: number[]) =>

@@ -1,11 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
 import SceneArtwork from "./SceneArtwork";
+import ConceptIsland from "./ConceptIsland";
 import { visualScenes } from "@/lib/visual-scenes";
 import {
   ArrowRight,
   Copy,
-  MoveVertical,
   RotateCcw,
   SlidersHorizontal,
 } from "lucide-react";
@@ -21,7 +21,6 @@ import { useConceptExperiment } from "./useConceptExperiment";
 import {
   alphaText,
   bounded,
-  conceptAlphas,
   conceptDefaults,
   conceptNumber,
   editConceptPoint,
@@ -159,7 +158,7 @@ export default function ConceptWorkshop({
   const selectedPoint = result?.train[selected];
   const selectedY = compatible
     ? (input.edits.find((row) => row.index === selected)?.y ??
-      selectedPoint?.y ??
+      selectedPoint?.original_y ??
       0)
     : 0;
   const waiting = pending || dragging;
@@ -224,9 +223,9 @@ export default function ConceptWorkshop({
               sizes="(max-width:760px) 76px, 120px"
               eager
             />
-            <h1>把概念，拖到眼前。</h1>
+            <h1>{visualScenes[input.panel].name}</h1>
           </div>
-          <p>点的位置、模型的形状、误差和约束，在同一张画布里彼此回应。</p>
+          <p>{panel.question}</p>
         </div>
         <div className="concept-heading-actions">
           <button
@@ -275,25 +274,6 @@ export default function ConceptWorkshop({
           </button>
         ))}
       </nav>
-      <div className="concept-scene-heading">
-        <div>
-          <h2>{panel.question}</h2>
-          <p>
-            <MoveVertical size={16} />
-            {panel.instruction}
-          </p>
-        </div>
-        <span
-          className={`concept-state ${waiting ? "pending" : ""}`}
-          role="status"
-        >
-          {!result
-            ? "正在计算…"
-            : waiting
-              ? "更新中 · 指标为最近实算"
-              : "已匹配当前输入"}
-        </span>
-      </div>
       <div className="concept-data-bar">
         <span>探索数据 seed {input.seed}</span>
         <span>训练 {input.samples} 点</span>
@@ -353,62 +333,24 @@ export default function ConceptWorkshop({
           <button onClick={retry}>重新计算</button>
         </div>
       )}
-      {input.panel === "sensitivity" && (
-        <div className="concept-primary-control">
-          <Range
-            label="观察模型B阶数"
-            shortLabel="观察B阶数"
-            value={input.degree}
-            display={`${input.degree} 阶`}
-            min={1}
-            max={15}
-            step={1}
-            onChange={(n) => number("degree", n)}
-            onDrag={setDragging}
-          />
-          <Range
-            label="两组共同正则化α"
-            shortLabel="共同约束α"
-            value={conceptAlphas.indexOf(input.alpha)}
-            display={alphaText(input.alpha)}
-            min={0}
-            max={7}
-            step={1}
-            onChange={(n) => number("alpha", conceptAlphas[n])}
-            onDrag={setDragging}
-          />
-        </div>
-      )}
-      {input.panel === "regularization" && (
-        <div className="concept-primary-control">
-          <Range
-            label="工坊正则化强度α"
-            shortLabel="正则化强度"
-            value={conceptAlphas.indexOf(input.alpha)}
-            display={`α = ${alphaText(input.alpha)}`}
-            min={0}
-            max={7}
-            step={1}
-            onChange={(n) => number("alpha", conceptAlphas[n])}
-            onDrag={setDragging}
-          />
-          <Range
-            label="工坊多项式阶数"
-            shortLabel="模型阶数"
-            value={input.degree}
-            display={`${input.degree} 阶`}
-            min={1}
-            max={15}
-            step={1}
-            onChange={(n) => number("degree", n)}
-            onDrag={setDragging}
-          />
-        </div>
-      )}
       {!result || !fitProps ? (
         <div className="concept-loading">正在建立可操纵的几何视图…</div>
       ) : (
         <>
+          <ConceptIsland
+            key={input.panel}
+            input={input}
+            result={result}
+            selected={selected}
+            pending={waiting}
+            onSelect={setSelected}
+            onInput={(next) => { setDragging(false); setInput(next); setSelected((i)=>Math.min(i,next.samples-1)); }}
+            onPoint={point}
+            onDrag={setDragging}
+          />
+          <details className="island-precision" key={`precision-${input.panel}`}>
+            <summary>展开精确图表与模型依据<span>相同样本、相同实算结果</span></summary>
+            <p className="concept-figure-note">{panel.instruction}</p>
           {result.linear && (
             <>
               <div className="concept-stage">
@@ -714,6 +656,7 @@ export default function ConceptWorkshop({
               还原所有样本
             </button>
           </div>
+          </details>
           <footer className="concept-footer">
             <p>
               自由探索与当前学习轮次分开。验证样本不参与拖拽，独立测试未参与。
