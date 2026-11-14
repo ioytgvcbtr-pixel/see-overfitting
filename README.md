@@ -6,7 +6,7 @@
 
 从合成曲线建立直觉，再到公开数据比较模型。支持参数干预、固定条件对照、配对划分复核，以及基于真实指标的AI解释。
 
-![可直接进入的模型群岛](artifacts/screenshots/illustrated-world-v09.jpg)
+![精简后的模型群岛](artifacts/screenshots/polish-preview-v11.jpg)
 
 - [功能设计](docs/FUNCTIONAL_DESIGN.md)
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
@@ -22,9 +22,19 @@
 - [0.9实际验收](docs/VALIDATION_V09.md)
 - [0.10岛内互动设计](docs/INTERACTIVE_ISLANDS_V10.md)
 - [0.10实际验收](docs/VALIDATION_V10.md)
+- [0.11界面规范与后续细节](docs/UI_POLISH_V11.md)
+- [0.11实际验收](docs/VALIDATION_V11.md)
 - [AI开发记录](docs/ai-process/README.md)
 
-当前为本地可运行的0.10版，默认进入插画式模型群岛，岛内场景物件与真实计算联动；从探索再进入正式学习工作台。按初学者的学习顺序组织操作、证据、预测和迁移验证；计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[0.10验收](docs/VALIDATION_V10.md)、[0.9验收](docs/VALIDATION_V09.md)和[此前记录](docs/VALIDATION.md)。
+当前为本地可运行的0.11版，默认进入插画式模型群岛，岛内物件与真实计算联动；从探索再进入正式学习工作台。界面使用稳定数字槽位、同心圆角、分组淡入与轻柔阴影，说明按需打开。计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际核验范围见[0.11验收](docs/VALIDATION_V11.md)、[0.10验收](docs/VALIDATION_V10.md)和[此前记录](docs/VALIDATION.md)。
+
+## 安静的界面，按需的说明
+
+动态读数启用tabular-nums，并使用固定网格和输出宽度。场景外圆角按内圆角加内边距计算：桌面40=20+20，手机28=16+12。主要内容按0/100/200/300ms淡入，调参时不重播；减少动态效果时直接显示。标题均衡换行，表面使用三层低透明度阴影，输入和焦点继续保持辨识。
+
+场景读法、数据条件、比较范围和指标解释收进问号浮层，支持悬停、聚焦、点击、Esc与外部关闭。任务目标、实算/更新状态、数值和反馈直接可见。首页保留主题、岛名及操作，图像说明仍供辅助技术读取。核心观察任务和错分救援规则保持原样。
+
+[实验界面](artifacts/screenshots/polish-concepts-v11.jpg) · [问号浮层](artifacts/screenshots/polish-help-v11.jpg) · [森林](artifacts/screenshots/polish-forest-v11.jpg) · [手机](artifacts/screenshots/polish-mobile-v11.jpg)
 
 ## 在岛内动手观察
 
