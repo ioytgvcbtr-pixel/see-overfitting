@@ -127,10 +127,15 @@ def package(panel, mode, before, after, control, row=None):
     reason_index = (before['seed'] + list(NAMES).index(panel)) % 3
     reasons = REASONS[panel][1:]
     reasons.insert(reason_index, REASONS[panel][0])
+    context = ('XOR合成数据；相同训练与验证划分' if panel == 'forest' else
+               f"A为3阶，B为{before['degree']}阶；共同α={before['alpha']:g}" if panel == 'sensitivity' else
+               f"{before['degree']}阶多项式；{before['samples']}个训练样本" if panel == 'regularization' else
+               f"斜率a={before['slope']:g}；{before['samples']}个训练样本")
     return {'panel': panel, 'mode': mode, 'title': NAMES[panel] + (' · 反例挑战' if mode == 'counterexample' else ' · 一次发现'),
+            'context': context,
             'question': question, 'choices': choices, 'reasons': reasons, 'operation': operation,
             'control': control, 'before_parameters': before, 'target_parameters': after,
-            'focus': ('map' if panel == 'forest' else 'shift' if panel == 'sensitivity' else 'validation'),
+            'focus': ('map' if panel == 'forest' else 'shift' if panel == 'sensitivity' and mode == 'discovery' else 'validation'),
             'row': row, 'selected': after['edits'][0]['index'] if panel == 'sensitivity' else 0,
             'seed': before['seed'], '_proof': proof, '_reason': reason_index}
 
@@ -178,7 +183,7 @@ def case(panel, mode, seed):
                     first = {**base, 'alpha': alpha, 'degree': degree}
                     actual = calculate(panel, first)
                     for index in ((5,) if mode == 'discovery' else range(12)):
-                        value = round(min(3, actual['train'][index]['original_y']+.2), 3)
+                        value = round(min(3, actual['train'][index]['original_y']+.2), 2)
                         last = {**first, 'edits': [{'index': index, 'y': value}]}
                         proof = evidence(panel, actual, calculate(panel, last))
                         if mode == 'discovery' or (proof['after'] > proof['before']*1.1 and proof['b_validation'] < proof['a_validation']*.95):
@@ -241,6 +246,13 @@ def make_router(connect):
             rows = connection.execute('SELECT content FROM island_attempts ORDER BY rowid DESC LIMIT 60').fetchall()
         return [{k: s.get(k) for k in ('id', 'created_at', 'panel', 'mode', 'stage', 'prediction', 'hints_used', 'transfer_answer', 'ai_before_transfer')}
                 for row in rows if (s := json.loads(row['content']))['prediction']]
+
+    @router.get('/actions')
+    def action_history(attempt_id: str):
+        with connect() as connection:
+            load(connection, 'island_attempts', attempt_id)
+            rows = connection.execute("SELECT content FROM island_actions WHERE json_extract(content,'$.attempt_id')=? ORDER BY rowid DESC LIMIT 12", (attempt_id,)).fetchall()
+        return [json.loads(row['content']) for row in rows]
 
     @router.get('/attempts/{key}')
     def restore(key: str):

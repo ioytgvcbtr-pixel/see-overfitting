@@ -136,6 +136,7 @@ def test_ai_actions_are_single_variable_verified_and_stale_safe(client, monkeypa
     assert client.post(f"/islands/actions/{plan['id']}/execute",json={'parameters':raw}).json() == executed
     restored = client.get(f"/islands/attempts/{task['id']}").json()
     assert restored['ai_before_transfer'] == [plan['id']]
+    assert client.get('/islands/actions', params={'attempt_id':task['id']}).json()[0] == executed
     client.post(f"/islands/attempts/{task['id']}/transfer-task")
     assert client.post('/islands/actions/plan',json=request).status_code == 409
     assert client.post(f"/islands/actions/{plan['id']}/execute",json={'parameters':raw}).status_code == 409
