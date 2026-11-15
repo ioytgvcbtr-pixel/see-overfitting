@@ -170,21 +170,28 @@ export const quizzes = {
   },
 };
 
+export class ApiError extends Error {
+  constructor(message: string, public status = 0) { super(message); this.name = "ApiError"; }
+}
 export async function api<T>(
   path: string,
   body?: unknown,
   signal?: AbortSignal,
 ): Promise<T> {
-  const response = await fetch("/api" + path, {
+  let response: Response;
+  try { response = await fetch("/api" + path, {
     method: body === undefined ? "GET" : "POST",
     headers: { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal,
-  });
+  }); } catch (error) {
+    if ((error as Error).name === "AbortError") throw error;
+    throw new ApiError("实验服务未连接。请检查启动状态，再重试当前操作。");
+  }
   if (!response.ok) {
     const detail = await response.json().catch(() => null);
-    throw new Error(response.status === 502 ? "实验服务尚未启动，请检查后端服务。"
-      : typeof detail?.detail === "string" ? detail.detail : `请求未完成（${response.status}），请重试。`);
+    throw new ApiError(response.status === 502 || response.status === 503 ? "实验服务暂未就绪，请检查启动状态后重试。"
+      : typeof detail?.detail === "string" ? detail.detail : response.status === 422 ? "当前输入未通过校验，请检查内容后重试。" : `请求未完成（${response.status}），请重试。`, response.status);
   }
   return response.json();
 }

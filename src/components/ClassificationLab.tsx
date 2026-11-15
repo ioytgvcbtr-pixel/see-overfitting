@@ -1,6 +1,7 @@
 "use client";
 import SceneArtwork from "./SceneArtwork";
 import ForestDelivery from "./ForestDelivery";
+import type { IslandLaunch, NextLesson } from "@/lib/island-learning";
 import HelpHint from "./HelpHint";
 import {
   readProgress,
@@ -103,9 +104,15 @@ function ClassMetrics({ result }: { result: ClassResult }) {
 export default function ClassificationLab({
   launch = null,
   onLaunchConsumed,
+  learningLaunch,
+  onLearningConsumed,
+  onNextLesson,
 }: {
   launch?: ClassRecipeId | null;
   onLaunchConsumed?: () => void;
+  learningLaunch?: IslandLaunch | null;
+  onLearningConsumed?: () => void;
+  onNextLesson?: NextLesson;
 }) {
   const [input, setInput] = useState<ClassInput>(classDefaults),
     [ready, setReady] = useState(false),
@@ -119,7 +126,7 @@ export default function ClassificationLab({
   const comparingRequest = useRef<AbortController | null>(null),
     key = classComparisonKey(input);
   const casesRef = useRef<HTMLElement>(null);
-  const { result, error, pending, retry } = useClassificationExperiment(
+  const { result, retainedResult, error, pending, retry } = useClassificationExperiment(
     input,
     ready,
   );
@@ -406,11 +413,14 @@ export default function ClassificationLab({
       <span className="class-sr-status" role="status">
         {copyStatus}
       </span>
-      {result && (
+      {(result || retainedResult) && (
         <ForestDelivery
           key={forestGeneration}
+          learningLaunch={learningLaunch}
+          onLearningConsumed={onLearningConsumed}
+          onNextLesson={onNextLesson}
           input={input}
-          result={result}
+          result={(result || retainedResult)!}
           selected={selected}
           pending={pending || dragging}
           onInput={setInput}

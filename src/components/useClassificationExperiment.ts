@@ -49,6 +49,7 @@ export function useClassificationExperiment(input: ClassInput, ready: boolean) {
   const visible = result?.parameters.dataset === input.dataset ? result : null;
   return {
     result: visible,
+    retainedResult: result,
     error,
     pending: !visible || classKey(visible.parameters) !== key,
     retry: () => setRetry((n) => n + 1),

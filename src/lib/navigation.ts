@@ -5,7 +5,9 @@ export type AppView =
   | "studio"
   | "datasets"
   | "path"
-  | "history";
+  | "history"
+  | "settings";
+// Settings stays out of the learning route hierarchy.
 export function viewFromHash(hash: string): AppView {
   const value = hash.replace(/^#/, "");
   if (!value) return "explore";
@@ -14,8 +16,8 @@ export function viewFromHash(hash: string): AppView {
     value === "classification" ||
     value === "datasets" ||
     value === "path" ||
-    value === "history"
-    ? value
+    value === "history" || value === "settings"
+    ? value as AppView
     : "studio";
 }
 export function hashForView(view: AppView) {

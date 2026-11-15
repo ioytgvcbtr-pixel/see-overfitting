@@ -27,6 +27,7 @@ import {
   Plus,
   RotateCcw,
   Save,
+  Settings2,
   ShieldCheck,
   Sparkles,
   Target,
@@ -44,8 +45,10 @@ import {
 } from "@/components/LearningJourney";
 import { useLearningJourney } from "@/components/useLearningJourney";
 import ActionExperiment from "@/components/ActionExperiment";
-import ActionArchive from "@/components/ActionArchive";
-import StudyNotebook from "@/components/StudyNotebook";
+import WorkspaceRecords from "@/components/WorkspaceRecords";
+import WorkspaceSettings from "@/components/WorkspaceSettings";
+import {connectionLabel,type Health,type WorkspaceOverview,type WorkspaceEntry} from "@/lib/workspace";
+import type {IslandAttempt,IslandLaunch,IslandId} from "@/lib/island-learning";
 import ConceptWorkshop from "@/components/ConceptWorkshop";
 import ClassificationLab from "@/components/ClassificationLab";
 import ExploreMap from "@/components/ExploreMap";
@@ -84,6 +87,9 @@ export default function Home() {
   const [navigationReady, setNavigationReady] = useState(false);
   const [classLaunch, setClassLaunch] = useState<ClassRecipeId | null>(null);
   const [conceptLaunch, setConceptLaunch] = useState<ConceptPanel | null>(null);
+  const [islandLaunch,setIslandLaunch]=useState<IslandLaunch|null>(null);
+  const [workspace,setWorkspace]=useState<WorkspaceOverview|null>(null),[workspaceRevision,setWorkspaceRevision]=useState(0);
+  const [serviceError,setServiceError]=useState(""),[workspaceError,setWorkspaceError]=useState("");
   const [params, setParams] = useState<Parameters>(scenes[0].defaults);
   const [sceneReady, setSceneReady] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -112,10 +118,7 @@ export default function Home() {
   const [coach, setCoach] = useState<Coach | null>(null);
   const [coaching, setCoaching] = useState(false);
   const [question, setQuestion] = useState("");
-  const [health, setHealth] = useState<{
-    ai_configured: boolean;
-    ai_model: string;
-  } | null>(null);
+  const [health, setHealth] = useState<Health | null>(null);
   const [sweep, setSweep] = useState<Sweep | null>(null);
   const [sweeping, setSweeping] = useState(false);
   const [chartTab, setChartTab] = useState<"fit" | "sweep">("fit");
@@ -169,6 +172,27 @@ export default function Home() {
       document.getElementById("main-content")?.focus({ preventScroll: true }),
     );
   }
+  function launchIsland(attempt:IslandAttempt){
+    setIslandLaunch({attempt,serial:Date.now()});
+    if(attempt.panel==="forest"){setClassLaunch(null);setView("classification");}
+    else{setConceptLaunch(attempt.panel);setView("concepts");}
+  }
+  async function openWorkspaceEntry(entry:WorkspaceEntry,practice=false){
+    if(entry.kind==="course"){if(await journey.resume(entry.id,practice))setView("studio");}
+    else if(entry.kind==="island")launchIsland(await api<IslandAttempt>(`/islands/attempts/${entry.id}${practice?"/practice":""}`,practice?{}:undefined));
+  }
+  async function openNextLesson(panel:IslandId|"history"){
+    if(panel==="history"){setView("history");return;}
+    launchIsland(await api<IslandAttempt>("/islands/tasks",{panel,mode:"discovery"}));
+  }
+  useEffect(()=>{const changed=()=>setWorkspaceRevision(n=>n+1);window.addEventListener("fitlab-workspace-changed",changed);return()=>window.removeEventListener("fitlab-workspace-changed",changed);},[]);
+  useEffect(()=>{
+    const abort=new AbortController();
+    api<Health>("/health",undefined,abort.signal).then(value=>{setHealth(value);setServiceError("");}).catch(e=>{if(e.name!=="AbortError"){setHealth(null);setServiceError(e.message);}});
+    api<WorkspaceOverview>("/workspace/overview",undefined,abort.signal).then(value=>{setWorkspace(value);setWorkspaceError("");setCompleted(value.completed_scenes);localStorage.setItem("fitlab-learning-completed-v1",JSON.stringify(value.completed_scenes));}).catch(e=>{if(e.name!=="AbortError")setWorkspaceError(e.message);});
+    api<SavedRecord[]>("/records",undefined,abort.signal).then(setRecords).catch(()=>{});
+    return()=>abort.abort();
+  },[view,workspaceRevision]);
   useEffect(() => {
     const stored = localStorage.getItem("fitlab-current-scene-v1");
     const previous = scenes.find((item) => item.id === stored);
@@ -204,12 +228,6 @@ export default function Home() {
   }, [journey.attempt?.completed_at]);
 
   useEffect(() => {
-    api<{ ai_configured: boolean; ai_model: string }>("/health")
-      .then(setHealth)
-      .catch(() => {});
-    api<SavedRecord[]>("/records")
-      .then(setRecords)
-      .catch(() => {});
     try {
       const stored = JSON.parse(
         localStorage.getItem("fitlab-learning-completed-v1") || "[]",
@@ -602,23 +620,25 @@ export default function Home() {
                         ? "学习路径"
                         : view === "datasets"
                           ? "真实数据实验"
-                          : "学习档案"}
+                          : view === "settings" ? "设置与数据" : "学习档案"}
             </strong>
           </div>
           <div className="topbar-right">
             <span className="ai-status">
               <i />
-              {health?.ai_configured ? "AI辅助讲解" : "内置规则讲解"}
+              {health?connectionLabel(health.connection):serviceError?"实验服务未连接":"检查连接中"}
             </span>
             <span className="topbar-separator" />
-            <button className="text-button" onClick={() => setModal("guide")}>
+            <button className="text-button" aria-label="使用指南" onClick={() => setModal("guide")}>
               <BookOpen size={16} />
-              使用指南
+              <span className="workspace-guide-label">使用指南</span>
             </button>
+            <button className="text-button workspace-settings-trigger" aria-label="设置与数据" onClick={()=>setView("settings")}><Settings2 size={20}/><span>设置</span></button>
           </div>
         </header>
 
         <main className="content" id="main-content" tabIndex={-1}>
+          {serviceError&&<div className="workspace-service-error" role="alert"><p>{serviceError}</p><button className="text-button" onClick={()=>setWorkspaceRevision(n=>n+1)}>重新连接</button><button className="text-button" onClick={()=>setView("settings")}>检查设置</button></div>}
           {!navigationReady && (
             <div className="navigation-loading" role="status">
               正在打开实验…
@@ -626,6 +646,9 @@ export default function Home() {
           )}
           {navigationReady && view === "explore" && (
             <ExploreMap
+              onStart={async()=>launchIsland(await api<IslandAttempt>("/islands/tasks",{panel:"error",mode:"discovery"}))}
+              continueEntry={workspace?.latest??null}
+              onResumeEntry={openWorkspaceEntry}
               onConcept={(panel) => {
                 setConceptLaunch(panel);
                 setView("concepts");
@@ -649,6 +672,9 @@ export default function Home() {
           )}
           {view === "concepts" && (
             <ConceptWorkshop
+              learningLaunch={islandLaunch}
+              onLearningConsumed={()=>setIslandLaunch(null)}
+              onNextLesson={openNextLesson}
               onLearn={changeScene}
               launch={conceptLaunch}
               onLaunchConsumed={() => setConceptLaunch(null)}
@@ -656,11 +682,15 @@ export default function Home() {
           )}
           {view === "classification" && (
             <ClassificationLab
+              learningLaunch={islandLaunch}
+              onLearningConsumed={()=>setIslandLaunch(null)}
+              onNextLesson={openNextLesson}
               launch={classLaunch}
               onLaunchConsumed={() => setClassLaunch(null)}
             />
           )}
           {view === "datasets" && <DatasetLab onNotify={setToast} />}
+          {view === "settings" && <WorkspaceSettings/>}
           {view === "studio" && (
             <>
               <div
@@ -1207,13 +1237,13 @@ export default function Home() {
                   aria-pressed={archiveTab === "learning"}
                   onClick={() => setArchiveTab("learning")}
                 >
-                  学习足迹
+                  课程与四岛
                 </button>
                 <button
                   aria-pressed={archiveTab === "actions"}
                   onClick={() => setArchiveTab("actions")}
                 >
-                  AI核验
+                  AI实验
                 </button>
                 <button
                   aria-pressed={archiveTab === "saved"}
@@ -1222,14 +1252,12 @@ export default function Home() {
                   已保存实验（{records.length}）
                 </button>
               </div>
-              {archiveTab === "actions" && <ActionArchive />}
+              {workspaceError&&!serviceError&&<p role="alert">{workspaceError}<button className="text-button" onClick={()=>setWorkspaceRevision(n=>n+1)}>重试读取</button></p>}
+              {workspace&&archiveTab==="learning"&&<div className="workspace-learning-summary"><span>课程 <b>{workspace.stats.courses}/3</b></span><span>四岛学习 <b>{workspace.stats.island_rounds}轮</b></span><span>需复盘 <b>{workspace.stats.needs_review}条</b></span></div>}
+              {archiveTab === "actions" && <WorkspaceRecords overview={workspace} group="ai" onOpen={openWorkspaceEntry} onRefresh={()=>setWorkspaceRevision(n=>n+1)}/>}
 
               {archiveTab === "learning" && (
-                <StudyNotebook
-                  onOpen={async (id, fresh) => {
-                    if (await journey.resume(id, fresh)) setView("studio");
-                  }}
-                />
+                <WorkspaceRecords overview={workspace} group="learning" onOpen={openWorkspaceEntry} onRefresh={()=>setWorkspaceRevision(n=>n+1)}/>
               )}
 
               <div className="saved-archive" hidden={archiveTab !== "saved"}>

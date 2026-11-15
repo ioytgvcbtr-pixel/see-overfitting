@@ -1,5 +1,7 @@
 import type { ConceptInput } from "./concepts";
 import type { ClassInput } from "./classification";
+import { readConceptInput } from "./concepts.ts";
+import { readClassInput } from "./classification.ts";
 
 export type IslandId = "error" | "sensitivity" | "regularization" | "forest";
 export type IslandInput = ConceptInput | ClassInput;
@@ -29,7 +31,47 @@ export type IslandAttempt = {
     choice: number; reason: number; passed: boolean; assisted: boolean;
     choice_correct: boolean; reason_correct: boolean; correct_reason: number; proof: IslandProof;
   } | null;
+  checkpoint?: IslandDraft;
+  practice_of?: string;
+  practice_focus?: string;
+  repeated_case?: boolean;
+  imported_at?: string;
 };
+export type IslandLaunch = { attempt: IslandAttempt; serial: number };
+export type NextLesson = (panel: IslandId | "history") => Promise<void>;
+export type IslandDraft = {
+  id: string; stage: "predict" | "experiment" | "transfer"; parameters: IslandInput; selected: number;
+  choice: number | null; confidence: number; reason: string;
+  transfer_choice: number | null; transfer_reason: number | null;
+  client_updated_at: string; updated_at?: string;
+};
+export function draftKey(id: string) { return `fitlab-island-draft-v14-${id}`; }
+export function readIslandDraft(raw: string | null): IslandDraft | null {
+  if (!raw || raw.length > 64000) return null;
+  try {
+    const d = JSON.parse(raw);
+    if (!learningReference(d.id) || !["predict","experiment","transfer"].includes(d.stage)) return null;
+    const p = d.parameters?.dataset ? readClassInput(JSON.stringify(d.parameters)) : readConceptInput(JSON.stringify(d.parameters));
+    const validChoice = (v: unknown) => v === null || (Number.isInteger(v) && Number(v) >= 0 && Number(v) <= 2);
+    if (!p || !Number.isInteger(d.selected) || d.selected < 0 || d.selected >= ("samples" in p ? p.samples : 300) ||
+        !validChoice(d.choice) || !validChoice(d.transfer_choice) || !validChoice(d.transfer_reason) ||
+        ![1,2,3].includes(d.confidence) || typeof d.reason !== "string" || d.reason.length > 500 ||
+        typeof d.client_updated_at !== "string" || !Number.isFinite(Date.parse(d.client_updated_at))) return null;
+    return {id:d.id,stage:d.stage,parameters:p,selected:d.selected,choice:d.choice,confidence:d.confidence,reason:d.reason,
+      transfer_choice:d.transfer_choice,transfer_reason:d.transfer_reason,client_updated_at:d.client_updated_at};
+  } catch { return null; }
+}
+export function checkpointPayload(d: IslandDraft) {
+  const { id: _id, updated_at: _updated, ...body } = d;
+  return body;
+}
+export function preferredDraft(attempt: IslandAttempt, local: IslandDraft | null): IslandDraft | null {
+  const fromServer = attempt.checkpoint ? readIslandDraft(JSON.stringify({...attempt.checkpoint,id:attempt.id,
+    client_updated_at:attempt.checkpoint.client_updated_at || attempt.checkpoint.updated_at})) : null;
+  const candidates = [fromServer,local].filter((d): d is IslandDraft => !!d && d.id===attempt.id && d.stage===attempt.stage &&
+    (attempt.panel === "forest" ? "dataset" in d.parameters : "panel" in d.parameters && d.parameters.panel===attempt.panel));
+  return candidates.sort((a,b)=>b.client_updated_at.localeCompare(a.client_updated_at))[0] ?? null;
+}
 export type IslandPlan = {
   id: string; mode: "online" | "rules"; model: string | null; notice: string;
   hypothesis: string; expected: "lower" | "higher" | "uncertain";

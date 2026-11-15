@@ -19,6 +19,7 @@ import HelpHint from "./HelpHint";
 import { useForestChallenge } from "./useForestChallenge";
 import IslandJourney from "./IslandJourney";
 import CausalTrace from "./CausalTrace";
+import type { IslandLaunch, NextLesson } from "@/lib/island-learning";
 import LearningCompanion from "./LearningCompanion";
 import LayeredHint from "./LayeredHint";
 import { pauseProgress, type ForestDraft } from "@/lib/island-progress";
@@ -47,6 +48,9 @@ export default function ForestDelivery({
   resume,
   onResumeConsumed,
   onResumeRequest,
+  learningLaunch,
+  onLearningConsumed,
+  onNextLesson,
 }: {
   input: ClassInput;
   result: ClassResult;
@@ -58,6 +62,9 @@ export default function ForestDelivery({
   resume: ForestDraft | null;
   onResumeConsumed: () => void;
   onResumeRequest: (d: ForestDraft) => void;
+  learningLaunch?: IslandLaunch | null;
+  onLearningConsumed?: () => void;
+  onNextLesson?: NextLesson;
 }) {
   const { ref, width } = useChartWidth(),
     active = useRef<number | null>(null);
@@ -171,6 +178,7 @@ export default function ForestDelivery({
       ref={stageRef}
       data-hint-focus={spotlight}
       className="island-workbench island-forest"
+      data-switching={result.parameters.dataset!==input.dataset}
       aria-label="边界森林互动投递站"
     >
       <header className="island-stage-heading">
@@ -194,6 +202,7 @@ export default function ForestDelivery({
       </header>
       <div className="island-workbench-grid">
         <div className="island-scene-column">
+          {result.parameters.dataset!==input.dataset&&<p className="forest-dataset-switch" role="status">正在切换数据，学习步骤已保留。</p>}
           <div className="island-live-scene forest-scene" ref={ref}>
             <svg
               viewBox={`0 0 ${width} 300`}
@@ -561,7 +570,7 @@ export default function ForestDelivery({
           </div>
         </div>
         <aside className="island-control-desk">
-          <IslandJourney panel="forest" input={input} pending={pending}
+          <IslandJourney panel="forest" input={input} pending={pending} selected={selected??point.row} launch={learningLaunch} onLaunchConsumed={onLearningConsumed} onNextLesson={onNextLesson}
             onApply={(next, row) => { if (progress.engaged || progress.restoring) progress.pause(); else pauseProgress("forest"); onResumeConsumed(); onInput(next as ClassInput); if (row !== undefined) onSelect(row); }}
             onLocate={() => locate("map")} />
           <details className="island-free-observation"><summary>自由投递与救援</summary>

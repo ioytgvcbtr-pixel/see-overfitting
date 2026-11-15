@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import SceneArtwork from "./SceneArtwork";
 import ConceptIsland from "./ConceptIsland";
+import type { IslandLaunch, NextLesson } from "@/lib/island-learning";
 import HelpHint from "./HelpHint";
 import { visualScenes } from "@/lib/visual-scenes";
 import { ArrowRight, Copy, RotateCcw, SlidersHorizontal } from "lucide-react";
@@ -120,10 +121,16 @@ export default function ConceptWorkshop({
   onLearn,
   launch = null,
   onLaunchConsumed,
+  learningLaunch,
+  onLearningConsumed,
+  onNextLesson,
 }: {
   onLearn: (scene: SceneId) => void;
   launch?: ConceptPanel | null;
   onLaunchConsumed?: () => void;
+  learningLaunch?: IslandLaunch | null;
+  onLearningConsumed?: () => void;
+  onNextLesson?: NextLesson;
 }) {
   const [input, setInput] = useState<ConceptInput>(conceptDefaults);
   const [ready, setReady] = useState(false);
@@ -373,6 +380,9 @@ export default function ConceptWorkshop({
         <>
           <ConceptIsland
             key={`${input.panel}:${questGeneration}`}
+            learningLaunch={learningLaunch?.attempt.panel===input.panel?learningLaunch:null}
+            onLearningConsumed={onLearningConsumed}
+            onNextLesson={onNextLesson}
             input={input}
             result={result}
             selected={selected}

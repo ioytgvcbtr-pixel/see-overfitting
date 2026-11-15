@@ -3,12 +3,16 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight, BookOpen, Check, Compass, Eye, FlaskConical, History, Lightbulb, LoaderCircle, RotateCcw, Sparkles, Target } from "lucide-react";
 import { api } from "@/lib/experiment";
 import { inputKey, islandNames, learningReference, proofNumber, type IslandAttempt, type IslandId,
-  type IslandInput, type IslandPlan, type IslandProof } from "@/lib/island-learning";
+  type IslandInput, type IslandPlan, type IslandProof, type IslandLaunch, type IslandDraft, type NextLesson,
+  draftKey, readIslandDraft, preferredDraft, checkpointPayload } from "@/lib/island-learning";
+import { workspaceChanged } from "@/lib/workspace";
 import LearningCompanion from "./LearningCompanion";
 import HelpHint from "./HelpHint";
 
 type Props = {
   panel: IslandId; input: IslandInput; pending: boolean;
+  selected: number; launch?: IslandLaunch | null; onLaunchConsumed?: () => void;
+  onNextLesson?: NextLesson;
   onApply: (value: IslandInput, selected?: number, fitCurrent?: boolean) => void;
   onLocate: (focus: string) => void;
 };
@@ -26,7 +30,7 @@ function Evidence({ proof, panel }: { proof: IslandProof; panel: IslandId }) {
   </div>;
 }
 
-export default function IslandJourney({ panel, input, pending, onApply, onLocate }: Props) {
+export default function IslandJourney({ panel, input, selected, pending, onApply, onLocate, launch, onLaunchConsumed, onNextLesson }: Props) {
   const [attempt, setAttempt] = useState<IslandAttempt | null>(null);
   const [saved, setSaved] = useState<IslandAttempt | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -39,6 +43,9 @@ export default function IslandJourney({ panel, input, pending, onApply, onLocate
   const [history, setHistory] = useState<IslandAttempt[]>([]);
   const [motion, setMotion] = useState(0);
   const [intro, setIntro] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const draftRef = useRef<IslandDraft | null>(null), draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveOperation = useRef<AbortController | null>(null);
   const operation = useRef(0), controller = useRef<AbortController | null>(null);
   const currentInput = useRef(input);
   currentInput.current = input;
@@ -46,15 +53,41 @@ export default function IslandJourney({ panel, input, pending, onApply, onLocate
     const abort = new AbortController();
     try {
       setIntro(localStorage.getItem("fitlab-island-intro-v13") !== "seen");
-      const id = learningReference(localStorage.getItem(storageKey(panel)));
+      const id = !launch && learningReference(localStorage.getItem(storageKey(panel)));
       if (id) api<IslandAttempt>(`/islands/attempts/${id}`, undefined, abort.signal)
         .then(setSaved).catch(e => { if (e.name !== "AbortError") setError(e.message); });
     } catch { setError("浏览器无法保存续接入口，本轮仍可学习。"); }
-    return () => { abort.abort(); controller.current?.abort(); operation.current++; };
+    return () => {
+      abort.abort(); controller.current?.abort(); operation.current++;
+      if (draftTimer.current) clearTimeout(draftTimer.current);
+      const draft = draftRef.current;
+      if (draft) void fetch(`/api/islands/attempts/${draft.id}/checkpoint`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(checkpointPayload(draft)),keepalive:true}).catch(()=>{});
+    };
   }, [panel]);
+
+  useEffect(() => {
+    if (launch?.attempt.panel === panel) { restore(launch.attempt); onLaunchConsumed?.(); }
+  }, [launch?.serial, panel]);
+
+  useEffect(() => {
+    if (draftTimer.current) clearTimeout(draftTimer.current);
+    if (!attempt || !["predict","experiment","transfer"].includes(attempt.stage)) { draftRef.current=null; return; }
+    const d: IslandDraft = {id:attempt.id,stage:attempt.stage as IslandDraft["stage"],parameters:input,selected,
+      choice,confidence,reason,transfer_choice:transferChoice,transfer_reason:transferReason,client_updated_at:new Date().toISOString()};
+    draftRef.current=d;
+    try { localStorage.setItem(draftKey(d.id),JSON.stringify(d)); } catch { setSaveError("本页草稿未能保存到浏览器，请使用暂存按钮确认服务端保存。"); }
+    draftTimer.current=setTimeout(()=>void persistDraft(d),350);
+  }, [attempt?.id,attempt?.stage,inputKey(input),selected,choice,confidence,reason,transferChoice,transferReason]);
+
+  async function persistDraft(d: IslandDraft) {
+    saveOperation.current?.abort(); const abort=new AbortController();saveOperation.current=abort;
+    try { await api(`/islands/attempts/${d.id}/checkpoint`,checkpointPayload(d),abort.signal);setSaveError(""); }
+    catch(e) { if ((e as Error).name!=="AbortError" && !((e as {status?:number}).status===409)) setSaveError("进度暂未同步，浏览器草稿仍保留。连接恢复后可重试保存。"); }
+  }
 
   function remember(value: IslandAttempt) {
     setAttempt(value);
+    workspaceChanged();
     try { localStorage.setItem(storageKey(panel), value.id); } catch { setError("学习记录已在本机服务保存，浏览器续接入口未能保存。"); }
   }
   async function run<T>(label: string, url: string, body: object | undefined, accept: (value: T) => void) {
@@ -74,7 +107,7 @@ export default function IslandJourney({ panel, input, pending, onApply, onLocate
   const isLocked = !!busy;
   function apply(value: IslandInput, selected?: number, fitCurrent = false) { onApply(value, selected, fitCurrent); }
   function start(mode: "discovery" | "counterexample") {
-    setChoice(null); setTransferChoice(null); setTransferReason(null); setReason(""); setPlan(null); setActionHistory([]); setMotion(0);
+    setChoice(null); setConfidence(2); setTransferChoice(null); setTransferReason(null); setReason(""); setPlan(null); setActionHistory([]); setMotion(0);
     void run<IslandAttempt>("准备挑战", "/islands/tasks", { panel, mode, avoid_seed: input.seed }, remember);
   }
   function predict() {
@@ -86,7 +119,14 @@ export default function IslandJourney({ panel, input, pending, onApply, onLocate
   }
   function restore(value: IslandAttempt) {
     remember(value); setSaved(null); setPlan(null); setActionHistory([]); setMotion(0);
+    let local: IslandDraft | null = null;
+    try { local=readIslandDraft(localStorage.getItem(draftKey(value.id))); } catch {}
+    const d=preferredDraft(value,local);
+    setChoice(value.prediction?.choice ?? d?.choice ?? null);setConfidence(value.prediction?.confidence ?? d?.confidence ?? 2);
+    setReason(value.prediction?.reason ?? d?.reason ?? "");
+    setTransferChoice(value.transfer_answer?.choice ?? d?.transfer_choice ?? null);setTransferReason(value.transfer_answer?.reason ?? d?.transfer_reason ?? null);
     if (value.stage === "complete" && value.transfer_task) apply(value.transfer_task.target_parameters, value.transfer_task.row ?? value.transfer_task.selected, true);
+    else if (d && value.stage!=="predict") apply(d.parameters,d.selected,true);
     else if (value.stage === "experiment") apply(value.task.before_parameters, value.task.row ?? value.task.selected, true);
     else if (value.observation) apply(value.task.target_parameters, value.task.row ?? value.task.selected, true);
   }
@@ -101,7 +141,9 @@ export default function IslandJourney({ panel, input, pending, onApply, onLocate
       return <li key={label} aria-current={i === current ? "step" : undefined} data-done={i < current || stage === "complete"}><span>{i < current || stage === "complete" ? <Check size={18} /> : i+1}</span>{label}</li>;
     })}</ol>}
     {error && <p className="island-learning-error" role="alert">{error}</p>}
-    {busy && <p className="island-learning-busy" role="status"><LoaderCircle size={20} className="spin" />{busy}…</p>}
+    {saveError && <div role="alert"><p>{saveError}</p><button className="text-button" onClick={()=>draftRef.current&&void persistDraft(draftRef.current)}>重试保存</button></div>}
+    {busy && <div className="island-learning-busy" role="status"><LoaderCircle size={20} className="spin" /><span>{busy}…</span><button className="text-button" onClick={()=>{controller.current?.abort();operation.current++;setBusy(null);setError("已停止等待。已提交的操作可能仍在处理，请先核对已保存进度。");}}>停止等待</button></div>}
+    {error && active && <button className="text-button" disabled={isLocked} onClick={()=>void run<IslandAttempt>("核对记录",`/islands/attempts/${active.id}`,undefined,restore)}>核对已保存进度</button>}
 
     {!active && <>
       {intro && <div className="island-first-step"><BookOpen size={24} /><p>先猜一次，亲手试试，再去新数据里检验。</p>
@@ -114,6 +156,8 @@ export default function IslandJourney({ panel, input, pending, onApply, onLocate
     </>}
 
     {active && task && stage === "predict" && <>
+      {active.practice_focus && <p className="island-insight">围绕上次的误区再试一次：{active.practice_focus}</p>}
+      {active.repeated_case && <p className="island-condition">这组条件曾练习过，有限题库会重复；本次首答单独保留。</p>}
       <p className="island-operation">{task.operation}</p>
       <p className="island-condition">{task.context}；seed {task.seed}。预测后载入画布。</p>
       <fieldset disabled={isLocked}><legend>{task.question}</legend>
@@ -161,6 +205,10 @@ export default function IslandJourney({ panel, input, pending, onApply, onLocate
       <p className="island-prediction-line">首次迁移：{transfer.choices[active.transfer_answer.choice]}；实际：{transfer.choices[active.transfer_answer.proof.choice]}（seed {transfer.seed}）</p>
       <Evidence panel={panel} proof={active.transfer_answer.proof} />
       <p className="island-insight">{transfer.reasons[active.transfer_answer.correct_reason]}</p>
+      {active.transfer_answer.passed&&onNextLesson&&<button className="button primary" disabled={isLocked} onClick={async()=>{
+        setBusy("打开下一站");setError("");try{await onNextLesson(({error:"sensitivity",sensitivity:"regularization",regularization:"forest",forest:"history"} as const)[panel]);}catch(e){setError((e as Error).message);}finally{setBusy(null);}
+      }}><ArrowRight size={20}/>{({error:"下一站：曲线山",sensitivity:"下一站：约束花园",regularization:"下一站：边界森林",forest:"查看我的学习记录"})[panel]}</button>}
+      {!active.transfer_answer.passed && <button className="button primary" disabled={isLocked} onClick={()=>void run<IslandAttempt>("准备针对性复练",`/islands/attempts/${active.id}/practice`,{},v=>{setChoice(null);setConfidence(2);setReason("");setTransferChoice(null);setTransferReason(null);setMotion(0);remember(v);})}><Target size={20}/>针对这个误区再练</button>}
       {active.observation && <details className="island-round-review"><summary><BookOpen size={20} />回看这轮预测与实验</summary>
         <p>最初预测：{task!.choices[active.prediction!.choice]}；实际：{task!.choices[active.observation.choice]}（seed {task!.seed}）</p>
         <p>当时信心：{["试着猜", "有些把握", "很确定"][active.prediction!.confidence-1]}{active.prediction!.reason ? `；理由：${active.prediction!.reason}` : ""}</p>
@@ -199,6 +247,9 @@ export default function IslandJourney({ panel, input, pending, onApply, onLocate
     <details className="island-learning-history" onToggle={e => { if (e.currentTarget.open) void api<IslandAttempt[]>("/islands/history").then(rows => setHistory(rows.filter(r => r.panel === panel))).catch(e => setError(e.message)); }}><summary><History size={20} />本岛学习记录</summary>
       {history.length === 0 ? <p>留下首次预测后，学习过程会保存在这里。</p> : <ul>{history.slice(0, 8).map(row => <li key={row.id}><div><strong>{row.mode === "counterexample" ? "反例挑战" : "一次发现"}</strong><span>{row.stage === "complete" ? row.transfer_answer?.passed ? "迁移通过" : "迁移需重练" : "进行中"}{row.hints_used || row.ai_before_transfer.length ? " · 有辅助" : ""}</span></div><button className="text-button" disabled={isLocked} onClick={() => void run<IslandAttempt>("载入学习", `/islands/attempts/${row.id}`, undefined, restore)}>回看</button></li>)}</ul>}
     </details>
-    {active && <button className="text-button island-learning-pause" disabled={isLocked} onClick={() => { setSaved(active); setAttempt(null); setPlan(null); }}>暂存学习，继续探索</button>}
+    {active && <button className="text-button island-learning-pause" disabled={isLocked} onClick={async () => {
+      const d=draftRef.current;if(d)await persistDraft(d);
+      setSaved(d?{...active,checkpoint:d}:active);setAttempt(null);setPlan(null);workspaceChanged();
+    }}>暂存学习，继续探索</button>}
   </section>;
 }

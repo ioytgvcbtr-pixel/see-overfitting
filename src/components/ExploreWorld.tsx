@@ -9,6 +9,7 @@ import SceneArtwork from "./SceneArtwork";
 import HelpHint from "./HelpHint";
 import ContinueChallenge from "./ContinueChallenge";
 import type { ChallengeId } from "@/lib/island-progress";
+import type { WorkspaceEntry } from "@/lib/workspace";
 
 const places = [
   {
@@ -46,13 +47,20 @@ export default function ExploreWorld({
   onRecipe,
   onStudy,
   onContinue,
+  onStart,
+  continueEntry,
+  onResumeEntry,
 }: {
   onConcept: (panel: ConceptPanel) => void;
   onRecipe: (id: ClassRecipeId) => void;
   onStudy: () => void;
   onContinue: (id: ChallengeId) => void;
+  onStart: () => Promise<void>;
+  continueEntry: WorkspaceEntry | null;
+  onResumeEntry: (entry: WorkspaceEntry) => Promise<void>;
 }) {
   const [preview, setPreview] = useState<VisualSceneId>("classification");
+  const [starting,setStarting]=useState(false),[startError,setStartError]=useState("");
   const place = places.find((p) => p.id === preview)!;
   const visual = visualScenes[preview];
   function enter(id: VisualSceneId) {
@@ -76,7 +84,9 @@ export default function ExploreWorld({
           />
         </div>
       </header>
-      <ContinueChallenge onContinue={onContinue} />
+      <div className="world-start-actions"><button className="button primary" disabled={starting} onClick={async()=>{setStarting(true);setStartError("");try{await onStart();}catch(e){setStartError((e as Error).message);}finally{setStarting(false);}}}><Play size={20}/>{starting?"正在准备":"开始学习"}</button><span>从误差湖开始，先猜一次，再亲手验证。</span><button className="button secondary" onClick={()=>document.querySelector('.world-atlas')?.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})}><FlaskConical size={20}/>自由探索</button></div>
+      {startError&&<p role="alert">{startError}</p>}
+      <ContinueChallenge onContinue={onContinue} entry={continueEntry} onResumeEntry={onResumeEntry}/>
       <div
         className="world-atlas"
         role="group"
