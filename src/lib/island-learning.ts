@@ -85,7 +85,8 @@ export type IslandPlan = {
   change: { control: string; label: string; from_value: string | number; to_value: string | number };
   learning_focus?: {label:string;status?:string};
   execution: { before: number; after: number; metric: string; verdict: "observed" | "supported" | "not_supported";
-    validation_fingerprint: string; test_sealed: boolean } | null;
+    validation_fingerprint: string; test_sealed: boolean;
+    observations?:{metric:string;before:number;after:number}[] } | null;
 };
 export const islandNames: Record<IslandId, string> = {
   error: "误差湖", sensitivity: "曲线山", regularization: "约束花园", forest: "边界森林",

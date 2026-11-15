@@ -467,7 +467,7 @@ def make_router(connect):
             selected = next(v for v in options if v['id'] == selection.candidate_id)
         except (ValidationError, StopIteration):
             selected = options[0]
-            selection = Suggestion(candidate_id=selected['id'], expected='uncertain', hypothesis='保持数据与其余条件不变，比较这项单变量操作前后的验证表现。')
+            selection = Suggestion(candidate_id=selected['id'], expected='uncertain', hypothesis=f"围绕“{focus['label']}”，保持数据与其余条件不变，比较这项单变量操作前后的验证表现。")
             response['mode'], response['model'] = 'rules', None
             response['notice'] = response.get('notice') or '模型候选未通过校验，使用规则方案。'
         target = params(request.panel, {**current, selected['control']: selected['to_value']}).model_dump()
@@ -504,7 +504,8 @@ def make_router(connect):
                     'verdict': 'observed' if saved['expected'] == 'uncertain' else 'supported' if saved['expected'] == observed else 'not_supported',
                     'metric': '验证错误率' if saved['panel'] == 'forest' else '验证MSE', 'validation_fingerprint': a['validation_fingerprint'],
                     'before_fingerprint': a.get('data_fingerprint', a.get('fingerprint')), 'after_fingerprint': b.get('data_fingerprint', b.get('fingerprint')),
-                    'executed_at': learning.now(), 'test_sealed': True}
+                    'executed_at': learning.now(), 'test_sealed': True,
+                    'observations':pedagogy.action_observations(saved['panel'],a,b)}
                 save(connection, 'island_actions', saved)
                 if not attempt['transfer_answer'] and saved['id'] not in attempt['ai_before_transfer']:
                     attempt['ai_before_transfer'].append(saved['id'])

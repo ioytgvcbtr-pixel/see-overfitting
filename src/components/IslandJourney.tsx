@@ -251,6 +251,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
           else setError("实验已核验并保存；画布已被你调整，保留当前条件。");
           if (!active.transfer_answer) remember({...active,ai_before_transfer:[...new Set([...active.ai_before_transfer,v.id])]});
         })}>执行这项操作<FlaskConical size={20} /></button> : <div className="island-ai-result" role="status"><strong>{({supported:"这次结果支持预期",not_supported:"这次结果不支持预期",observed:"已记录实际变化"})[plan.execution.verdict]}</strong><p>{plan.execution.metric} {proofNumber(plan.execution.before, panel === "forest" ? "forest" : "error")} → {proofNumber(plan.execution.after, panel === "forest" ? "forest" : "error")}</p>
+          {plan.execution.observations?.map(row=><p key={row.metric}>{row.metric} {proofNumber(row.before,panel==="forest"?"forest":"error")} → {proofNumber(row.after,panel==="forest"?"forest":"error")}</p>)}
           <button className="text-button" disabled={isLocked} onClick={() => apply(plan.baseline_parameters)}><RotateCcw size={20} />恢复执行前条件</button></div>}
         {!planMatches && !plan.execution && <p role="status">画布条件已变化，请重新生成方案。</p>}</div>}
       {actionHistory.filter(row => row.execution && row.id !== plan?.id).length > 0 && <div className="island-ai-past"><p>已核验的实验</p>{actionHistory.filter(row => row.execution && row.id !== plan?.id).slice(0,3).map(row => <button className="text-button" disabled={isLocked} key={row.id} onClick={() => setPlan(row)}>{row.change.label} {String(row.change.to_value)} · 回看</button>)}</div>}

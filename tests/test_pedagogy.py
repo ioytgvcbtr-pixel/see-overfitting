@@ -92,3 +92,37 @@ def test_old_question_is_not_rewritten_on_restore():
     from backend.backup import rebuild_task,without_hidden_answers
     old=islands.case('regularization','counterexample',2026)
     assert rebuild_task(without_hidden_answers(old))==old
+
+
+@pytest.mark.parametrize('seed',[2026,314,2718])
+def test_autonomous_start_allows_a_non_goal_first_try_and_a_real_counterexample(seed):
+    t=pedagogy.investigation(seed);base=t['before_parameters']
+    first=pedagogy.trial(t,{**base,'alpha':.1})
+    last=pedagogy.trial(t,{**base,'alpha':100})
+    assert first['choice']==0 and not first['goal_met']
+    assert last['choice']==1 and last['goal_met']
+
+
+@pytest.mark.parametrize('variant',[0,1,2])
+def test_each_transfer_form_grades_real_api_answer_and_round_trips(client,tmp_path,monkeypatch,variant):
+    # Prior submitted predictions select the next representation; no fabricated scores.
+    for _ in range(variant):
+        old=post(client,'/islands/tasks',{'panel':'regularization'})
+        post(client,f"/islands/attempts/{old['id']}/predict",{'choice':0,'confidence':2})
+    a=post(client,'/islands/tasks',{'panel':'regularization'})
+    key=a['id']
+    post(client,f'/islands/attempts/{key}/predict',{'choice':0,'confidence':2})
+    post(client,f'/islands/attempts/{key}/observe',{'parameters':a['task']['target_parameters']})
+    a=post(client,f'/islands/attempts/{key}/transfer-task')
+    transfer=a['transfer_task']
+    form=('comparison','model_selection','controlled_design')[variant]
+    assert transfer['question_kind']==form
+    t=pedagogy.upgrade(islands.case('regularization',transfer['mode'],transfer['seed']),form)
+    a=post(client,f'/islands/attempts/{key}/answer',{'task_id':transfer['id'],'choice':t['_proof']['choice'],'reason':t['_reason']})
+    assert a['transfer_answer']['passed']
+    package=client.get('/workspace/backup').json()
+    monkeypatch.setattr(main,'DB_PATH',tmp_path/f'form-{variant}.sqlite')
+    post(client,'/workspace/backup/restore',package)
+    restored=client.get(f'/islands/attempts/{key}').json()
+    assert restored['transfer_task']==a['transfer_task']
+    assert restored['transfer_answer']==a['transfer_answer']

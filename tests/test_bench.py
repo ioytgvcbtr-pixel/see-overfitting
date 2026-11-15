@@ -69,6 +69,7 @@ def test_thinking_request_uses_xhigh_and_keeps_reasoning_private(monkeypatch):
             captured.update(kwargs['json'])
             return httpx.Response(200, json={'model':'deepseek-flash','choices':[{'message':{'content':'实际指标说明','reasoning_content':'private reasoning'}}]})
     monkeypatch.setenv('AI_API_KEY','test-fixture')
+    monkeypatch.setenv('AI_ENABLED','1')
     monkeypatch.setenv('AI_REASONING_EFFORT','xhigh')
     monkeypatch.setattr(coach_service.httpx, 'AsyncClient', Provider)
     with TestClient(app) as client:

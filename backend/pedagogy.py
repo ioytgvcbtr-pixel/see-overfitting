@@ -20,16 +20,16 @@ def upgrade(task, form='comparison'):
         rows = [{'label':'切换前', 'values':[p['before_train'],p['before']]},
                 {'label':'切换后', 'values':[p['after_train'],p['after']]}]
         correct = f"全体验证准确率从{p['before']:.1%}到{p['after']:.1%}；固定样本的纠正另作局部证据。"
-        wrong = [('singlepoint_as_global', '固定包裹已送对，用这个被纠正的样本代表整体泛化表现。'),
-                 ('training_as_validation', '按训练准确率比较模型，将见过的数据上的表现作为新样本依据。')]
+        wrong = [('singlepoint_as_global', f"第{p['row']+1}件包裹已送对，用这个样本的改善代表全体验证表现。"),
+                 ('training_as_validation', f"训练准确率从{p['before_train']:.1%}到{p['after_train']:.1%}，按已见样本的表现判断泛化。")]
     else:
         columns = ['训练MSE','验证MSE'] + (['系数范数'] if panel == 'regularization' else [])
         rows = [{'label':'调整前', 'values':[p['before_train'],p['before']] + ([p['before_norm']] if panel=='regularization' else [])},
                 {'label':'调整后', 'values':[p['after_train'],p['after']] + ([p['after_norm']] if panel=='regularization' else [])}]
         correct = f"验证MSE从{p['before']:.4f}到{p['after']:.4f}，直接比较同一验证划分上的误差。"
-        wrong = [('training_as_validation', '按训练MSE的变化判断，将对已见样本的拟合程度作为泛化依据。'),
+        wrong = [('training_as_validation', f"训练MSE从{p['before_train']:.4f}到{p['after_train']:.4f}，按对已见样本的拟合程度判断泛化。"),
                  ('norm_as_validation' if panel=='regularization' else 'singlepoint_as_global',
-                  '按系数范数的变化判断，把收缩程度作为预测新样本的准确程度。' if panel=='regularization' else
+                  f"系数范数从{p['before_norm']:.4f}到{p['after_norm']:.4f}，按收缩程度判断预测新样本的准确程度。" if panel=='regularization' else
                   '选择更贴近某个训练点的位置，把局部残差的改善作为泛化依据。')]
     t['assessment'] = {'columns':columns, 'rows':rows, 'percent':panel=='forest',
                        'note':'同一验证划分；每列独立从零起算，不跨量纲比较柱长。'}
@@ -47,8 +47,10 @@ def upgrade(task, form='comparison'):
         t['_proof'] = islands.evidence(panel,islands.calculate(panel,base),islands.calculate(panel,t['target_parameters']))
         t['_proof']['choice'] = winner
         correct = f"比较三者验证MSE，模型{chr(65+winner)}在这次划分上的值最低；独立测试集仍未使用。"
-        wrong = [('training_as_validation', '选择训练MSE最低的模型，把拟合训练样本作为下一轮选择标准。'),
-                 ('norm_as_validation', '选择系数范数最小的模型，把更强收缩作为下一轮选择标准。')]
+        train_best=min(range(3),key=lambda i:results[i]['train_mse'])
+        norm_best=min(range(3),key=lambda i:results[i]['weight_norm'])
+        wrong = [('training_as_validation', f"模型{chr(65+train_best)}训练MSE最低（{results[train_best]['train_mse']:.4f}），按训练拟合选择下一轮模型。"),
+                 ('norm_as_validation', f"模型{chr(65+norm_best)}系数范数最小（{results[norm_best]['weight_norm']:.4f}），按更强收缩选择下一轮模型。")]
     elif panel == 'regularization' and form == 'controlled_design':
         t.update(question='要单独核验α的作用，下一步怎样设计更可靠？',
                  choices=['固定样本与阶数，只改变α','提高α，同时增加训练样本','提高α，同时降低多项式阶数'],
@@ -105,3 +107,15 @@ def diagnosis(attempt):
             'submitted_answer':{'choice':task['choices'][answer['choice']], 'reason':task['reasons'][answer['reason']],
                                 'choice_correct':answer['choice_correct'], 'reason_correct':answer['reason_correct']},
             'status':'待检验线索，不是学生能力诊断'}
+
+
+def action_observations(panel,before,after):
+    if panel=='regularization':
+        a,b=before['regularization']['current'],after['regularization']['current']
+        return [{'metric':'系数范数','before':a['weight_norm'],'after':b['weight_norm']},
+                {'metric':'训练MSE','before':a['train_mse'],'after':b['train_mse']}]
+    if panel=='error':
+        return [{'metric':'训练MSE','before':before['linear']['train_mse'],'after':after['linear']['train_mse']}]
+    if panel=='sensitivity':
+        return [{'metric':'模型B变化RMS','before':before['pairs'][1]['shift_rms'],'after':after['pairs'][1]['shift_rms']}]
+    return [{'metric':'训练准确率','before':before['metrics']['train_accuracy'],'after':after['metrics']['train_accuracy']}]

@@ -207,7 +207,8 @@ def rebuild_action(raw, island=False):
                 'verdict':'observed' if s['expected']=='uncertain' else 'supported' if s['expected']==observed else 'not_supported',
                 'metric':'验证错误率' if panel=='forest' else '验证MSE', 'validation_fingerprint':a['validation_fingerprint'],
                 'before_fingerprint':a.get('data_fingerprint',a.get('fingerprint')), 'after_fingerprint':b.get('data_fingerprint',b.get('fingerprint')),
-                'executed_at':learning.now(), 'test_sealed':True, 'imported_at':s['imported_at']}
+                'executed_at':learning.now(), 'test_sealed':True, 'imported_at':s['imported_at'],
+                'observations':pedagogy.action_observations(panel,a,b)}
     else:
         s.update(kind=kind, learning_attempt_id=identity(raw['learning_attempt_id']) if raw.get('learning_attempt_id') else None,
                  learning_prediction=None, test_previously_viewed=bool(raw.get('test_previously_viewed')))

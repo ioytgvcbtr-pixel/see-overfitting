@@ -92,6 +92,7 @@ def test_provider_error_is_visible_fallback(monkeypatch):
         async def post(self, *args, **kwargs):
             return httpx.Response(401)
     monkeypatch.setenv('AI_API_KEY', 'test-fixture')
+    monkeypatch.setenv('AI_ENABLED', '1')
     monkeypatch.setattr(main.httpx, 'AsyncClient', UnavailableProvider)
     with TestClient(main.app) as client:
         response = client.post('/coach', json={'parameters': Parameters().model_dump()}).json()
