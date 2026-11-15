@@ -177,9 +177,14 @@ def make_router(connect):
         if not row: raise HTTPException(404, '核验记录不存在。')
         s = json.loads(row['content'])
         proof = s.get('execution')
+        context_label = islands.NAMES.get(s.get('panel'), str((s.get('baseline_parameters') or {}).get('dataset') or '基础实验'))
         if kind == 'course_ai' and proof:
+            metadata = proof['before'].get('dataset') or {}
+            context_label = metadata.get('title') or context_label
+            metric_label = {'validation_mse':'验证MSE','validation_rmse':'验证RMSE'}.get(proof['metric'],proof['metric'])
+            if proof['metric']=='validation_rmse' and metadata.get('unit'): metric_label += '（'+metadata['unit']+'）'
             proof = {'before': proof['before']['metrics'][proof['metric']], 'after': proof['after']['metrics'][proof['metric']],
-                     'metric': {'validation_mse':'验证MSE','validation_rmse':'验证RMSE'}.get(proof['metric'],proof['metric']), 'verdict': proof['verdict'], 'executed_at': proof['executed_at']}
-        return {k: s.get(k) for k in ('id', 'hypothesis', 'expected', 'change', 'baseline_parameters', 'target_parameters', 'mode', 'model', 'notice', 'imported_at')} | {'proof': proof}
+                     'metric': metric_label, 'verdict': proof['verdict'], 'executed_at': proof['executed_at']}
+        return {k: s.get(k) for k in ('id', 'hypothesis', 'expected', 'change', 'baseline_parameters', 'target_parameters', 'mode', 'model', 'notice', 'imported_at')} | {'proof': proof, 'context': context_label}
 
     return router
