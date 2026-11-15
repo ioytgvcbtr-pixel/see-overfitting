@@ -22,7 +22,7 @@ export type IslandTask = {
   selected: number; row: number | null;
   before_parameters: IslandInput; target_parameters: IslandInput;
   investigation?: boolean; question_kind?: string;
-  assessment?: {columns:string[];rows:{label:string;values:number[]}[];percent:boolean;note:string};
+  assessment?: {columns:string[];rows:{label:string;values:number[];parameters?:IslandInput}[];percent:boolean;note:string};
 };
 export type IslandAttempt = {
   id: string; created_at: string; panel: IslandId; mode: IslandTask["mode"];

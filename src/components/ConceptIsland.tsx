@@ -872,7 +872,7 @@ export default function ConceptIsland({
               </>
             )}
           </div>
-          {evidenceTask&&<TransferEvidence task={evidenceTask}/>}
+          {evidenceTask&&<TransferEvidence task={evidenceTask} current={input} onInspect={next=>onInput(next as ConceptInput)}/>}
         </div>
         <aside className="island-control-desk" aria-label="场景操作与任务">
           <IslandJourney panel={input.panel} input={input} pending={pending} selected={pointIndex} launch={learningLaunch} onLaunchConsumed={onLearningConsumed} onNextLesson={onNextLesson}

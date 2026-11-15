@@ -31,6 +31,7 @@ def test_garden_questions_have_real_observations_and_rebuildable_grading(seed,fo
         assert t['_proof']['choice']==expected
         assert t['_proof']['after']==rows[expected]['values'][1]
     raw=without_hidden_answers(t)
+    assert '_reason_tags' not in raw and '_proof' not in raw and '_reason' not in raw
     raw['assessment']['rows'][0]['values']=[999,999,999]
     raw['reasons']=['伪造']*3
     rebuilt=rebuild_task(raw)

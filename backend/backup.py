@@ -16,7 +16,7 @@ MAX_BYTES = 16 * 1024 * 1024
 
 def without_hidden_answers(value):
     if isinstance(value, dict):
-        return {k:without_hidden_answers(v) for k,v in value.items() if k not in ('_proof','_reason','_answer')}
+        return {k:without_hidden_answers(v) for k,v in value.items() if k not in ('_proof','_reason','_answer','_reason_tags')}
     if isinstance(value, list): return [without_hidden_answers(v) for v in value]
     return value
 

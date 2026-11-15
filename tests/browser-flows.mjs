@@ -1,16 +1,18 @@
 import assert from 'node:assert/strict';
 
 // Shared semantic flow: CUA tab adapter locally, Playwright page in hosted CI.
-export async function autonomousGarden(tab) {
+export async function autonomousGarden(tab,onCheckpoint=async()=>{}) {
   const p=tab.playwright;
   await p.getByRole('button',{name:'概念工坊',exact:true}).click();
   await p.getByRole('button',{name:'约束的形状'}).click();
   const learning=p.getByRole('region',{name:'约束花园学习挑战',exact:true});
   await learning.getByRole('button',{name:'自主寻找反例',exact:true}).click();
   await p.getByRole('combobox',{name:'首轮计划α',exact:true}).selectOption('0.1');
+  await onCheckpoint('prediction');
   await learning.getByRole('button',{name:'降低',exact:true}).click();
   await learning.getByRole('button',{name:'锁定预测，开始实验'}).click();
   await learning.getByRole('button',{name:'核验这次实验',exact:true}).waitFor({state:'visible'});
+  await onCheckpoint('experiment');
   const slider=p.getByRole('slider',{name:'工坊正则化强度α',exact:true});
   await p.getByRole('status',{name:'工坊正则化强度α 2',exact:true}).waitFor({state:'visible'});
   for(let i=3;i<=4;i++) {
@@ -19,15 +21,26 @@ export async function autonomousGarden(tab) {
   }
   await learning.getByRole('button',{name:'核验这次实验',exact:true}).click();
   await learning.getByText('已核验 1 次',{exact:true}).waitFor({state:'visible'});
+  await onCheckpoint('first-trial');
   await tab.reload();
   await learning.getByRole('button',{name:'继续学习',exact:true}).click();
   await learning.getByText('已核验 1 次',{exact:true}).waitFor({state:'visible'});
   await slider.press('End');
   await learning.getByRole('button',{name:'核验这次实验',exact:true}).click();
   await learning.getByText('自主反例已通过实算核验',{exact:true}).waitFor({state:'visible'});
+  await onCheckpoint('review');
   await learning.getByRole('button',{name:'去新数据里验证'}).click();
   await p.getByLabel('本题实测观测',{exact:true}).getByRole('img').first().waitFor({state:'visible'});
   assert.equal(await p.getByLabel('本题实测观测',{exact:true}).count(),1);
+  const scenes=p.locator('.transfer-scene-switch button');
+  await scenes.last().click();
+  assert.equal(await scenes.last().getAttribute('aria-pressed'),'true');
+  await scenes.first().click();
+  await p.getByText('已实算',{exact:true}).waitFor({state:'visible'});
+  const expectedValue=Number(await p.locator('.transfer-observation-plots figure').nth(1).locator('.transfer-observation-row strong').nth(0).innerText());
+  const sceneValue=Number(await p.locator('[data-evidence="validation"] b').innerText());
+  assert.ok(Math.abs(expectedValue-sceneValue)<.00011,'new-seed observations must match the inspected scene');
+  await onCheckpoint('transfer');
   // Leave a draft and restore it before the immutable first answer.
   await learning.locator('.island-answer-options button').nth(0).click();
   await learning.locator('.island-reason-options button').nth(0).click();
@@ -37,6 +50,7 @@ export async function autonomousGarden(tab) {
   assert.equal(await learning.locator('.island-answer-options button').nth(0).getAttribute('aria-pressed'),'true');
   await learning.getByRole('button',{name:'提交判断与依据'}).click();
   await learning.getByText('首次迁移：',{exact:false}).waitFor({state:'visible'});
+  await onCheckpoint('complete');
   const result=await learning.innerText();
   assert.match(result,/首次迁移/);
   return {flow:'autonomous-garden-and-transfer-draft',passed:true};

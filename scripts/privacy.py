@@ -19,6 +19,8 @@ def rules():
 
 
 def redact(text: str) -> str:
+    text = re.sub(r'''https?://[^\s"<>\\)]+''',
+        lambda m: '[TEMPORARY_DOWNLOAD_URL]' if re.search(r'(?i)[?&](?:sig|token|access_token|signature)=',m[0]) else m[0], text)
     for pattern, target in rules():
         text = re.sub(pattern, lambda _: target, text, flags=re.IGNORECASE)
     text = text.replace(Path.home().name, '<LOCAL_USER>')

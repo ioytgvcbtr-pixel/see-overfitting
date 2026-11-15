@@ -31,13 +31,15 @@ def upgrade(task, form='comparison'):
                  ('norm_as_validation' if panel=='regularization' else 'singlepoint_as_global',
                   f"系数范数从{p['before_norm']:.4f}到{p['after_norm']:.4f}，按收缩程度判断预测新样本的准确程度。" if panel=='regularization' else
                   '选择更贴近某个训练点的位置，把局部残差的改善作为泛化依据。')]
+    for i,row in enumerate(rows):
+        row['parameters'] = copy.deepcopy(t['target_parameters'] if panel=='sensitivity' or i else t['before_parameters'])
     t['assessment'] = {'columns':columns, 'rows':rows, 'percent':panel=='forest',
                        'note':'同一验证划分；每列独立从零起算，不跨量纲比较柱长。'}
     if panel == 'regularization' and form == 'model_selection':
         base = t['before_parameters']
         alphas = (.0001, .1, 100)
         results = [islands.calculate(panel,{**base,'alpha':a})['regularization']['current'] for a in alphas]
-        rows = [{'label':f"{chr(65+i)} · α={a:g}", 'values':[r['train_mse'],r['validation_mse'],r['weight_norm']]}
+        rows = [{'label':f"{chr(65+i)} · α={a:g}", 'values':[r['train_mse'],r['validation_mse'],r['weight_norm']], 'parameters':{**base,'alpha':a}}
                 for i,(a,r) in enumerate(zip(alphas,results))]
         winner = min(range(3), key=lambda i:results[i]['validation_mse'])
         t['assessment']['rows'] = rows

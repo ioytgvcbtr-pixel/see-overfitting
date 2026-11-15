@@ -138,6 +138,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
     setTransferChoice(value.transfer_answer?.choice ?? d?.transfer_choice ?? null);setTransferReason(value.transfer_answer?.reason ?? d?.transfer_reason ?? null);
     if (value.stage === "complete" && value.transfer_task) apply(value.transfer_task.target_parameters, value.transfer_task.row ?? value.transfer_task.selected, true);
     else if (d && value.stage!=="predict") apply(d.parameters,d.selected,true);
+    else if(value.stage==="transfer"&&value.transfer_task) apply(value.transfer_task.assessment?.rows[0]?.parameters??value.transfer_task.before_parameters,value.transfer_task.row??value.transfer_task.selected,true);
     else if (value.stage === "experiment") apply(value.task.before_parameters, value.task.row ?? value.task.selected, true);
     else if (value.observation) apply(value.task.target_parameters, value.task.row ?? value.task.selected, true);
   }
@@ -200,14 +201,14 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
       {task.investigation&&<p>经过 {active.trials?.length} 次核验，在α={(task.target_parameters as {alpha:number}).alpha}找到了反例。下方是起点与反例的比较。</p>}
       <Evidence panel={panel} proof={active.observation} />
       <p className="island-insight">{active.observation.conclusion}</p>
-      <button className="button primary" disabled={isLocked} onClick={() => { setPlan(null); void run<IslandAttempt>("准备新数据", `/islands/attempts/${active.id}/transfer-task`, {}, remember); }}>去新数据里验证<ArrowRight size={20} /></button>
+      <button className="button primary" disabled={isLocked} onClick={() => { setPlan(null); void run<IslandAttempt>("准备新数据", `/islands/attempts/${active.id}/transfer-task`, {}, value=>{remember(value);const t=value.transfer_task;if(t)apply(t.assessment?.rows[0]?.parameters??t.before_parameters,t.row??t.selected,true);}); }}>去新数据里验证<ArrowRight size={20} /></button>
     </>}
 
     {active && transfer && stage === "transfer" && <>
       <p className="island-transfer-intro"><Target size={24} />换一组数据，独立判断</p>
       <p className="island-condition">{transfer.context}；seed {task!.seed} → {transfer.seed}。{transfer.assessment?"根据实测观测判断，作答后核验依据。":"本题结果在作答后揭示。"}</p>
       <p className="island-operation">{transfer.operation}</p>
-      {!onEvidenceChange&&<TransferEvidence task={transfer}/>}
+      {!onEvidenceChange&&<TransferEvidence task={transfer} current={input} onInspect={p=>apply(p,transfer.row??transfer.selected)}/>}
       <fieldset disabled={isLocked}><legend>{transfer.question}</legend><div className="island-answer-options">{transfer.choices.map((label, i) => <button key={label} aria-pressed={transferChoice === i} onClick={() => setTransferChoice(i)}>{label}</button>)}</div></fieldset>
       <fieldset disabled={isLocked}><legend>哪条依据更可靠？</legend><div className="island-reason-options">{transfer.reasons.map((label, i) => <button key={label} aria-pressed={transferReason === i} onClick={() => setTransferReason(i)}>{label}</button>)}</div></fieldset>
       <button className="button primary" disabled={isLocked || transferChoice === null || transferReason === null} onClick={() => void run<IslandAttempt>("核验迁移", `/islands/attempts/${active.id}/answer`, {task_id:transfer.id,choice:transferChoice,reason:transferReason}, v => {
@@ -219,7 +220,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
     {active && transfer && stage === "complete" && active.transfer_answer && <>
       <LearningCompanion mood={active.transfer_answer.passed ? "celebrate" : "thinking"} title={active.transfer_answer.passed ? "判断与依据都通过核验" : "这次迁移还需要再练习"} message={active.transfer_answer.assisted ? "迁移前有提示或AI方案记录，已标明辅助。" : "迁移前没有提示或AI方案记录。"} event={motion} />
       <p className="island-prediction-line">首次迁移：{transfer.choices[active.transfer_answer.choice]}；实际：{transfer.choices[active.transfer_answer.proof.choice]}（seed {transfer.seed}）</p>
-      {transfer.assessment?(!onEvidenceChange&&<TransferEvidence task={transfer}/>):<Evidence panel={panel} proof={active.transfer_answer.proof} />}
+      {transfer.assessment?(!onEvidenceChange&&<TransferEvidence task={transfer} current={input} onInspect={p=>apply(p,transfer.row??transfer.selected)}/>):<Evidence panel={panel} proof={active.transfer_answer.proof} />}
       <p className="island-insight">{transfer.reasons[active.transfer_answer.correct_reason]}</p>
       {active.transfer_answer.passed&&onNextLesson&&<button className="button primary" disabled={isLocked} onClick={async()=>{
         setBusy("打开下一站");setError("");try{await onNextLesson(({error:"sensitivity",sensitivity:"regularization",regularization:"forest",forest:"history"} as const)[panel]);}catch(e){setError((e as Error).message);}finally{setBusy(null);}

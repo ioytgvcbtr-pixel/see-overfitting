@@ -1,13 +1,14 @@
-import type { IslandTask } from "@/lib/island-learning";
-import { proofNumber } from "@/lib/island-learning";
+import type { IslandTask,IslandInput } from "@/lib/island-learning";
+import { proofNumber,inputKey } from "@/lib/island-learning";
 import HelpHint from "./HelpHint";
 
-export default function TransferEvidence({task}:{task:IslandTask}) {
+export default function TransferEvidence({task,onInspect,current}:{task:IslandTask;onInspect?:(p:IslandInput)=>void;current?:IslandInput}) {
   const data=task.assessment;
   if (!data) return null;
   const format=(v:number)=>proofNumber(v,data.percent?"forest":"regularization");
   return <div className="transfer-observations" aria-label="本题实测观测">
     <div className="transfer-observation-title"><strong>这组数据告诉我们</strong><HelpHint title="怎样读观测图"><p>{data.note}柱长不能跨列比较；这些是题目观测，判断与依据仍由你选择。</p></HelpHint></div>
+    {onInspect&&<div className="transfer-scene-switch" aria-label="载入观测对应场景">{data.rows.filter(r=>r.parameters).map(r=><button key={r.label} onClick={()=>onInspect(r.parameters!)} aria-pressed={current?inputKey(current)===inputKey(r.parameters):false}>查看{r.label}</button>)}</div>}
     <div className="transfer-observation-plots">{data.columns.map((column,c)=>{
       const max=Math.max(...data.rows.map(r=>r.values[c]),1e-12);
       return <figure key={column}><figcaption>{column}</figcaption>
