@@ -63,8 +63,8 @@ function Open-FitLab([string]$Address) {
         if ($base) { $candidates += Join-Path $base 'Google\Chrome\Application\chrome.exe' }
     }
     $browserPath = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-    if ($browserPath) { Start-Process -FilePath $browserPath -ArgumentList @($Address) -WindowStyle Hidden }
-    else { Start-Process -FilePath $Address -WindowStyle Hidden }
+    if ($browserPath) { Start-Process -FilePath $browserPath -ArgumentList @($Address) -WindowStyle Normal }
+    else { Start-Process -FilePath $Address -WindowStyle Normal }
 }
 function Wait-FitLab([string]$Address, $Process) {
     $watch = [System.Diagnostics.Stopwatch]::StartNew()
