@@ -20,14 +20,29 @@ if (!$pythonPath -and (Test-Path -LiteralPath $localConfig)) {
 }
 if (!$pythonPath) { $pythonPath = (Get-Command python -ErrorAction Stop).Source }
 if (!(Test-Path -LiteralPath $pythonPath)) { throw '没有找到Python解释器，请设置FITLAB_PYTHON或使用-Python参数。' }
-if ($Install) {
-    & $pythonPath -m pip install -r requirements.txt
-    if ($LASTEXITCODE -ne 0) { throw 'Python依赖安装未完成，请检查网络后重试。' }
-    & npm.cmd ci
-    if ($LASTEXITCODE -ne 0) { throw '前端依赖安装未完成，请检查网络后重试。' }
+function Read-SetupReport {
+    $reportText = & $pythonPath -X utf8 scripts/check_environment.py --json
+    try { return (($reportText -join "`n") | ConvertFrom-Json) } catch { throw '环境自检未完成，请确认使用Python 3.13。' }
 }
-$reportText = & $pythonPath -X utf8 scripts/check_environment.py --json
-try { $report = ($reportText -join "`n") | ConvertFrom-Json } catch { throw '环境自检未完成，请确认使用Python 3.13。' }
+$report = Read-SetupReport
+if ($Install) {
+    $missingRuntime = @($report.checks | Where-Object { !$_.ok -and $_.id -in @('python','node','npm') })
+    if ($missingRuntime.Count) {
+        foreach ($check in $missingRuntime) { Write-Output ($check.label + '：' + $check.fix) }
+        throw '请先准备Python与Node.js运行环境，再安装项目依赖。'
+    }
+    $missingDependencies = @($report.checks | Where-Object { !$_.ok -and ($_.id.StartsWith('package-') -or $_.id -eq 'frontend') })
+    if ($missingDependencies.Count) {
+        if (Get-NetTCPConnection -State Listen -LocalPort @($WebPort,$ApiPort) -ErrorAction SilentlyContinue) {
+            throw '请先退出当前端口上的服务，再安装依赖；已有FitLab可不带-Install直接复用。'
+        }
+        & $pythonPath -m pip install -r requirements.txt
+        if ($LASTEXITCODE -ne 0) { throw 'Python依赖安装未完成，请检查网络后重试。' }
+        & npm.cmd ci
+        if ($LASTEXITCODE -ne 0) { throw '前端依赖安装未完成，请检查网络后重试。' }
+        $report = Read-SetupReport
+    } else { Write-Output '锁定依赖已就绪，未重复安装。' }
+}
 foreach ($check in $report.checks) {
     if (!$check.ok) { Write-Output ($check.label + '：' + $check.detail + '。' + $check.fix) }
 }
