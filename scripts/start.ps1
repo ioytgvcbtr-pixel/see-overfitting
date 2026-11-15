@@ -7,8 +7,6 @@
     [switch]$Install,
     [switch]$Production
 )
-[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
-$OutputEncoding = [Console]::OutputEncoding
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $projectRoot
@@ -85,7 +83,10 @@ function Stop-Owned($Process) {
     for ($i = 0; $i -lt $ids.Count; $i++) {
         foreach ($child in $all | Where-Object { $_.ParentProcessId -eq $ids[$i] }) { $ids.Add([int]$child.ProcessId) }
     }
-    for ($i = $ids.Count - 1; $i -ge 0; $i--) { Stop-Process -Id $ids[$i] -ErrorAction SilentlyContinue }
+    for ($i = $ids.Count - 1; $i -ge 0; $i--) {
+        try { Stop-Process -Id $ids[$i] -ErrorAction Stop }
+        catch [Microsoft.PowerShell.Commands.ProcessCommandException] { <# Child already exited. #> }
+    }
 }
 $apiUrl = "http://127.0.0.1:$ApiPort"
 $webUrl = "http://127.0.0.1:$WebPort"
