@@ -81,7 +81,7 @@ def main():
         elif active and kind in ('function_call', 'function_call_output', 'custom_tool_call', 'custom_tool_call_output'):
             # Discovery inventories and agent instructions are not project evidence.
             command = str(payload.get('input', payload.get('arguments', '')))
-            if 'web__run' in command or 'web_run' in str(payload.get('name', '')) or any(marker in command for marker in ('tfReference', 'theoryReference', 'courseReference', 'rulesReviewTab', 'museumMathRef', 'museumExploreRef', 'conceptTheoryRef', 'conceptMomentumRef', 'rulesV07', 'playRef', 'canvasRef', 'visualStudyRef', 'duoVisualRef', 'phetVisualRef', 'codeSceneRef', 'visualCodeRef', 'nativeStudyChrome', 'node_modules/next/dist/docs')) or ('ui-ux-pro-max' in command and 'search.py' in command):
+            if 'web__run' in command or 'web_run' in str(payload.get('name', '')) or any(marker in command for marker in ('tfReference', 'theoryReference', 'courseReference', 'rulesReviewTab', 'museumMathRef', 'museumExploreRef', 'conceptTheoryRef', 'conceptMomentumRef', 'rulesV07', 'officialTrackTab', 'playRef', 'canvasRef', 'visualStudyRef', 'duoVisualRef', 'phetVisualRef', 'codeSceneRef', 'visualCodeRef', 'nativeStudyChrome', 'node_modules/next/dist/docs')) or ('ui-ux-pro-max' in command and 'search.py' in command):
                 reference_calls.add(payload.get('call_id'))
             if 'image_gen__imagegen' in command:
                 asset_calls.add(payload.get('call_id'))
@@ -95,7 +95,7 @@ def main():
                 cleaned['output'] = '[Reference lookup output omitted; source identifiers retained in call arguments.]'
             if payload.get('call_id') in asset_calls and 'output' in cleaned:
                 cleaned['output'] = '[Generated asset preview omitted; prompts retained in call and final assets in public/illustrations.]'
-            if 'output' in cleaned and any(marker in str(cleaned['output']) for marker in ('# Browser Safety', '## Computer Use', '## How to use the API')):
+            if 'output' in cleaned and any(marker in str(cleaned['output']) for marker in ('# Browser Safety', '## Computer Use', '## How to use the API', '# Tab Capability:', '# Browser Capability:')):
                 cleaned['output'] = '[Tool runtime documentation omitted; project actions preserved in subsequent events.]'
             if 'output' in cleaned:
                 cleaned['output'] = omit_binary_previews(cleaned['output'])

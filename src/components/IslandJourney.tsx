@@ -157,7 +157,7 @@ export default function IslandJourney({ panel, input, pending, onApply, onLocate
     </>}
 
     {active && transfer && stage === "complete" && active.transfer_answer && <>
-      <LearningCompanion mood={active.transfer_answer.passed ? "celebrate" : "thinking"} title={active.transfer_answer.passed ? "判断与依据都通过核验" : "这次迁移还需要再练习"} message={active.transfer_answer.assisted ? "本轮使用过提示或AI辅助，记录已标明。" : "本轮未使用提示或AI辅助。"} event={motion} />
+      <LearningCompanion mood={active.transfer_answer.passed ? "celebrate" : "thinking"} title={active.transfer_answer.passed ? "判断与依据都通过核验" : "这次迁移还需要再练习"} message={active.transfer_answer.assisted ? "迁移前有提示或AI方案记录，已标明辅助。" : "迁移前没有提示或AI方案记录。"} event={motion} />
       <p className="island-prediction-line">首次迁移：{transfer.choices[active.transfer_answer.choice]}；实际：{transfer.choices[active.transfer_answer.proof.choice]}（seed {transfer.seed}）</p>
       <Evidence panel={panel} proof={active.transfer_answer.proof} />
       <p className="island-insight">{transfer.reasons[active.transfer_answer.correct_reason]}</p>
@@ -165,7 +165,7 @@ export default function IslandJourney({ panel, input, pending, onApply, onLocate
         <p>最初预测：{task!.choices[active.prediction!.choice]}；实际：{task!.choices[active.observation.choice]}（seed {task!.seed}）</p>
         <p>当时信心：{["试着猜", "有些把握", "很确定"][active.prediction!.confidence-1]}{active.prediction!.reason ? `；理由：${active.prediction!.reason}` : ""}</p>
         <Evidence panel={panel} proof={active.observation} />
-        <p>{active.observation.conclusion}</p><p className="island-condition">实验提示 {active.hints_used}级；迁移前AI实验 {active.ai_before_transfer.length}次。</p>
+        <p>{active.observation.conclusion}</p><p className="island-condition">实验提示 {active.hints_used}级；迁移前AI方案 {active.ai_before_transfer.length}份。</p>
         <button className="text-button" disabled={isLocked} onClick={() => { apply(task!.target_parameters, task!.row ?? task!.selected, true); onLocate(task!.focus); }}><RotateCcw size={20} />复现实验场景</button>
       </details>}
       <div className="island-action-pair"><button className="button secondary" disabled={isLocked} onClick={() => { apply(transfer.target_parameters, transfer.row ?? transfer.selected); onLocate(transfer.focus); }}><Eye size={20} />查看场景</button>
@@ -178,7 +178,9 @@ export default function IslandJourney({ panel, input, pending, onApply, onLocate
       }).catch(e => setError(e.message));
     }}><summary><Sparkles size={20} />再做一个AI实验</summary>
       <p>用当前画布条件生成单变量方案，执行后核验真实验证表现。</p>
-      <button className="button secondary" disabled={isLocked || pending} onClick={() => void run<IslandPlan>("AI正在构思实验", "/islands/actions/plan", {panel,parameters:input,attempt_id:active.id}, setPlan)}>{plan ? "重新生成方案" : "生成可执行方案"}</button>
+      <button className="button secondary" disabled={isLocked || pending} onClick={() => void run<IslandPlan>("AI正在构思实验", "/islands/actions/plan", {panel,parameters:input,attempt_id:active.id}, value => {
+        setPlan(value); if (!active.transfer_answer) remember({...active, ai_before_transfer:[...new Set([...active.ai_before_transfer,value.id])]});
+      })}>{plan ? "重新生成方案" : "生成可执行方案"}</button>
       {plan && <div className="island-ai-preview"><p className="island-condition">{plan.mode === "online" ? `${plan.model} · AI方案` : "规则方案"}</p>{plan.notice && <p role="status">{plan.notice}</p>}
         <strong>{plan.change.label}：{String(plan.change.from_value)} → {String(plan.change.to_value)}</strong><p>{plan.hypothesis}</p>
         <p>待检验预期：{plan.expected === "lower" ? "验证误差降低" : plan.expected === "higher" ? "验证误差升高" : "只观察，不预设方向"}</p>

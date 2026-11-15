@@ -364,7 +364,13 @@ def make_router(connect):
                  'mode': response['mode'], 'model': response['model'], 'notice': response['notice'], 'usage': response.get('usage', {}),
                  'reasoning_effort': coach.ai_status()['reasoning_effort'], 'hypothesis': selection.hypothesis,
                  'expected': selection.expected, 'execution': None}
-        with connect() as connection: save(connection, 'island_actions', saved)
+        with connect() as connection:
+            connection.execute('BEGIN IMMEDIATE')
+            latest = load(connection, 'island_attempts', attempt['id'])
+            save(connection, 'island_actions', saved)
+            if not latest['transfer_answer'] and saved['id'] not in latest['ai_before_transfer']:
+                latest['ai_before_transfer'].append(saved['id'])
+                save(connection, 'island_attempts', latest)
         return saved
 
     @router.post('/actions/{key}/execute')
@@ -388,7 +394,7 @@ def make_router(connect):
                     'before_fingerprint': a.get('data_fingerprint', a.get('fingerprint')), 'after_fingerprint': b.get('data_fingerprint', b.get('fingerprint')),
                     'executed_at': learning.now(), 'test_sealed': True}
                 save(connection, 'island_actions', saved)
-                if not attempt['transfer_answer']:
+                if not attempt['transfer_answer'] and saved['id'] not in attempt['ai_before_transfer']:
                     attempt['ai_before_transfer'].append(saved['id'])
                     save(connection, 'island_attempts', attempt)
         return saved

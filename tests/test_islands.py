@@ -124,6 +124,7 @@ def test_ai_actions_are_single_variable_verified_and_stale_safe(client, monkeypa
     assert response.status_code == 200, response.text
     plan = response.json()
     assert plan['mode'] == 'online' and plan['execution'] is None
+    assert client.get(f"/islands/attempts/{task['id']}").json()['ai_before_transfer'] == [plan['id']]
     assert len([k for k in raw if raw[k] != plan['target_parameters'][k]]) == 1
     stale = copy.deepcopy(raw); stale['seed'] = 43 if panel == 'forest' else 314
     assert client.post(f"/islands/actions/{plan['id']}/execute",json={'parameters':stale}).status_code == 409
