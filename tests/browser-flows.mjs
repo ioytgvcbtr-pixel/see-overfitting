@@ -26,8 +26,8 @@ export async function autonomousGarden(tab) {
   await learning.getByRole('button',{name:'核验这次实验',exact:true}).click();
   await learning.getByText('自主反例已通过实算核验',{exact:true}).waitFor({state:'visible'});
   await learning.getByRole('button',{name:'去新数据里验证'}).click();
-  await learning.getByRole('img').first().waitFor({state:'visible'});
-  assert.equal(await learning.getByLabel('本题实测观测',{exact:true}).count(),1);
+  await p.getByLabel('本题实测观测',{exact:true}).getByRole('img').first().waitFor({state:'visible'});
+  assert.equal(await p.getByLabel('本题实测观测',{exact:true}).count(),1);
   // Leave a draft and restore it before the immutable first answer.
   await learning.locator('.island-answer-options button').nth(0).click();
   await learning.locator('.island-reason-options button').nth(0).click();

@@ -1,4 +1,4 @@
-param(
+﻿param(
     [ValidateRange(1024,65535)][int]$WebPort = 3000,
     [ValidateRange(1024,65535)][int]$ApiPort = 8000,
     [string]$Python = '',
@@ -7,6 +7,8 @@ param(
     [switch]$Install,
     [switch]$Production
 )
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+$OutputEncoding = [Console]::OutputEncoding
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $projectRoot

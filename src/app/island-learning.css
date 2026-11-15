@@ -94,6 +94,8 @@
 .transfer-observations { --transfer-blue:#397bb7; --transfer-orange:#bd6135; --transfer-green:#23806b; --transfer-track:#e9edf0; margin:24px 0; font-variant-numeric:tabular-nums; }
 .transfer-observation-title { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; }
 .transfer-observation-plots { display:grid; gap:24px; }
+.island-scene-column > .transfer-observations { margin-top:32px; padding-top:24px; box-shadow:0 -1px #3f255b0a; }
+.island-scene-column .transfer-observation-plots { grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
 .transfer-observation-plots figure { margin:0; min-width:0; }
 .transfer-observation-plots figcaption { margin:0 0 12px; font-size:14px; font-weight:650; }
 .transfer-observation-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 16px; margin:12px 0; font-size:13px; align-items:baseline; }

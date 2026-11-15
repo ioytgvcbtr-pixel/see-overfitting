@@ -17,7 +17,8 @@ import SceneArtwork from "./SceneArtwork";
 import ConceptQuest from "./ConceptQuest";
 import IslandJourney from "./IslandJourney";
 import CausalTrace from "./CausalTrace";
-import type { IslandLaunch, NextLesson } from "@/lib/island-learning";
+import type { IslandLaunch, NextLesson, IslandTask } from "@/lib/island-learning";
+import TransferEvidence from "./TransferEvidence";
 import HelpHint from "./HelpHint";
 import { pauseProgress, type ConceptDraft } from "@/lib/island-progress";
 
@@ -56,6 +57,7 @@ export default function ConceptIsland({
     id = useId().replace(/:/g, "");
   const [zoomScale, setZoomScale] = useState<number | null>(null);
   const [freeOpen, setFreeOpen] = useState(false);
+  const [evidenceTask,setEvidenceTask]=useState<IslandTask|null>(null);
   useEffect(() => { if (resume) setFreeOpen(true); }, [resume]);
   const fitLearningFrame = useRef(false);
   const stageRef = useRef<HTMLElement>(null);
@@ -870,11 +872,12 @@ export default function ConceptIsland({
               </>
             )}
           </div>
+          {evidenceTask&&<TransferEvidence task={evidenceTask}/>}
         </div>
         <aside className="island-control-desk" aria-label="场景操作与任务">
           <IslandJourney panel={input.panel} input={input} pending={pending} selected={pointIndex} launch={learningLaunch} onLaunchConsumed={onLearningConsumed} onNextLesson={onNextLesson}
             onApply={(next, point, fitCurrent) => { pauseProgress(input.panel); setFreeOpen(false); onResumeConsumed(); if (input.panel === "regularization" && fitCurrent) fitLearningFrame.current = true; onInput(next as ConceptInput); if (point !== undefined) onSelect(point); }}
-            onLocate={locate} />
+            onLocate={locate} onEvidenceChange={setEvidenceTask} />
           <details className="island-free-observation" open={freeOpen} onToggle={e => setFreeOpen(e.currentTarget.open)}><summary>自由观察任务</summary>
           {freeOpen && <ConceptQuest
             input={input}

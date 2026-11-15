@@ -4,7 +4,7 @@ import { ArrowRight, BookOpen, Check, Compass, Eye, FlaskConical, History, Light
 import { api } from "@/lib/experiment";
 import { inputKey, islandNames, learningReference, proofNumber, type IslandAttempt, type IslandId,
   type IslandInput, type IslandPlan, type IslandProof, type IslandLaunch, type IslandDraft, type NextLesson,
-  draftKey, readIslandDraft, preferredDraft, checkpointPayload } from "@/lib/island-learning";
+  draftKey, readIslandDraft, preferredDraft, checkpointPayload, type IslandTask } from "@/lib/island-learning";
 import { workspaceChanged } from "@/lib/workspace";
 import LearningCompanion from "./LearningCompanion";
 import HelpHint from "./HelpHint";
@@ -16,6 +16,7 @@ type Props = {
   onNextLesson?: NextLesson;
   onApply: (value: IslandInput, selected?: number, fitCurrent?: boolean) => void;
   onLocate: (focus: string) => void;
+  onEvidenceChange?: (task:IslandTask|null)=>void;
 };
 const storageKey = (panel: IslandId) => `fitlab-island-learning-v13-${panel}`;
 
@@ -31,7 +32,7 @@ function Evidence({ proof, panel }: { proof: IslandProof; panel: IslandId }) {
   </div>;
 }
 
-export default function IslandJourney({ panel, input, selected, pending, onApply, onLocate, launch, onLaunchConsumed, onNextLesson }: Props) {
+export default function IslandJourney({ panel, input, selected, pending, onApply, onLocate, launch, onLaunchConsumed, onNextLesson, onEvidenceChange }: Props) {
   const [attempt, setAttempt] = useState<IslandAttempt | null>(null);
   const [saved, setSaved] = useState<IslandAttempt | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -46,6 +47,10 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
   const [motion, setMotion] = useState(0);
   const [intro, setIntro] = useState(false);
   const [saveError, setSaveError] = useState("");
+  useEffect(()=>{
+    onEvidenceChange?.(attempt && ["transfer","complete"].includes(attempt.stage) && attempt.transfer_task?.assessment ? attempt.transfer_task : null);
+    return ()=>onEvidenceChange?.(null);
+  },[attempt?.id,attempt?.stage,attempt?.transfer_task?.id,onEvidenceChange]);
   const draftRef = useRef<IslandDraft | null>(null), draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveOperation = useRef<AbortController | null>(null);
   const operation = useRef(0), controller = useRef<AbortController | null>(null);
@@ -202,7 +207,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
       <p className="island-transfer-intro"><Target size={24} />换一组数据，独立判断</p>
       <p className="island-condition">{transfer.context}；seed {task!.seed} → {transfer.seed}。{transfer.assessment?"根据实测观测判断，作答后核验依据。":"本题结果在作答后揭示。"}</p>
       <p className="island-operation">{transfer.operation}</p>
-      <TransferEvidence task={transfer}/>
+      {!onEvidenceChange&&<TransferEvidence task={transfer}/>}
       <fieldset disabled={isLocked}><legend>{transfer.question}</legend><div className="island-answer-options">{transfer.choices.map((label, i) => <button key={label} aria-pressed={transferChoice === i} onClick={() => setTransferChoice(i)}>{label}</button>)}</div></fieldset>
       <fieldset disabled={isLocked}><legend>哪条依据更可靠？</legend><div className="island-reason-options">{transfer.reasons.map((label, i) => <button key={label} aria-pressed={transferReason === i} onClick={() => setTransferReason(i)}>{label}</button>)}</div></fieldset>
       <button className="button primary" disabled={isLocked || transferChoice === null || transferReason === null} onClick={() => void run<IslandAttempt>("核验迁移", `/islands/attempts/${active.id}/answer`, {task_id:transfer.id,choice:transferChoice,reason:transferReason}, v => {
@@ -214,7 +219,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
     {active && transfer && stage === "complete" && active.transfer_answer && <>
       <LearningCompanion mood={active.transfer_answer.passed ? "celebrate" : "thinking"} title={active.transfer_answer.passed ? "判断与依据都通过核验" : "这次迁移还需要再练习"} message={active.transfer_answer.assisted ? "迁移前有提示或AI方案记录，已标明辅助。" : "迁移前没有提示或AI方案记录。"} event={motion} />
       <p className="island-prediction-line">首次迁移：{transfer.choices[active.transfer_answer.choice]}；实际：{transfer.choices[active.transfer_answer.proof.choice]}（seed {transfer.seed}）</p>
-      {transfer.assessment?<TransferEvidence task={transfer}/>:<Evidence panel={panel} proof={active.transfer_answer.proof} />}
+      {transfer.assessment?(!onEvidenceChange&&<TransferEvidence task={transfer}/>):<Evidence panel={panel} proof={active.transfer_answer.proof} />}
       <p className="island-insight">{transfer.reasons[active.transfer_answer.correct_reason]}</p>
       {active.transfer_answer.passed&&onNextLesson&&<button className="button primary" disabled={isLocked} onClick={async()=>{
         setBusy("打开下一站");setError("");try{await onNextLesson(({error:"sensitivity",sensitivity:"regularization",regularization:"forest",forest:"history"} as const)[panel]);}catch(e){setError((e as Error).message);}finally{setBusy(null);}
