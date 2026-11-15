@@ -8,7 +8,7 @@ import httpx
 def ai_status():
     requested = os.environ.get('AI_REASONING_EFFORT', 'xhigh')
     effective = {'xhigh': 'high', 'medium': 'high', 'minimal': 'low'}.get(requested, requested)
-    return {'ai_configured': bool(os.environ.get('AI_API_KEY')),
+    return {'ai_configured': bool(os.environ.get('AI_API_KEY')) and os.environ.get('AI_ENABLED', '1') != '0',
             'ai_model': os.environ.get('AI_MODEL', 'deepseek-flash'),
             'reasoning_effort': requested, 'provider_effort': effective,
             'thinking_enabled': requested != 'none'}

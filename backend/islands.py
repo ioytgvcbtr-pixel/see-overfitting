@@ -4,6 +4,7 @@ import copy
 import json
 import math
 import uuid
+from datetime import datetime
 from functools import lru_cache
 from typing import Literal
 
@@ -50,6 +51,33 @@ class Answer(Strict):
     task_id: str = Field(max_length=40)
     choice: int = Field(ge=0, le=2)
     reason: int = Field(ge=0, le=2)
+
+
+class Checkpoint(Strict):
+    stage: Literal['predict', 'experiment', 'transfer']
+    parameters: dict
+    selected: int = Field(default=0, ge=0, le=299)
+    choice: int | None = Field(default=None, ge=0, le=2)
+    confidence: int = Field(default=2, ge=1, le=3)
+    reason: str = Field(default='', max_length=500)
+    transfer_choice: int | None = Field(default=None, ge=0, le=2)
+    transfer_reason: int | None = Field(default=None, ge=0, le=2)
+    client_updated_at: str = Field(default='', max_length=40)
+
+
+def checkpoint_value(saved, request):
+    if saved['stage'] != request.stage:
+        raise ValueError('学习阶段已更新，旧草稿不会覆盖已提交答案。')
+    current = params(saved['panel'], request.parameters).model_dump()
+    if request.client_updated_at: datetime.fromisoformat(request.client_updated_at)
+    if saved['panel'] != 'forest' and request.selected >= current['samples']:
+        raise ValueError('选点不在当前训练样本中。')
+    value = request.model_dump() | {'parameters': current, 'updated_at': learning.now()}
+    if request.stage != 'predict':
+        value.update(choice=None, confidence=2, reason='')
+    if request.stage != 'transfer':
+        value.update(transfer_choice=None, transfer_reason=None)
+    return value
 
 
 class AIRequest(Input):
@@ -226,6 +254,7 @@ def make_router(connect):
         return json.loads(row['content'])
 
     def save(connection, table, item):
+        item['updated_at'] = learning.now()
         connection.execute(f'INSERT OR REPLACE INTO {table}(id,content) VALUES (?,?)', (item['id'], json.dumps(item, ensure_ascii=False)))
 
     @router.post('/tasks')
@@ -235,6 +264,7 @@ def make_router(connect):
         try: task = case(request.panel, request.mode, seed)
         except ValueError as error: raise HTTPException(409, str(error))
         saved = {'id': uuid.uuid4().hex, 'created_at': learning.now(), 'panel': request.panel, 'mode': request.mode,
+                 'protocol_version': 2,
                  'stage': 'predict', 'prediction': None, 'observation': None, 'transfer_answer': None,
                  'hints_used': 0, 'ai_before_transfer': [], '_case': task, '_transfer': None}
         with connect() as connection: save(connection, 'island_attempts', saved)
@@ -257,6 +287,39 @@ def make_router(connect):
     @router.get('/attempts/{key}')
     def restore(key: str):
         with connect() as connection: return public(load(connection, 'island_attempts', key))
+
+    @router.post('/attempts/{key}/checkpoint')
+    def checkpoint(key: str, request: Checkpoint):
+        with connect() as connection:
+            connection.execute('BEGIN IMMEDIATE')
+            saved = load(connection, 'island_attempts', key)
+            try: value = checkpoint_value(saved, request)
+            except (ValidationError, ValueError) as error: raise HTTPException(409, str(error))
+            previous = (saved.get('checkpoint') or {}).get('client_updated_at', '')
+            if previous and request.client_updated_at and request.client_updated_at < previous:
+                return {'saved':False, 'stale':True}
+            saved['checkpoint'] = value
+            save(connection, 'island_attempts', saved)
+        return {'saved': True, 'updated_at': value['updated_at']}
+
+    @router.post('/attempts/{key}/practice')
+    def practice(key: str):
+        with connect() as connection:
+            original = load(connection, 'island_attempts', key)
+            if not original['transfer_answer']:
+                raise HTTPException(409, '先完成本轮迁移，再开始针对性复练。')
+            previous = original['_transfer']
+            seeds = (42, 43, 44) if original['panel'] == 'forest' else (2026, 314, 2718)
+            seed = next(s for s in seeds if s not in (original['_case']['seed'], previous['seed']))
+            task = case(original['panel'], previous['mode'], seed)
+            older = [json.loads(r['content']) for r in connection.execute('SELECT content FROM island_attempts').fetchall()]
+            repeated = any(s['panel'] == original['panel'] and s['_case']['seed'] == seed and s['mode'] == task['mode'] and s.get('prediction') for s in older)
+            saved = {'id': uuid.uuid4().hex, 'created_at': learning.now(), 'panel': original['panel'], 'mode': task['mode'],
+                     'protocol_version': 2, 'stage': 'predict', 'prediction': None, 'observation': None,
+                     'transfer_answer': None, 'hints_used': 0, 'ai_before_transfer': [], '_case': task, '_transfer': None,
+                     'practice_of': key, 'practice_focus': REASONS[original['panel']][0], 'repeated_case': repeated}
+            save(connection, 'island_attempts', saved)
+        return public(saved)
 
     @router.post('/attempts/{key}/predict')
     def predict(key: str, request: Predict):
