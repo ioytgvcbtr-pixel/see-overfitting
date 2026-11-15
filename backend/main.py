@@ -20,6 +20,7 @@ from backend.actions import make_router as actions_router
 from backend import learning
 from backend.concepts import router as concepts_router
 from backend.classification import router as classification_router
+from backend.islands import make_router as islands_router
 
 ROOT = Path(__file__).resolve().parents[1]
 for line in (ROOT / 'backend' / '.env').read_text(encoding='utf-8').splitlines() if (ROOT / 'backend' / '.env').exists() else []:
@@ -28,7 +29,7 @@ for line in (ROOT / 'backend' / '.env').read_text(encoding='utf-8').splitlines()
         os.environ.setdefault(key.strip(), value.strip())
 
 DB_PATH = Path(os.environ.get('FITLAB_DB', str(ROOT / 'data' / 'fitlab.sqlite')))
-app = FastAPI(title='看见过拟合 · FitLab', version='0.12.0')
+app = FastAPI(title='看见过拟合 · FitLab', version='0.13.0')
 app.include_router(bench_router)
 app.include_router(concepts_router)
 app.include_router(classification_router)
@@ -42,16 +43,19 @@ def connect():
     connection.execute('CREATE TABLE IF NOT EXISTS reports (id TEXT PRIMARY KEY, content TEXT)')
     connection.execute('CREATE TABLE IF NOT EXISTS learning_attempts (id TEXT PRIMARY KEY, content TEXT)')
     connection.execute('CREATE TABLE IF NOT EXISTS action_plans (id TEXT PRIMARY KEY, content TEXT)')
+    connection.execute('CREATE TABLE IF NOT EXISTS island_attempts (id TEXT PRIMARY KEY, content TEXT)')
+    connection.execute('CREATE TABLE IF NOT EXISTS island_actions (id TEXT PRIMARY KEY, content TEXT)')
     return connection
 
 
 app.include_router(learning_router(connect))
 app.include_router(actions_router(connect))
+app.include_router(islands_router(connect))
 
 
 @app.get('/health')
 def health():
-    return {'status': 'ok', 'version': '0.12.0', **ai_status()}
+    return {'status': 'ok', 'version': '0.13.0', **ai_status()}
 
 
 @app.post('/experiments/run')
