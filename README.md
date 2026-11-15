@@ -6,7 +6,7 @@
 
 从合成曲线建立直觉，再到公开数据比较模型。支持参数干预、固定条件对照、配对划分复核，以及基于真实指标的AI解释。
 
-![四岛学习与探索](artifacts/screenshots/island-preview-v13.jpg)
+![从开始到下次继续](artifacts/screenshots/workspace-preview-v14.jpg)
 
 - [功能设计](docs/FUNCTIONAL_DESIGN.md)
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
@@ -28,9 +28,21 @@
 - [0.12实际验收](docs/VALIDATION_V12.md)
 - [0.13四岛学习与AI操作](docs/ISLAND_LEARNING_V13.md)
 - [0.13实际验收](docs/VALIDATION_V13.md)
+- [0.14启动与学习流程](docs/WORKSPACE_FLOW_V14.md)
+- [0.14实际验收](docs/VALIDATION_V14.md)
 - [AI开发记录](docs/ai-process/README.md)
 
-当前为本地可运行的0.13版。四岛支持预测、实验、迁移验证及反例挑战，保留首次判断、提示和AI辅助记录；岛内AI方案可预览、执行并核验。界面延续稳定数字、同心圆角、分组淡入和轻柔阴影，科学物件由真实计算驱动。计算、数据读取和学习记录在本地运行，AI解释及实验假设通过配置的模型API提供。实际范围见[0.13验收](docs/VALIDATION_V13.md)、[0.12验收](docs/VALIDATION_V12.md)和[此前记录](docs/VALIDATION.md)。
+当前为本地可运行的0.14版。首页统一开始、继续与探索，课程/四岛/AI记录可在同一档案中回看；实验中途输入和未提交选择可准确续接。设置支持AI连接测试、规则模式与学习备份恢复。四岛的预测、实验、迁移及反例继续使用真实计算，首次作答保留。界面延续稳定数字、同心圆角、分组淡入和轻柔阴影。实际范围见[0.14验收](docs/VALIDATION_V14.md)、[0.13验收](docs/VALIDATION_V13.md)和[此前记录](docs/VALIDATION.md)。
+
+## 从打开，到下次继续
+
+首页“开始学习”从误差湖进入第一轮；“继续”从本机学习记录找到未完成课程或岛屿；自由探索保留全部科学场景。完成迁移后可前往下一岛，未通过时可围绕原误区复练，原错答不改写。有限题库重复时会提示。
+
+中途草稿保存输入、选点、预测理由与未提交迁移选择。浏览器有界草稿兜底，服务端校验阶段和保存顺序，恢复后重新计算；迟到草稿不能覆盖已提交答案。浏览器没有续接入口时，首页和档案仍能从SQLite找回记录与课程统计。
+
+设置区分已配置、连接测试结果和规则模式。已有密钥留空保留，修改保存后生效；主动测试才调用模型。JSON备份排除模型配置及待答隐藏答案，先预览并复算，再合并恢复；已有同标识记录保持，导入来源可见。
+
+[设置](artifacts/screenshots/workspace-settings-v14.jpg) · [统一档案](artifacts/screenshots/workspace-records-v14.jpg) · [AI证据](artifacts/screenshots/workspace-ai-v14.jpg) · [恢复预览](artifacts/screenshots/workspace-restore-v14.jpg) · [准确续接](artifacts/screenshots/workspace-resume-v14.jpg) · [手机](artifacts/screenshots/workspace-mobile-v14.jpg)
 
 ## 先猜一次，再让实验回答
 
@@ -186,23 +198,27 @@ AI实验执行后可以恢复执行前条件、再回看执行后条件，原核
 
 ## 安装与启动
 
-使用Node.js 20.9+、Python 3.13。克隆后，在项目根目录运行：
+准备Python 3.13与Node.js 22.18+或24+；本次实测Python 3.13.15、Node.js 24.14.1。首次克隆后，在项目根目录运行：
 
 ```powershell
-npm.cmd ci
-python -m pip install -r requirements.txt
-.\scripts\start.ps1
+.\scripts\start.ps1 -Install
 ```
 
-打开 http://127.0.0.1:3000 。启动脚本从当前Python环境获取解释器；也可通过`FITLAB_PYTHON`环境变量、忽略的`.env.local`文件，或`-Python`参数选择已有环境。关闭运行终端或Ctrl+C可停止服务。3000和8000端口需空闲。
+脚本先检查基础环境、锁定依赖和数据快照，只在需要时安装依赖。已有FitLab直接复用；端口被其他程序占用时明确提示并保持对方进程。正常启动后打开网页，默认 http://127.0.0.1:3000 。
+
+已有环境运行`.\scripts\start.ps1`即可；优先沿用`FITLAB_PYTHON`、忽略的`.env.local`配置或`-Python`参数指定的解释器。根目录`.env.example`提供可选模板，已有配置无需覆盖。按Ctrl+C停止本次启动的服务，不停止复用实例。
+
+参数：`-NoBrowser`仅启动服务，`-WebPort 3002 -ApiPort 8002`选择其他本机端口；`-Production`运行已完成`npm.cmd run build`的生产版；`-SmokeTest -NoBrowser`在就绪后退出并清理本次启动的进程。
 
 其他系统可分别运行`python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000`与`npm run dev`。
 
-依赖版本已锁定。安装与启动速度取决于环境和网络，可运行`python scripts/check_environment.py`核对版本。
+安装速度取决于环境和网络；`python scripts/check_environment.py`检查版本、缺失依赖、前端安装及五组公开快照，并给出修复方向，支持`--json`。本轮验证了冷启动与已有实例复用，未在另一台干净机器完成10分钟安装计时。
 
 ## AI配置
 
-复制`backend/.env.example`为`backend/.env`并设置`AI_API_KEY`。配置项：
+网页右上角“设置”可沿用或更新连接，密钥留空表示保留；关闭AI时配置仍保留。主动点击“测试AI连接”才会发送一次简短请求，显示最近测试结果。界面保存立即生效。
+
+命令行也可参考`backend/.env.example`创建`backend/.env`并设置`AI_API_KEY`：
 
 ```dotenv
 AI_BASE_URL=https://api.deepseek.com/v1
@@ -211,9 +227,10 @@ AI_API_KEY=填写你自己的密钥
 AI_REASONING_EFFORT=xhigh
 AI_MAX_TOKENS=8192
 AI_TIMEOUT=90
+AI_ENABLED=1
 ```
 
-密钥保存在忽略的本地配置中。修改配置后重启后端。无API时实验、练习、记录照常运行，教练明确显示规则分析。接口故障也显示降级原因。密钥不进入前端、Git或导出报告。
+密钥保存在忽略的本地配置中，接口不将已保存密钥读回页面。手工修改文件后需重启后端。无API或选择规则模式时，实验、练习、记录照常运行；接口故障显示本次降级原因。模型配置不进入学习备份、Git或实验报告。
 
 DeepSeek兼容接受`xhigh`并映射为原生`high`，请求启用思考模式；应用只展示最终解释和用量，不展示推理过程。参数规则见[官方说明](https://api-docs.deepseek.com/api/create-chat-completion/)。
 
@@ -231,7 +248,7 @@ npm.cmd run build
 
 真实数据的配对验证可用`python scripts/validate_bench.py`复现；[原始运行记录](experiments/improvement/real-data-v1/results.json)包含63组条件与验证结果。不同数据集的RMSE单位不同，不进行跨数据集直接排名。三种子的均值与样本标准差只描述划分波动，不作为置信区间。
 
-运行数据保存在`data/fitlab.sqlite`，不随仓库发布。学习进度保存在当前浏览器。仓库中的截图与开发验收记录是开发证据，不是学生学习效果研究数据。
+运行数据和首答保存在本机`data/fitlab.sqlite`，不随仓库发布；浏览器保存输入及未同步草稿，首页和档案从数据库重建入口与课程统计。设置页可下载、预览或复制学习备份，恢复前校验/复算，已有同标识记录不覆盖。当前不提供跨设备自动同步。截图与验收记录是开发证据，不是学生学习效果研究数据。
 
 报告在弹窗中预览或复制，也可点击附件链接下载。当前Chrome策略会拦截自动化附件导航，已核验的可用获取方式是在线预览/复制；标准附件接口另经HTTP验证。示例报告在`artifacts/sample-report.json`和`.md`。
 
