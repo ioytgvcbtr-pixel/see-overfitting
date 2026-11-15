@@ -223,6 +223,15 @@ def descriptor(task):
     return {k: copy.deepcopy(v) for k, v in task.items() if not k.startswith('_')}
 
 
+def seen_case(records, task):
+    for s in records:
+        if s['panel'] != task['panel']: continue
+        for old, viewed in ((s.get('_case'), bool(s.get('prediction'))), (s.get('_transfer'), bool(s.get('transfer_answer')))):
+            if old and viewed and old['mode'] == task['mode'] and old['before_parameters'] == task['before_parameters'] and old['target_parameters'] == task['target_parameters']:
+                return True
+    return False
+
+
 def public(saved):
     value = {k: copy.deepcopy(v) for k, v in saved.items() if not k.startswith('_')}
     value['task'] = descriptor(saved['_case'])
@@ -267,7 +276,10 @@ def make_router(connect):
                  'protocol_version': 2,
                  'stage': 'predict', 'prediction': None, 'observation': None, 'transfer_answer': None,
                  'hints_used': 0, 'ai_before_transfer': [], '_case': task, '_transfer': None}
-        with connect() as connection: save(connection, 'island_attempts', saved)
+        with connect() as connection:
+            records = [json.loads(row['content']) for row in connection.execute('SELECT content FROM island_attempts').fetchall()]
+            saved['repeated_case'] = seen_case(records, task)
+            save(connection, 'island_attempts', saved)
         return public(saved)
 
     @router.get('/history')
@@ -313,7 +325,7 @@ def make_router(connect):
             seed = next(s for s in seeds if s not in (original['_case']['seed'], previous['seed']))
             task = case(original['panel'], previous['mode'], seed)
             older = [json.loads(r['content']) for r in connection.execute('SELECT content FROM island_attempts').fetchall()]
-            repeated = any(s['panel'] == original['panel'] and s['_case']['seed'] == seed and s['mode'] == task['mode'] and s.get('prediction') for s in older)
+            repeated = seen_case(older, task)
             saved = {'id': uuid.uuid4().hex, 'created_at': learning.now(), 'panel': original['panel'], 'mode': task['mode'],
                      'protocol_version': 2, 'stage': 'predict', 'prediction': None, 'observation': None,
                      'transfer_answer': None, 'hints_used': 0, 'ai_before_transfer': [], '_case': task, '_transfer': None,

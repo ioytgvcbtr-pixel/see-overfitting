@@ -58,6 +58,8 @@ def test_overview_and_targeted_practice_keep_original_history(client):
     assert new['practice_focus'] and new['observation'] is None
     assert client.get('/islands/attempts/'+s['id']).json()==s
     assert client.get('/workspace/overview').json()['latest']['id']==new['id']
+    repeated=client.post('/islands/tasks',json={'panel':'error','mode':s['transfer_task']['mode'],'avoid_seed':s['task']['seed']}).json()
+    assert repeated['task']['seed']==s['transfer_task']['seed'] and repeated['repeated_case'] is True
 
 
 def test_settings_are_write_only_keep_existing_key_and_apply_without_restart(client):

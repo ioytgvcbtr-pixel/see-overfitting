@@ -106,7 +106,10 @@ def rebuild_island(raw):
     cp = raw.get('checkpoint')
     if cp and cp.get('stage') == s['stage']:
         s['checkpoint'] = islands.checkpoint_value(s, islands.Checkpoint.model_validate({k:v for k,v in cp.items() if k != 'updated_at'}))
-    if raw.get('practice_of'): s['practice_of'] = identity(raw['practice_of'])
+    if raw.get('practice_of'):
+        s['practice_of'] = identity(raw['practice_of'])
+        s['practice_focus'] = islands.REASONS[s['panel']][0]
+    s['repeated_case'] = bool(raw.get('repeated_case'))
     return s
 
 
