@@ -30,6 +30,7 @@
 - [0.13实际验收](docs/VALIDATION_V13.md)
 - [0.14启动与学习流程](docs/WORKSPACE_FLOW_V14.md)
 - [0.14实际验收](docs/VALIDATION_V14.md)
+- [0.14官方要求复核与严格自评](docs/REVIEW_V14.md)
 - [AI开发记录](docs/ai-process/README.md)
 
 当前为本地可运行的0.14版。首页统一开始、继续与探索，课程/四岛/AI记录可在同一档案中回看；实验中途输入和未提交选择可准确续接。设置支持AI连接测试、规则模式与学习备份恢复。四岛的预测、实验、迁移及反例继续使用真实计算，首次作答保留。界面延续稳定数字、同心圆角、分组淡入和轻柔阴影。实际范围见[0.14验收](docs/VALIDATION_V14.md)、[0.13验收](docs/VALIDATION_V13.md)和[此前记录](docs/VALIDATION.md)。
