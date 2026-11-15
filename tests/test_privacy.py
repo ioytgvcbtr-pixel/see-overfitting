@@ -26,7 +26,7 @@ def test_file_uri_is_normalized():
 
 
 def test_signed_artifact_urls_are_not_published_in_process_logs():
-    url='https://downloads.example/artifact?expires=123&sig=temporary-fixture'
+    url='https://downloads.example/artifact?expires=123&'+'sig=temporary-fixture'
     event={'result':{'download_url':url},'source':'https://github.com/example/project/actions/runs/123'}
     result=json.loads(redact(json.dumps(event)))
     assert result['result']['download_url']=='[TEMPORARY_DOWNLOAD_URL]'
