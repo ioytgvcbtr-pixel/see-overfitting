@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from backend import actions, experiments, islands, learning
+from backend import actions, experiments, islands, learning, pedagogy
 
 TABLES = ('learning_attempts', 'island_attempts', 'action_plans', 'island_actions', 'records')
 MAX_BYTES = 16 * 1024 * 1024
@@ -48,12 +48,25 @@ def stamp(value):
 
 
 def prediction(raw):
-    return islands.Predict.model_validate({k: raw[k] for k in ('choice', 'confidence', 'reason')})
+    return islands.Predict.model_validate({k: raw[k] for k in ('choice', 'confidence', 'reason', 'planned_alpha') if k in raw})
 
 
 def rebuild_task(raw):
     panel, mode = raw['panel'], raw['mode']
     if panel not in islands.NAMES or mode not in ('discovery', 'counterexample'): raise ValueError('未知岛屿任务。')
+    if raw.get('investigation'):
+        if panel != 'regularization' or mode != 'counterexample': raise ValueError('自主反例任务不合法。')
+        task = pedagogy.investigation(raw['seed'])
+        if raw['before_parameters'] != task['before_parameters']: raise ValueError('自主反例起点不合法。')
+        return task
+    if raw.get('content_version') == 2:
+        form = raw.get('question_kind','comparison')
+        if form not in ('comparison','model_selection','controlled_design'): raise ValueError('未知迁移表达。')
+        # Recreate from the canonical seed; never trust imported charts or keys.
+        task = pedagogy.upgrade(islands.case(panel,mode,raw['seed']),form)
+        if task['before_parameters'] != raw['before_parameters'] or task['target_parameters'] != raw['target_parameters']:
+            raise ValueError('题目条件不符合版本协议。')
+        return task
     before = islands.params(panel, raw['before_parameters']).model_dump()
     target = islands.params(panel, raw['target_parameters']).model_dump()
     control = raw['control']
@@ -76,18 +89,40 @@ def rebuild_island(raw):
     s = {'id': identity(raw['id']), 'created_at': stamp(raw['created_at']), 'updated_at': learning.now(),
          'panel': task['panel'], 'mode': task['mode'], 'protocol_version': 2, '_case': task, '_transfer': None,
          'stage': 'predict', 'prediction': None, 'observation': None, 'transfer_answer': None,
-         'hints_used': int(raw.get('hints_used', 0)),
+         'hints_used': int(raw.get('hints_used', 0)), 'trials': [],
+         'transfer_variant': int(raw.get('transfer_variant',0)),
          'ai_before_transfer': [identity(v) for v in raw.get('ai_before_transfer', [])[:100]], 'imported_at': learning.now()}
     if not 0 <= s['hints_used'] <= 2: raise ValueError('提示层级不合法。')
+    if not 0 <= s['transfer_variant'] <= 2: raise ValueError('迁移表达不合法。')
     if raw.get('prediction'):
         p = prediction(raw['prediction'])
         s['prediction'] = p.model_dump() | {'submitted_at': stamp(raw['prediction']['submitted_at'])}
         s['stage'] = 'experiment'
+    if task.get('investigation'):
+        if s['prediction'] and (s['prediction']['planned_alpha'] not in islands.concepts.ALPHAS or
+                               s['prediction']['planned_alpha'] <= task['before_parameters']['alpha']):
+            raise ValueError('自主反例缺少合法首轮计划。')
+        trials = raw.get('trials',[])
+        if len(trials)>8: raise ValueError('自主反例试验过多。')
+        for i, row in enumerate(trials):
+            current = islands.params('regularization',row['parameters']).model_dump()
+            if not s['prediction'] or (i==0 and current['alpha'] != s['prediction']['planned_alpha']):
+                raise ValueError('首轮试验与锁定预测不匹配。')
+            proof = pedagogy.trial(task,current)
+            if any(t['parameters']==current for t in s['trials']): raise ValueError('重复试验记录。')
+            s['trials'].append({'parameters':current,'proof':proof,'observed_at':stamp(row['observed_at'])})
+        if raw.get('observation'):
+            if not s['trials'] or not s['trials'][-1]['proof']['goal_met']: raise ValueError('未找到可复算反例。')
+            task['target_parameters'] = s['trials'][-1]['parameters']
+            task['_proof'] = s['trials'][-1]['proof']
     if raw.get('observation'):
         if not s['prediction']: raise ValueError('实验缺少首次预测。')
         s['observation'] = task['_proof'] | {'matched': task['_proof']['choice'] == s['prediction']['choice'],
             'conclusion': task['reasons'][task['_reason']], 'observed_at': stamp(raw['observation']['observed_at'])}
         s['stage'] = 'review'
+        if task.get('investigation'):
+            s['observation'].update(matched=s['trials'][0]['proof']['choice']==s['prediction']['choice'],
+                first_choice=s['trials'][0]['proof']['choice'], conclusion='找到一个实算反例：系数收缩与验证误差降低不是同一个目标。')
     if raw.get('_transfer'):
         transfer = rebuild_task(raw['_transfer'])
         if not s['observation'] or transfer['panel'] != s['panel'] or transfer['seed'] == task['seed']:

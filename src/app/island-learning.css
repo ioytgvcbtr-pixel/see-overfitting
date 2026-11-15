@@ -91,3 +91,23 @@
   .island-ai-preview { padding:16px; border-radius:18px; }
 }
 @media (prefers-reduced-motion:reduce) { .causal-change { animation:none; } [data-causal-object] { transition:none; } }
+.transfer-observations { --transfer-blue:#397bb7; --transfer-orange:#bd6135; --transfer-green:#23806b; --transfer-track:#e9edf0; margin:24px 0; font-variant-numeric:tabular-nums; }
+.transfer-observation-title { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; }
+.transfer-observation-plots { display:grid; gap:24px; }
+.transfer-observation-plots figure { margin:0; min-width:0; }
+.transfer-observation-plots figcaption { margin:0 0 12px; font-size:14px; font-weight:650; }
+.transfer-observation-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 16px; margin:12px 0; font-size:13px; align-items:baseline; }
+.transfer-observation-row span { overflow-wrap:anywhere; }
+.transfer-observation-row strong { font-weight:600; }
+.transfer-observation-row svg { grid-column:1/-1; width:100%; height:12px; display:block; }
+.transfer-observations details { margin-top:20px; }
+.transfer-observations summary { min-height:44px; display:flex; align-items:center; cursor:pointer; font-size:14px; }
+.transfer-table-scroll { overflow:auto; }
+.transfer-table-scroll table { border-collapse:collapse; font-size:12px; width:100%; }
+.transfer-table-scroll th,.transfer-table-scroll td { padding:10px 8px; text-align:left; white-space:nowrap; }
+.transfer-table-scroll thead { background:#f3f5f7; }
+.investigation-start { margin-top:16px; width:100%; }
+.investigation-plan { display:grid; gap:12px; margin:20px 0; font-size:14px; }
+.investigation-plan select { min-height:48px; padding:12px 16px; border-radius:12px; border:0; background:#f0f5f2; color:#245441; font:inherit; }
+.investigation-trials { margin:24px 0; padding-left:16px; box-shadow:inset 3px 0 #b7d7cb; }
+.investigation-trials p { font-size:13px; line-height:1.8; font-variant-numeric:tabular-nums; }

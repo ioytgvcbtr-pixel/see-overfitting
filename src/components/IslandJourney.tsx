@@ -8,6 +8,7 @@ import { inputKey, islandNames, learningReference, proofNumber, type IslandAttem
 import { workspaceChanged } from "@/lib/workspace";
 import LearningCompanion from "./LearningCompanion";
 import HelpHint from "./HelpHint";
+import TransferEvidence from "./TransferEvidence";
 
 type Props = {
   panel: IslandId; input: IslandInput; pending: boolean;
@@ -38,6 +39,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
   const [choice, setChoice] = useState<number | null>(null), [confidence, setConfidence] = useState(2);
   const [reason, setReason] = useState(""), [transferChoice, setTransferChoice] = useState<number | null>(null);
   const [transferReason, setTransferReason] = useState<number | null>(null);
+  const [plannedAlpha,setPlannedAlpha]=useState(.1);
   const [plan, setPlan] = useState<IslandPlan | null>(null);
   const [actionHistory, setActionHistory] = useState<IslandPlan[]>([]);
   const [history, setHistory] = useState<IslandAttempt[]>([]);
@@ -73,11 +75,11 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
     if (draftTimer.current) clearTimeout(draftTimer.current);
     if (!attempt || !["predict","experiment","transfer"].includes(attempt.stage)) { draftRef.current=null; return; }
     const d: IslandDraft = {id:attempt.id,stage:attempt.stage as IslandDraft["stage"],parameters:input,selected,
-      choice,confidence,reason,transfer_choice:transferChoice,transfer_reason:transferReason,client_updated_at:new Date().toISOString()};
+      choice,confidence,reason,transfer_choice:transferChoice,transfer_reason:transferReason,planned_alpha:plannedAlpha,client_updated_at:new Date().toISOString()};
     draftRef.current=d;
     try { localStorage.setItem(draftKey(d.id),JSON.stringify(d)); } catch { setSaveError("本页草稿未能保存到浏览器，请使用暂存按钮确认服务端保存。"); }
     draftTimer.current=setTimeout(()=>void persistDraft(d),350);
-  }, [attempt?.id,attempt?.stage,inputKey(input),selected,choice,confidence,reason,transferChoice,transferReason]);
+  }, [attempt?.id,attempt?.stage,inputKey(input),selected,choice,confidence,reason,transferChoice,transferReason,plannedAlpha]);
 
   async function persistDraft(d: IslandDraft) {
     saveOperation.current?.abort(); const abort=new AbortController();saveOperation.current=abort;
@@ -101,18 +103,21 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
     finally { if (ticket === operation.current) setBusy(null); }
   }
   const active = attempt, task = active?.task;
-  const atTarget = !!task && inputKey(input) === inputKey(task.target_parameters);
+  const atTarget = !!task && (task.investigation ? "alpha" in input && input.alpha > (task.before_parameters as {alpha:number}).alpha &&
+    Object.entries(task.before_parameters).every(([key,value])=>key==="alpha"||inputKey(value)===inputKey((input as unknown as Record<string,unknown>)[key])) &&
+    (!!active?.trials?.length || input.alpha===active?.prediction?.planned_alpha) : inputKey(input) === inputKey(task.target_parameters));
   const planMatches = !!plan && inputKey(input) === inputKey(plan.baseline_parameters);
   const transfer = active?.transfer_task;
   const isLocked = !!busy;
   function apply(value: IslandInput, selected?: number, fitCurrent = false) { onApply(value, selected, fitCurrent); }
-  function start(mode: "discovery" | "counterexample") {
+  function start(mode: "discovery" | "counterexample", autonomous=false) {
     setChoice(null); setConfidence(2); setTransferChoice(null); setTransferReason(null); setReason(""); setPlan(null); setActionHistory([]); setMotion(0);
-    void run<IslandAttempt>("准备挑战", "/islands/tasks", { panel, mode, avoid_seed: input.seed }, remember);
+    setPlannedAlpha(.1);
+    void run<IslandAttempt>("准备挑战", "/islands/tasks", { panel, mode, autonomous, avoid_seed: input.seed }, remember);
   }
   function predict() {
     if (!active || choice === null) return;
-    void run<IslandAttempt>("保存预测", `/islands/attempts/${active.id}/predict`, { choice, confidence, reason }, value => {
+    void run<IslandAttempt>("保存预测", `/islands/attempts/${active.id}/predict`, { choice, confidence, reason, ...(task?.investigation?{planned_alpha:plannedAlpha}:{}) }, value => {
       remember(value); apply(value.task.before_parameters, value.task.row ?? value.task.selected, true);
       setIntro(false); try { localStorage.setItem("fitlab-island-intro-v13", "seen"); } catch { /* preference only */ }
     });
@@ -124,6 +129,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
     const d=preferredDraft(value,local);
     setChoice(value.prediction?.choice ?? d?.choice ?? null);setConfidence(value.prediction?.confidence ?? d?.confidence ?? 2);
     setReason(value.prediction?.reason ?? d?.reason ?? "");
+    setPlannedAlpha(value.prediction?.planned_alpha ?? d?.planned_alpha ?? .1);
     setTransferChoice(value.transfer_answer?.choice ?? d?.transfer_choice ?? null);setTransferReason(value.transfer_answer?.reason ?? d?.transfer_reason ?? null);
     if (value.stage === "complete" && value.transfer_task) apply(value.transfer_task.target_parameters, value.transfer_task.row ?? value.transfer_task.selected, true);
     else if (d && value.stage!=="predict") apply(d.parameters,d.selected,true);
@@ -153,6 +159,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
       <p className="island-learning-lead">{({error:"训练拟合得更好，新数据也会更好吗？", sensitivity:"一枚路钉，会更牵动哪条路？", regularization:"枝条收起来，远处就更准吗？", forest:"救回一件包裹，整体就更好吗？"})[panel]}</p>
       <div className="island-start-options"><button className="button primary" disabled={isLocked} onClick={() => start("discovery")}><FlaskConical size={20} />开始一次发现</button>
         <button className="button secondary" disabled={isLocked} onClick={() => start("counterexample")}><Lightbulb size={20} />挑战一个反例</button></div>
+      {panel==="regularization"&&<button className="button secondary investigation-start" disabled={isLocked} onClick={()=>start("counterexample",true)}><Target size={22}/>自主寻找反例</button>}
     </>}
 
     {active && task && stage === "predict" && <>
@@ -160,6 +167,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
       {active.repeated_case && <p className="island-condition">这组条件曾练习过，有限题库会重复；本次首答单独保留。</p>}
       <p className="island-operation">{task.operation}</p>
       <p className="island-condition">{task.context}；seed {task.seed}。预测后载入画布。</p>
+      {task.investigation&&<label className="investigation-plan">第一次只改变α，先选一个值<select aria-label="首轮计划α" value={plannedAlpha} disabled={isLocked} onChange={e=>setPlannedAlpha(Number(e.target.value))}>{[.1,1,10,100].filter(a=>a>(task.before_parameters as {alpha:number}).alpha).map(a=><option value={a} key={a}>{a}</option>)}</select></label>}
       <fieldset disabled={isLocked}><legend>{task.question}</legend>
         <div className="island-answer-options">{task.choices.map((label, i) => <button key={label} aria-pressed={choice === i} onClick={() => setChoice(i)}>{label}</button>)}</div>
       </fieldset>
@@ -170,19 +178,21 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
 
     {active && task && stage === "experiment" && <>
       <LearningCompanion mood="welcome" title="让物件回答你的猜想" message={task.operation} event={0} />
-      <p className="island-prediction-line">你的预测：{task.choices[active.prediction!.choice]}</p>
+      <p className="island-prediction-line">你的预测：{task.choices[active.prediction!.choice]}{task.investigation?`；首轮α=${active.prediction!.planned_alpha}`:""}</p>
+      {task.investigation&&!!active.trials?.length&&<div className="investigation-trials" role="status"><strong>已核验 {active.trials.length} 次</strong>{active.trials.map((t,i)=><p key={i}>α={(t.parameters as {alpha:number}).alpha}：范数 {proofNumber(t.proof.after_norm!,panel)}，验证MSE {proofNumber(t.proof.after,panel)}{t.proof.goal_met?" · 找到反例":" · 尚未同时满足两个条件"}</p>)}<p>保留其他条件，再试一个更大的α。</p></div>}
       <div className="island-action-pair"><button className="button secondary" disabled={isLocked} onClick={() => onLocate(task.focus)}><Target size={20} />定位证据</button>
         <button className="button secondary" disabled={isLocked} onClick={() => apply(task.before_parameters, task.row ?? task.selected)}><RotateCcw size={20} />回到起点</button></div>
-      <p className="island-condition">{pending ? "等待当前实算。" : atTarget ? "目标条件已就绪，可以核验。" : "保持其他条件不变，使用场景控件完成上方操作。"}</p>
+      <p className="island-condition">{pending ? "等待当前实算。" : atTarget ? "条件已就绪，可以核验。" : task.investigation&&!active.trials?.length?`先把画布α调到锁定的 ${active.prediction!.planned_alpha}，再核验首轮预测。`:"保持其他条件不变，使用场景控件完成上方操作。"}</p>
       <button className="button primary" disabled={isLocked || pending || !atTarget} onClick={() => void run<IslandAttempt>("核验实验", `/islands/attempts/${active.id}/observe`, {parameters:input}, v => { remember(v); setMotion(n => n+1); onLocate(task.focus); })}>核验这次实验<Check size={20} /></button>
       <button className="text-button" disabled={isLocked || active.hints_used >= 2} onClick={() => void run<IslandAttempt>("记录提示", `/islands/attempts/${active.id}/hint`, {}, v => { remember(v); onLocate(task.focus); })}><Lightbulb size={20} />{active.hints_used ? "再看一步" : "给我一个提示"}</button>
       {active.hints_used > 0 && <div className="island-hint" role="status"><p>{active.hints_used === 1 ? panel === "sensitivity" ? "RMS衡量两路被牵动的幅度，验证MSE衡量预测误差。先找到题目问的那一组读数。" : panel === "regularization" ? "可放大当前枝条，再分别核对系数范数和验证MSE；调α时保持其他条件不变。" : panel === "forest" ? "固定这件包裹，切换模型后也要核对全体验证准确率。" : "训练MSE和验证MSE衡量不同数据上的拟合；保持验证数据不变，分别比较。" : `只完成这一项：${task.operation}。需要时点“回到起点”，重新调整。`}</p>
-        {active.hints_used === 2 && !atTarget && <button className="button secondary" disabled={isLocked} onClick={() => apply(task.target_parameters, task.row ?? task.selected)}>按提示设置目标</button>}</div>}
+        {active.hints_used === 2 && !atTarget && !task.investigation && <button className="button secondary" disabled={isLocked} onClick={() => apply(task.target_parameters, task.row ?? task.selected)}>按提示设置目标</button>}</div>}
     </>}
 
     {active && task && stage === "review" && active.observation && <>
-      <LearningCompanion mood={active.observation.matched ? "celebrate" : "thinking"} title={active.observation.matched ? "这次结果与你的预测一致" : "发现了一个值得修正的猜想"} message="一次划分的结果，需要继续用新数据检验。" event={motion} />
-      <p className="island-prediction-line">最初预测：{task.choices[active.prediction!.choice]}；实际：{task.choices[active.observation.choice]}（seed {task.seed}）</p>
+      <LearningCompanion mood={task.investigation||active.observation.matched ? "celebrate" : "thinking"} title={task.investigation?"自主反例已通过实算核验":active.observation.matched ? "这次结果与你的预测一致" : "发现了一个值得修正的猜想"} message="一次划分的结果，需要继续用新数据检验。" event={motion} />
+      <p className="island-prediction-line">首次预测：{task.choices[active.prediction!.choice]}；首次实测：{task.choices[active.observation.first_choice??active.observation.choice]}（seed {task.seed}）</p>
+      {task.investigation&&<p>经过 {active.trials?.length} 次核验，在α={(task.target_parameters as {alpha:number}).alpha}找到了反例。下方是起点与反例的比较。</p>}
       <Evidence panel={panel} proof={active.observation} />
       <p className="island-insight">{active.observation.conclusion}</p>
       <button className="button primary" disabled={isLocked} onClick={() => { setPlan(null); void run<IslandAttempt>("准备新数据", `/islands/attempts/${active.id}/transfer-task`, {}, remember); }}>去新数据里验证<ArrowRight size={20} /></button>
@@ -190,8 +200,9 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
 
     {active && transfer && stage === "transfer" && <>
       <p className="island-transfer-intro"><Target size={24} />换一组数据，独立判断</p>
-      <p className="island-condition">{transfer.context}；seed {task!.seed} → {transfer.seed}。本题结果在作答后揭示。</p>
+      <p className="island-condition">{transfer.context}；seed {task!.seed} → {transfer.seed}。{transfer.assessment?"根据实测观测判断，作答后核验依据。":"本题结果在作答后揭示。"}</p>
       <p className="island-operation">{transfer.operation}</p>
+      <TransferEvidence task={transfer}/>
       <fieldset disabled={isLocked}><legend>{transfer.question}</legend><div className="island-answer-options">{transfer.choices.map((label, i) => <button key={label} aria-pressed={transferChoice === i} onClick={() => setTransferChoice(i)}>{label}</button>)}</div></fieldset>
       <fieldset disabled={isLocked}><legend>哪条依据更可靠？</legend><div className="island-reason-options">{transfer.reasons.map((label, i) => <button key={label} aria-pressed={transferReason === i} onClick={() => setTransferReason(i)}>{label}</button>)}</div></fieldset>
       <button className="button primary" disabled={isLocked || transferChoice === null || transferReason === null} onClick={() => void run<IslandAttempt>("核验迁移", `/islands/attempts/${active.id}/answer`, {task_id:transfer.id,choice:transferChoice,reason:transferReason}, v => {
@@ -203,14 +214,14 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
     {active && transfer && stage === "complete" && active.transfer_answer && <>
       <LearningCompanion mood={active.transfer_answer.passed ? "celebrate" : "thinking"} title={active.transfer_answer.passed ? "判断与依据都通过核验" : "这次迁移还需要再练习"} message={active.transfer_answer.assisted ? "迁移前有提示或AI方案记录，已标明辅助。" : "迁移前没有提示或AI方案记录。"} event={motion} />
       <p className="island-prediction-line">首次迁移：{transfer.choices[active.transfer_answer.choice]}；实际：{transfer.choices[active.transfer_answer.proof.choice]}（seed {transfer.seed}）</p>
-      <Evidence panel={panel} proof={active.transfer_answer.proof} />
+      {transfer.assessment?<TransferEvidence task={transfer}/>:<Evidence panel={panel} proof={active.transfer_answer.proof} />}
       <p className="island-insight">{transfer.reasons[active.transfer_answer.correct_reason]}</p>
       {active.transfer_answer.passed&&onNextLesson&&<button className="button primary" disabled={isLocked} onClick={async()=>{
         setBusy("打开下一站");setError("");try{await onNextLesson(({error:"sensitivity",sensitivity:"regularization",regularization:"forest",forest:"history"} as const)[panel]);}catch(e){setError((e as Error).message);}finally{setBusy(null);}
       }}><ArrowRight size={20}/>{({error:"下一站：曲线山",sensitivity:"下一站：约束花园",regularization:"下一站：边界森林",forest:"查看我的学习记录"})[panel]}</button>}
       {!active.transfer_answer.passed && <button className="button primary" disabled={isLocked} onClick={()=>void run<IslandAttempt>("准备针对性复练",`/islands/attempts/${active.id}/practice`,{},v=>{setChoice(null);setConfidence(2);setReason("");setTransferChoice(null);setTransferReason(null);setMotion(0);remember(v);})}><Target size={20}/>针对这个误区再练</button>}
       {active.observation && <details className="island-round-review"><summary><BookOpen size={20} />回看这轮预测与实验</summary>
-        <p>最初预测：{task!.choices[active.prediction!.choice]}；实际：{task!.choices[active.observation.choice]}（seed {task!.seed}）</p>
+        <p>首次预测：{task!.choices[active.prediction!.choice]}；首次实测：{task!.choices[active.observation.first_choice??active.observation.choice]}（seed {task!.seed}）</p>
         <p>当时信心：{["试着猜", "有些把握", "很确定"][active.prediction!.confidence-1]}{active.prediction!.reason ? `；理由：${active.prediction!.reason}` : ""}</p>
         <Evidence panel={panel} proof={active.observation} />
         <p>{active.observation.conclusion}</p><p className="island-condition">实验提示 {active.hints_used}级；迁移前AI方案 {active.ai_before_transfer.length}份。</p>
@@ -230,6 +241,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
         setPlan(value); if (!active.transfer_answer) remember({...active, ai_before_transfer:[...new Set([...active.ai_before_transfer,value.id])]});
       })}>{plan ? "重新生成方案" : "生成可执行方案"}</button>
       {plan && <div className="island-ai-preview"><p className="island-condition">{plan.mode === "online" ? `${plan.model} · AI方案` : "规则方案"}</p>{plan.notice && <p role="status">{plan.notice}</p>}
+        {plan.learning_focus&&<p className="island-insight">本次检验：{plan.learning_focus.label}<HelpHint title="这条线索从哪里来"><p>根据已提交的选择与依据提出待检验线索，不作为学生能力结论。</p></HelpHint></p>}
         <strong>{plan.change.label}：{String(plan.change.from_value)} → {String(plan.change.to_value)}</strong><p>{plan.hypothesis}</p>
         <p>待检验预期：{plan.expected === "lower" ? "验证误差降低" : plan.expected === "higher" ? "验证误差升高" : "只观察，不预设方向"}</p>
         {!plan.execution ? <button className="button primary" disabled={isLocked || pending || !planMatches} onClick={() => void run<IslandPlan>("执行并复算", `/islands/actions/${plan.id}/execute`, {parameters:input}, v => {

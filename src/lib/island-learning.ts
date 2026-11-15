@@ -13,6 +13,7 @@ export type IslandProof = {
   a_validation?: number; b_validation?: number;
   row?: number; fixed?: boolean;
   matched?: boolean; conclusion?: string; validation_fingerprint: string;
+  first_choice?: number; goal_met?: boolean;
 };
 export type IslandTask = {
   id?: string; panel: IslandId; mode: "discovery" | "counterexample";
@@ -20,11 +21,13 @@ export type IslandTask = {
   operation: string; control: string; focus: string; seed: number;
   selected: number; row: number | null;
   before_parameters: IslandInput; target_parameters: IslandInput;
+  investigation?: boolean; question_kind?: string;
+  assessment?: {columns:string[];rows:{label:string;values:number[]}[];percent:boolean;note:string};
 };
 export type IslandAttempt = {
   id: string; created_at: string; panel: IslandId; mode: IslandTask["mode"];
   stage: "predict" | "experiment" | "review" | "transfer" | "complete";
-  prediction: { choice: number; confidence: number; reason: string } | null;
+  prediction: { choice: number; confidence: number; reason: string; planned_alpha?: number | null } | null;
   observation: IslandProof | null; task: IslandTask;
   transfer_task: IslandTask | null; hints_used: number; ai_before_transfer: string[];
   transfer_answer: {
@@ -36,6 +39,7 @@ export type IslandAttempt = {
   practice_focus?: string;
   repeated_case?: boolean;
   imported_at?: string;
+  trials?: {parameters:IslandInput;proof:IslandProof;observed_at:string}[];
 };
 export type IslandLaunch = { attempt: IslandAttempt; serial: number };
 export type NextLesson = (panel: IslandId | "history") => Promise<void>;
@@ -44,6 +48,7 @@ export type IslandDraft = {
   choice: number | null; confidence: number; reason: string;
   transfer_choice: number | null; transfer_reason: number | null;
   client_updated_at: string; updated_at?: string;
+  planned_alpha?: number | null;
 };
 export function draftKey(id: string) { return `fitlab-island-draft-v14-${id}`; }
 export function readIslandDraft(raw: string | null): IslandDraft | null {
@@ -58,7 +63,8 @@ export function readIslandDraft(raw: string | null): IslandDraft | null {
         ![1,2,3].includes(d.confidence) || typeof d.reason !== "string" || d.reason.length > 500 ||
         typeof d.client_updated_at !== "string" || !Number.isFinite(Date.parse(d.client_updated_at))) return null;
     return {id:d.id,stage:d.stage,parameters:p,selected:d.selected,choice:d.choice,confidence:d.confidence,reason:d.reason,
-      transfer_choice:d.transfer_choice,transfer_reason:d.transfer_reason,client_updated_at:d.client_updated_at};
+      transfer_choice:d.transfer_choice,transfer_reason:d.transfer_reason,client_updated_at:d.client_updated_at,
+      ...(typeof d.planned_alpha==='number' && [1e-8,1e-6,1e-4,.01,.1,1,10,100].includes(d.planned_alpha) ? {planned_alpha:d.planned_alpha}: {})};
   } catch { return null; }
 }
 export function checkpointPayload(d: IslandDraft) {
@@ -77,6 +83,7 @@ export type IslandPlan = {
   hypothesis: string; expected: "lower" | "higher" | "uncertain";
   baseline_parameters: IslandInput; target_parameters: IslandInput;
   change: { control: string; label: string; from_value: string | number; to_value: string | number };
+  learning_focus?: {label:string;status?:string};
   execution: { before: number; after: number; metric: string; verdict: "observed" | "supported" | "not_supported";
     validation_fingerprint: string; test_sealed: boolean } | null;
 };

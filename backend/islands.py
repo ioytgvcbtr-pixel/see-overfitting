@@ -11,7 +11,7 @@ from typing import Literal
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from backend import classification, coach, concepts, learning
+from backend import classification, coach, concepts, learning, pedagogy
 from backend.actions import Suggestion
 
 Panel = Literal['error', 'sensitivity', 'regularization', 'forest']
@@ -35,12 +35,14 @@ class Prepare(Strict):
     panel: Panel
     mode: Mode = 'discovery'
     avoid_seed: int = 0
+    autonomous: bool = False
 
 
 class Predict(Strict):
     choice: int = Field(ge=0, le=2)
     confidence: int = Field(ge=1, le=3)
     reason: str = Field(default='', max_length=500)
+    planned_alpha: float | None = None
 
 
 class Input(Strict):
@@ -60,6 +62,7 @@ class Checkpoint(Strict):
     choice: int | None = Field(default=None, ge=0, le=2)
     confidence: int = Field(default=2, ge=1, le=3)
     reason: str = Field(default='', max_length=500)
+    planned_alpha: float | None = None
     transfer_choice: int | None = Field(default=None, ge=0, le=2)
     transfer_reason: int | None = Field(default=None, ge=0, le=2)
     client_updated_at: str = Field(default='', max_length=40)
@@ -74,7 +77,9 @@ def checkpoint_value(saved, request):
         raise ValueError('选点不在当前训练样本中。')
     value = request.model_dump() | {'parameters': current, 'updated_at': learning.now()}
     if request.stage != 'predict':
-        value.update(choice=None, confidence=2, reason='')
+        value.update(choice=None, confidence=2, reason='', planned_alpha=None)
+    elif request.planned_alpha is not None and request.planned_alpha not in concepts.ALPHAS:
+        raise ValueError('首轮α不在候选范围中。')
     if request.stage != 'transfer':
         value.update(transfer_choice=None, transfer_reason=None)
     return value
@@ -235,6 +240,9 @@ def seen_case(records, task):
 def public(saved):
     value = {k: copy.deepcopy(v) for k, v in saved.items() if not k.startswith('_')}
     value['task'] = descriptor(saved['_case'])
+    if not saved.get('observation') and saved['_case'].get('content_version') == 2:
+        value['task'].pop('assessment', None)
+        value['task']['reasons'] = []
     value['transfer_task'] = descriptor(saved['_transfer']) | {'id': saved['_transfer_id']} if saved.get('_transfer') else None
     return value
 
@@ -270,7 +278,9 @@ def make_router(connect):
     def prepare(request: Prepare):
         seeds = (42, 43, 44) if request.panel == 'forest' else (2026, 314, 2718)
         seed = next(s for s in seeds if s != request.avoid_seed)
-        try: task = case(request.panel, request.mode, seed)
+        if request.autonomous and request.panel != 'regularization':
+            raise HTTPException(422, '自主反例目前位于约束花园。')
+        try: task = pedagogy.investigation(seed) if request.autonomous else pedagogy.upgrade(case(request.panel, request.mode, seed))
         except ValueError as error: raise HTTPException(409, str(error))
         saved = {'id': uuid.uuid4().hex, 'created_at': learning.now(), 'panel': request.panel, 'mode': request.mode,
                  'protocol_version': 2,
@@ -278,6 +288,9 @@ def make_router(connect):
                  'hints_used': 0, 'ai_before_transfer': [], '_case': task, '_transfer': None}
         with connect() as connection:
             records = [json.loads(row['content']) for row in connection.execute('SELECT content FROM island_attempts').fetchall()]
+            saved['mode'] = task['mode']
+            saved['transfer_variant'] = sum(s['panel']==request.panel and bool(s.get('prediction')) for s in records) % 3
+            saved['trials'] = []
             saved['repeated_case'] = seen_case(records, task)
             save(connection, 'island_attempts', saved)
         return public(saved)
@@ -323,13 +336,14 @@ def make_router(connect):
             previous = original['_transfer']
             seeds = (42, 43, 44) if original['panel'] == 'forest' else (2026, 314, 2718)
             seed = next(s for s in seeds if s not in (original['_case']['seed'], previous['seed']))
-            task = case(original['panel'], previous['mode'], seed)
+            task = pedagogy.upgrade(case(original['panel'], previous['mode'], seed))
             older = [json.loads(r['content']) for r in connection.execute('SELECT content FROM island_attempts').fetchall()]
             repeated = seen_case(older, task)
             saved = {'id': uuid.uuid4().hex, 'created_at': learning.now(), 'panel': original['panel'], 'mode': task['mode'],
                      'protocol_version': 2, 'stage': 'predict', 'prediction': None, 'observation': None,
                      'transfer_answer': None, 'hints_used': 0, 'ai_before_transfer': [], '_case': task, '_transfer': None,
-                     'practice_of': key, 'practice_focus': REASONS[original['panel']][0], 'repeated_case': repeated}
+                     'practice_of': key, 'practice_focus': REASONS[original['panel']][0], 'repeated_case': repeated,
+                     'transfer_variant': (original.get('transfer_variant',0)+1)%3, 'trials': []}
             save(connection, 'island_attempts', saved)
         return public(saved)
 
@@ -339,9 +353,12 @@ def make_router(connect):
             connection.execute('BEGIN IMMEDIATE')
             saved = load(connection, 'island_attempts', key)
             if saved['prediction']:
-                if any(saved['prediction'][k] != v for k, v in request.model_dump().items()):
+                if any(saved['prediction'].get(k) != v for k, v in request.model_dump().items()):
                     raise HTTPException(409, '首次预测已锁定，请完成本轮或新建练习。')
             else:
+                if saved['_case'].get('investigation'):
+                    if request.planned_alpha not in concepts.ALPHAS or request.planned_alpha <= saved['_case']['before_parameters']['alpha']:
+                        raise HTTPException(422, '先选择第一次实验的α，再锁定预测。')
                 saved['prediction'] = request.model_dump() | {'submitted_at': learning.now()}
                 saved['stage'] = 'experiment'
                 save(connection, 'island_attempts', saved)
@@ -356,6 +373,23 @@ def make_router(connect):
             if not saved['prediction']: raise HTTPException(409, '请先留下预测。')
             try: current = params(saved['panel'], request.parameters).model_dump()
             except (ValidationError, ValueError): raise HTTPException(422, '实验参数不合法。')
+            if task.get('investigation') and not saved['observation']:
+                trials = saved.setdefault('trials', [])
+                if not trials and current['alpha'] != saved['prediction']['planned_alpha']:
+                    raise HTTPException(409, '先核验预测时锁定的第一次α，再继续寻找。')
+                try: proof = pedagogy.trial(task,current)
+                except ValueError as error: raise HTTPException(409,str(error))
+                if not any(t['parameters']==current for t in trials):
+                    trials.append({'parameters':current, 'proof':proof, 'observed_at':learning.now()})
+                if proof['goal_met']:
+                    task['target_parameters'] = current
+                    task['_proof'] = proof
+                    saved['observation'] = proof | {'matched':trials[0]['proof']['choice']==saved['prediction']['choice'],
+                        'first_choice':trials[0]['proof']['choice'], 'conclusion':'找到一个实算反例：系数收缩与验证误差降低不是同一个目标。',
+                        'observed_at':learning.now()}
+                    saved['stage'] = 'review'
+                save(connection,'island_attempts',saved)
+                return public(saved)
             if current != task['target_parameters']: raise HTTPException(409, '请保持其他条件不变，完成任务中的操作后再核验。')
             if not saved['observation']:
                 proof = evidence(saved['panel'], calculate(saved['panel'], task['before_parameters']), calculate(saved['panel'], current), task['row'], task['mode'])
@@ -386,7 +420,8 @@ def make_router(connect):
                 seeds = (42, 43, 44) if saved['panel'] == 'forest' else (2026, 314, 2718)
                 seed = next(s for s in seeds if s != saved['_case']['seed'])
                 mode = 'discovery' if saved['mode'] == 'counterexample' else 'counterexample'
-                try: saved['_transfer'] = case(saved['panel'], mode, seed)
+                form = ('comparison','model_selection','controlled_design')[saved.get('transfer_variant',0)] if saved['panel']=='regularization' else 'comparison'
+                try: saved['_transfer'] = pedagogy.upgrade(case(saved['panel'], mode, seed), form)
                 except ValueError as error: raise HTTPException(409, str(error))
                 saved['_transfer_id'] = uuid.uuid4().hex
                 saved['stage'] = 'transfer'
@@ -405,7 +440,7 @@ def make_router(connect):
                 if any(old[k] != v for k, v in request.model_dump().items()): raise HTTPException(409, '本题首次作答已保留，请新建练习。')
             else:
                 task = saved['_transfer']
-                proof = evidence(saved['panel'], calculate(saved['panel'], task['before_parameters']), calculate(saved['panel'], task['target_parameters']), task['row'], task['mode'])
+                proof = task['_proof']
                 passed = request.choice == proof['choice'] and request.reason == task['_reason']
                 saved['transfer_answer'] = request.model_dump() | {'passed': passed, 'choice_correct': request.choice == proof['choice'],
                     'reason_correct': request.reason == task['_reason'], 'correct_reason': task['_reason'], 'proof': proof,
@@ -423,8 +458,10 @@ def make_router(connect):
         except (ValidationError, ValueError): raise HTTPException(422, '实验参数不合法。')
         result = await asyncio.to_thread(calculate, request.panel, current)
         options = ai_options(request.panel, current)
+        focus = pedagogy.diagnosis(attempt)
         response = await coach.suggest({'parameters': current, 'metric': '验证错误率' if request.panel == 'forest' else '验证MSE',
-            'value': error_metric(request.panel, result), 'learning_context': {'prediction': attempt['prediction'], 'observation': attempt['observation']}}, options)
+            'value': error_metric(request.panel, result), 'learning_context': {'prediction': attempt['prediction'], 'observation': attempt['observation'],
+                'diagnosis':focus, 'instruction':'围绕已提交依据中的待检验线索选择单变量操作，提出可用验证误差方向核验的假设；不确定时使用uncertain。'}}, options)
         try:
             selection = Suggestion.model_validate(response['suggestion'])
             selected = next(v for v in options if v['id'] == selection.candidate_id)
@@ -438,7 +475,7 @@ def make_router(connect):
                  'baseline_parameters': current, 'target_parameters': target, 'change': selected,
                  'mode': response['mode'], 'model': response['model'], 'notice': response['notice'], 'usage': response.get('usage', {}),
                  'reasoning_effort': coach.ai_status()['reasoning_effort'], 'hypothesis': selection.hypothesis,
-                 'expected': selection.expected, 'execution': None}
+                 'expected': selection.expected, 'execution': None, 'learning_focus':focus}
         with connect() as connection:
             connection.execute('BEGIN IMMEDIATE')
             latest = load(connection, 'island_attempts', attempt['id'])
