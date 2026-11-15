@@ -17,9 +17,11 @@ import { LittleTree, SceneRange } from "./IslandControls";
 import ParcelMap from "./ParcelMap";
 import HelpHint from "./HelpHint";
 import { useForestChallenge } from "./useForestChallenge";
+import IslandJourney from "./IslandJourney";
+import CausalTrace from "./CausalTrace";
 import LearningCompanion from "./LearningCompanion";
 import LayeredHint from "./LayeredHint";
-import type { ForestDraft } from "@/lib/island-progress";
+import { pauseProgress, type ForestDraft } from "@/lib/island-progress";
 import { BookmarkCheck } from "lucide-react";
 import { Slash, UsersRound, Orbit, GitBranch, Trees } from "lucide-react";
 
@@ -484,8 +486,85 @@ export default function ForestDelivery({
               )}
             </div>
           )}
+          <div className="island-forest-controls">
+          <h3 className="forest-model-title">换一种投递规则</h3>
+          <div
+            className="forest-model-choices"
+            tabIndex={-1}
+            role="group"
+            aria-label="投递规则"
+          >
+            {classModels.map((m) => (
+              <button
+                key={m.id}
+                aria-pressed={input.model === m.id}
+                onClick={() => change({ model: m.id as ClassModel })}
+              >
+                <ModelGlyph id={m.id} />
+                {m.name}
+              </button>
+            ))}
+          </div>
+          {input.model === "knn" ? (
+            <SceneRange
+              label="投递站邻居K"
+              value={input.neighbors}
+              display={`${input.neighbors}个`}
+              min={1}
+              max={21}
+              step={2}
+              onChange={(n) => change({ neighbors: n })}
+            />
+          ) : input.model === "tree" || input.model === "forest" ? (
+            <SceneRange
+              label="投递站树深"
+              value={input.depth}
+              display={`${input.depth}层`}
+              min={1}
+              max={12}
+              onChange={(n) => change({ depth: n })}
+            />
+          ) : (
+            <>
+              <SceneRange
+                label="投递站C档位"
+                value={classC.indexOf(input.c)}
+                display={`C=${input.c}`}
+                min={0}
+                max={4}
+                onChange={(n) => change({ c: classC[n] })}
+              />
+              {input.model === "svm" && (
+                <SceneRange
+                  label="投递站γ档位"
+                  value={classGamma.indexOf(input.gamma)}
+                  display={`γ=${input.gamma}`}
+                  min={0}
+                  max={5}
+                  onChange={(n) => change({ gamma: classGamma[n] })}
+                />
+              )}
+            </>
+          )}
+          <div className="forest-real-metrics">
+            <span>
+              全体验证准确率
+              <b>{classPercent(result.metrics.validation_accuracy)}</b>
+            </span>
+            <span>
+              验证错分
+              <b>
+                {result.metrics.mistakes}/{result.split.validation}
+              </b>
+            </span>
+          </div>
+          </div>
         </div>
         <aside className="island-control-desk">
+          <IslandJourney panel="forest" input={input} pending={pending}
+            onApply={(next, row) => { if (progress.engaged || progress.restoring) progress.pause(); else pauseProgress("forest"); onResumeConsumed(); onInput(next as ClassInput); if (row !== undefined) onSelect(row); }}
+            onLocate={() => locate("map")} />
+          <details className="island-free-observation"><summary>自由投递与救援</summary>
           <LearningCompanion
             mood={
               rescued?.fixed || current?.gate === point.prediction
@@ -581,77 +660,6 @@ export default function ForestDelivery({
             下一枚样本
             <ArrowRight size={14} />
           </button>
-          <h3 className="forest-model-title">换一种投递规则</h3>
-          <div
-            className="forest-model-choices"
-            tabIndex={-1}
-            role="group"
-            aria-label="投递规则"
-          >
-            {classModels.map((m) => (
-              <button
-                key={m.id}
-                aria-pressed={input.model === m.id}
-                onClick={() => change({ model: m.id as ClassModel })}
-              >
-                <ModelGlyph id={m.id} />
-                {m.name}
-              </button>
-            ))}
-          </div>
-          {input.model === "knn" ? (
-            <SceneRange
-              label="投递站邻居K"
-              value={input.neighbors}
-              display={`${input.neighbors}个`}
-              min={1}
-              max={21}
-              step={2}
-              onChange={(n) => change({ neighbors: n })}
-            />
-          ) : input.model === "tree" || input.model === "forest" ? (
-            <SceneRange
-              label="投递站树深"
-              value={input.depth}
-              display={`${input.depth}层`}
-              min={1}
-              max={12}
-              onChange={(n) => change({ depth: n })}
-            />
-          ) : (
-            <>
-              <SceneRange
-                label="投递站C档位"
-                value={classC.indexOf(input.c)}
-                display={`C=${input.c}`}
-                min={0}
-                max={4}
-                onChange={(n) => change({ c: classC[n] })}
-              />
-              {input.model === "svm" && (
-                <SceneRange
-                  label="投递站γ档位"
-                  value={classGamma.indexOf(input.gamma)}
-                  display={`γ=${input.gamma}`}
-                  min={0}
-                  max={5}
-                  onChange={(n) => change({ gamma: classGamma[n] })}
-                />
-              )}
-            </>
-          )}
-          <div className="forest-real-metrics">
-            <span>
-              全体验证准确率
-              <b>{classPercent(result.metrics.validation_accuracy)}</b>
-            </span>
-            <span>
-              验证错分
-              <b>
-                {result.metrics.mistakes}/{result.split.validation}
-              </b>
-            </span>
-          </div>
           {rescue ? (
             <section className="island-quest" aria-label="错分救援任务">
               <div className="island-quest-heading">
@@ -738,6 +746,9 @@ export default function ForestDelivery({
               暂存森林挑战
             </button>
           )}
+          </details>
+          <CausalTrace panel="forest" input={input} calculated={result.parameters} pending={pending}
+            value={result.metrics.validation_accuracy} metric="验证准确率" onLocate={() => locate("map")} />
         </aside>
       </div>
     </section>

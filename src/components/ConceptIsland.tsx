@@ -6,6 +6,7 @@ import {
   bounded,
   conceptAlphas,
   conceptNumber,
+  conceptKey,
   type ConceptInput,
   type ConceptResult,
 } from "@/lib/concepts";
@@ -14,8 +15,10 @@ import { useChartWidth } from "./useChartWidth";
 import { LittleTree, SceneHandle, SceneRange } from "./IslandControls";
 import SceneArtwork from "./SceneArtwork";
 import ConceptQuest from "./ConceptQuest";
+import IslandJourney from "./IslandJourney";
+import CausalTrace from "./CausalTrace";
 import HelpHint from "./HelpHint";
-import type { ConceptDraft } from "@/lib/island-progress";
+import { pauseProgress, type ConceptDraft } from "@/lib/island-progress";
 
 export default function ConceptIsland({
   input,
@@ -45,11 +48,14 @@ export default function ConceptIsland({
   const { ref, width } = useChartWidth(),
     id = useId().replace(/:/g, "");
   const [zoomScale, setZoomScale] = useState<number | null>(null);
+  const [freeOpen, setFreeOpen] = useState(false);
+  useEffect(() => { if (resume) setFreeOpen(true); }, [resume]);
+  const fitLearningFrame = useRef(false);
   const stageRef = useRef<HTMLElement>(null);
   const [spotlight, setSpotlight] = useState<string | null>(null);
   useEffect(() => setSpotlight(null), [input]);
-  function locate(level: number) {
-    const target =
+  function locate(level: number | string) {
+    const target = typeof level === "string" ? level :
       input.panel === "sensitivity"
         ? "shift"
         : input.panel === "regularization" && level === 1
@@ -99,6 +105,11 @@ export default function ConceptIsland({
         ? "同一扰动，两条路"
         : "系数花园";
   const plant = result.regularization;
+  useEffect(() => {
+    if (!fitLearningFrame.current || pending || !plant || conceptKey(input) !== conceptKey(result.parameters)) return;
+    fitLearningFrame.current = false;
+    setZoomScale(Math.max(...plant.current.weights.map(Math.abs), 1e-12) * 1.15);
+  }, [input, result, plant, pending]);
   const indices = plant
     ? plant.weak.weights
         .map((v, i) => ({
@@ -226,6 +237,7 @@ export default function ConceptIsland({
                   <LittleTree x={65} y={40} scale={0.55} />
                   <path
                     d={`M${lakeX} ${y(p.y)}H${width * 0.51}V${y(predicted)}H${boatX}`}
+                    data-causal-object="residual"
                     fill="none"
                     stroke="#8260a4"
                     strokeWidth="2"
@@ -282,6 +294,7 @@ export default function ConceptIsland({
                   </SceneHandle>
                   <g
                     transform={`translate(${boatX},${y(predicted)})`}
+                    data-causal-object="boat"
                     aria-hidden="true"
                   >
                     <path
@@ -392,6 +405,7 @@ export default function ConceptIsland({
                           />
                           <path
                             d={road(pair.edited.curve)}
+                            data-causal-object="road"
                             fill="none"
                             stroke={index ? "#a28abd" : "#7fa897"}
                             strokeWidth="10"
@@ -585,6 +599,7 @@ export default function ConceptIsland({
                         )}
                         <path
                           d={`M${px + 3} 257v${-h}`}
+                          data-causal-object="coefficient"
                           stroke={
                             plant.current.weights[index] < 0
                               ? "#9970b1"
@@ -712,7 +727,7 @@ export default function ConceptIsland({
               ))}
             {result.pairs &&
               result.pairs.map((pair, i) => (
-                <span key={i}>
+                <span key={i} data-evidence="validation" tabIndex={-1}>
                   {i ? "B" : "A"}当前验证MSE{" "}
                   <b>{conceptNumber(pair.edited.validation_mse)}</b>
                 </span>
@@ -850,7 +865,11 @@ export default function ConceptIsland({
           </div>
         </div>
         <aside className="island-control-desk" aria-label="场景操作与任务">
-          <ConceptQuest
+          <IslandJourney panel={input.panel} input={input} pending={pending}
+            onApply={(next, point, fitCurrent) => { pauseProgress(input.panel); setFreeOpen(false); onResumeConsumed(); if (input.panel === "regularization" && fitCurrent) fitLearningFrame.current = true; onInput(next as ConceptInput); if (point !== undefined) onSelect(point); }}
+            onLocate={locate} />
+          <details className="island-free-observation" open={freeOpen} onToggle={e => setFreeOpen(e.currentTarget.open)}><summary>自由观察任务</summary>
+          {freeOpen && <ConceptQuest
             input={input}
             result={result}
             pending={pending}
@@ -860,7 +879,11 @@ export default function ConceptIsland({
             onResumeConsumed={onResumeConsumed}
             onResumeRequest={onResumeRequest}
             onLocate={locate}
-          />
+          />}
+          </details>
+          <CausalTrace panel={input.panel} input={input} calculated={result.parameters} pending={pending}
+            value={result.linear?.validation_mse ?? result.pairs?.[1].shift_rms ?? result.regularization!.current.validation_mse}
+            metric={input.panel === "sensitivity" ? "模型B曲线变化RMS" : "验证MSE"} onLocate={() => locate(2)} />
         </aside>
       </div>
     </section>
