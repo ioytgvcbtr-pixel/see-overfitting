@@ -18,7 +18,7 @@ async def explain(evidence: dict, question: str, fallback: str):
     status = ai_status()
     base = {'evidence': evidence, 'reasoning_effort': status['reasoning_effort'], 'provider_effort': status['provider_effort']}
     if not status['ai_configured']:
-        return {**base, 'mode': 'rules', 'model': None, 'content': fallback, 'notice': '未配置模型API，当前为基于实际指标的规则分析。'}
+        return {**base, 'mode': 'rules', 'model': None, 'content': fallback, 'notice': '当前已选择规则讲解。' if os.environ.get('AI_ENABLED','1')=='0' else '未配置模型API，当前为基于实际指标的规则分析。'}
     prompt = ('你是机器学习实验教练，用简洁中文回答，最多500字。只根据给定实际计算证据解释，不编造指标。'
               '按【观察】【为什么】【下一步】三段输出。先核对dataset、模型、指标和划分；真实数据没有已知真函数。'
               '不同目标和单位的MSE不可直接比较；训练误差低不等于泛化好；规则诊断不是统计检验。'
@@ -54,7 +54,7 @@ async def suggest(evidence, candidates):
     """Request a bounded JSON hypothesis; callers validate it before execution."""
     status = ai_status()
     fallback = {'mode': 'rules', 'model': None, 'suggestion': None,
-                'notice': '未配置模型API，使用可执行的规则建议。'}
+                'notice': '当前已选择规则讲解，使用可执行的规则建议。' if os.environ.get('AI_ENABLED','1')=='0' else '未配置模型API，使用可执行的规则建议。'}
     if not status['ai_configured']: return fallback
     prompt = ('你是实验教练。只从candidates中选择一个candidate_id，提出尚未验证的单变量实验假设。'
               '如有learning_context，围绕学生已提交的预测或错误依据设计实验，不透露不存在的执行后结果。'

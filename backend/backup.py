@@ -5,12 +5,20 @@ from datetime import datetime
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from backend import actions, experiments, islands, learning
 
 TABLES = ('learning_attempts', 'island_attempts', 'action_plans', 'island_actions', 'records')
 MAX_BYTES = 16 * 1024 * 1024
+
+
+def without_hidden_answers(value):
+    if isinstance(value, dict):
+        return {k:without_hidden_answers(v) for k,v in value.items() if k not in ('_proof','_reason','_answer')}
+    if isinstance(value, list): return [without_hidden_answers(v) for v in value]
+    return value
 
 
 class Entry(BaseModel):
@@ -199,8 +207,16 @@ def make_router(connect):
                     else: content = json.loads(row['content'])
                     if table == 'island_attempts' and not content.get('prediction') and content.get('protocol_version',1) < 2:
                         continue
-                    entries.append({'table':table, 'id':str(row['id']), 'content':content})
-        return {'format':'fitlab-learning', 'version':1, 'created_at':learning.now(), 'entries':entries}
+                    entries.append({'table':table, 'id':str(row['id']), 'content':without_hidden_answers(content)})
+        package = {'format':'fitlab-learning', 'version':1, 'created_at':learning.now(), 'entries':entries}
+        if len(entries)>2000 or len(json.dumps(package,ensure_ascii=False).encode())>MAX_BYTES:
+            raise HTTPException(413,'记录超过当前备份容量，请先单独保存所需实验记录。')
+        return package
+
+    @router.get('/backup/file')
+    def download():
+        return Response(json.dumps(export(),ensure_ascii=False),media_type='application/json',
+                        headers={'Content-Disposition':'attachment; filename="fitlab-learning.json"','Cache-Control':'no-store'})
 
     async def parse(request):
         raw = await request.body()

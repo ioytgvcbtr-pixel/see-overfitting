@@ -95,7 +95,7 @@ def main():
                 cleaned['output'] = '[Reference lookup output omitted; source identifiers retained in call arguments.]'
             if payload.get('call_id') in asset_calls and 'output' in cleaned:
                 cleaned['output'] = '[Generated asset preview omitted; prompts retained in call and final assets in public/illustrations.]'
-            if 'output' in cleaned and any(marker in str(cleaned['output']) for marker in ('# Browser Safety', '## Computer Use', '## How to use the API', '# Tab Capability:', '# Browser Capability:')):
+            if 'output' in cleaned and any(marker in str(cleaned['output']) for marker in ('# Browser Safety', '## Computer Use', '## How to use the API', '# Tab Capability:', '# Browser Capability:', '# File Uploads')):
                 cleaned['output'] = '[Tool runtime documentation omitted; project actions preserved in subsequent events.]'
             if 'output' in cleaned:
                 cleaned['output'] = omit_binary_previews(cleaned['output'])

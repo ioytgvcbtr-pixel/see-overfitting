@@ -179,7 +179,7 @@ def make_router(connect):
         proof = s.get('execution')
         if kind == 'course_ai' and proof:
             proof = {'before': proof['before']['metrics'][proof['metric']], 'after': proof['after']['metrics'][proof['metric']],
-                     'metric': proof['metric'], 'verdict': proof['verdict'], 'executed_at': proof['executed_at']}
+                     'metric': {'validation_mse':'验证MSE','validation_rmse':'验证RMSE'}.get(proof['metric'],proof['metric']), 'verdict': proof['verdict'], 'executed_at': proof['executed_at']}
         return {k: s.get(k) for k in ('id', 'hypothesis', 'expected', 'change', 'baseline_parameters', 'target_parameters', 'mode', 'model', 'notice', 'imported_at')} | {'proof': proof}
 
     return router

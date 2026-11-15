@@ -118,6 +118,8 @@ def complete_course(c):
 def test_backup_round_trip_recomputes_metrics_and_preserves_wrong_first_answer(client,tmp_path,monkeypatch):
     island_record=finish(client,island(client)); course=complete_course(client)
     package=client.get('/workspace/backup').json()
+    download=client.get('/workspace/backup/file')
+    assert 'attachment' in download.headers['content-disposition'] and download.json()['format']=='fitlab-learning'
     assert 'unit-test-token' not in json.dumps(package)
     for entry in package['entries']:
         if entry['table']=='island_attempts':
@@ -185,3 +187,17 @@ def test_older_checkpoint_cannot_overwrite_a_newer_input(client):
     assert client.post(f"/islands/attempts/{s['id']}/checkpoint",json=newer).json()['saved']
     assert client.post(f"/islands/attempts/{s['id']}/checkpoint",json=older).json()['stale']
     assert client.get('/islands/attempts/'+s['id']).json()['checkpoint']['parameters']['intercept']==-.35
+
+
+def test_backup_also_seals_unsubmitted_grading_answers(client):
+    island(client)
+    p=Parameters()
+    s=client.post('/learning/attempts',json={'parameters':p.model_dump(),'choice':1,'confidence':2,'reason':''}).json()
+    control,values=learning.lesson(p)
+    for value in values:client.post(f"/learning/attempts/{s['id']}/observe",json=p.model_copy(update={control:value}).model_dump())
+    package=client.get('/workspace/backup').json()
+    def keys(value):
+        if isinstance(value,dict):return set(value)|set().union(*(keys(v) for v in value.values()))
+        if isinstance(value,list):return set().union(*(keys(v) for v in value))
+        return set()
+    assert not {'_proof','_reason','_answer'} & keys(package)

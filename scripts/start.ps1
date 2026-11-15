@@ -82,7 +82,7 @@ if ($apiHealth -and $webHealth) {
 foreach ($port in @($ApiPort,$WebPort)) {
     $listener = Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue
     if ($listener -and !(($port -eq $ApiPort -and $apiHealth) -or ($port -eq $WebPort -and $webHealth))) {
-        throw "端口$port被占用，未关闭任何程序。请使用-WebPort和-ApiPort选择空闲端口，或先退出原服务。"
+        throw "端口${port}被占用，未关闭任何程序。请使用-WebPort和-ApiPort选择空闲端口，或先退出原服务。"
     }
 }
 New-Item -ItemType Directory -Path 'artifacts/local' -Force | Out-Null
@@ -94,10 +94,10 @@ try {
         Wait-FitLab "$apiUrl/health" $apiProcess
     }
     if (!$webHealth) {
+        if ($Production -and !(Test-Path -LiteralPath '.next/BUILD_ID')) { throw '生产模式需要先运行 npm.cmd run build。' }
         $oldOrigin = $env:FITLAB_API_ORIGIN
         $env:FITLAB_API_ORIGIN = $apiUrl
         $webMode = if ($Production) { 'start' } else { 'dev' }
-        if ($Production -and !(Test-Path -LiteralPath '.next/BUILD_ID')) { throw '生产模式需要先运行 npm.cmd run build。' }
         try {
             $webProcess = Start-Process -FilePath (Get-Command node).Source -ArgumentList @('node_modules/next/dist/bin/next',$webMode,'--hostname','127.0.0.1','--port',"$WebPort") -WorkingDirectory $projectRoot -PassThru -WindowStyle Hidden -RedirectStandardOutput "artifacts/local/web-$WebPort.out.log" -RedirectStandardError "artifacts/local/web-$WebPort.err.log"
         } finally { $env:FITLAB_API_ORIGIN = $oldOrigin }
