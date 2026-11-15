@@ -1,0 +1,128 @@
+[
+  {
+    "stage": "prediction",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 390
+  },
+  {
+    "stage": "prediction",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 768
+  },
+  {
+    "stage": "prediction",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 1440
+  },
+  {
+    "stage": "experiment",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 390
+  },
+  {
+    "stage": "experiment",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 768
+  },
+  {
+    "stage": "experiment",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 1440
+  },
+  {
+    "stage": "first-trial",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 390
+  },
+  {
+    "stage": "first-trial",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 768
+  },
+  {
+    "stage": "first-trial",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 1440
+  },
+  {
+    "stage": "review",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 390
+  },
+  {
+    "stage": "review",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 768
+  },
+  {
+    "stage": "review",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 1440
+  },
+  {
+    "stage": "transfer",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 390
+  },
+  {
+    "stage": "transfer",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 768
+  },
+  {
+    "stage": "transfer",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 1440
+  },
+  {
+    "stage": "complete",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 390
+  },
+  {
+    "stage": "complete",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 768
+  },
+  {
+    "stage": "complete",
+    "outside": [],
+    "overflow": false,
+    "small": [],
+    "width": 1440
+  }
+]

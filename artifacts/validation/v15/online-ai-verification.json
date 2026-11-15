@@ -1,0 +1,57 @@
+{
+  "scope": "Developer acceptance in isolated database; real configured API, not learner research",
+  "plans": [
+    {
+      "panel": "regularization",
+      "mode": "online",
+      "model": "deepseek-flash",
+      "created_at": "2026-11-15T17:20:56.440+00:00",
+      "reasoning_effort": "xhigh",
+      "learning_focus": {
+        "tag": "training_as_validation",
+        "label": "区分训练拟合与新样本表现",
+        "submitted_answer": {
+          "choice": "降低",
+          "reason": "按训练MSE的变化判断，将对已见样本的拟合程度作为泛化依据。",
+          "choice_correct": false,
+          "reason_correct": false
+        },
+        "status": "待检验线索，不是学生能力诊断"
+      },
+      "change": {
+        "id": "alpha-1",
+        "control": "alpha",
+        "label": "正则化α",
+        "from_value": 0.1,
+        "to_value": 1
+      },
+      "hypothesis": "学生把训练MSE下降当作泛化依据，需用固定验证集区分拟合与新样本表现。将α从0.1调至1.0，仅改变正则强度；若高次多项式存在过拟合，更强收缩可能降低验证MSE，即使训练MSE上升，也能检验该线索。",
+      "expected": "lower",
+      "execution": {
+        "before": 0.1251457663242151,
+        "after": 0.21396254998051534,
+        "delta": 0.08881678365630025,
+        "observed": "higher",
+        "verdict": "not_supported",
+        "metric": "验证MSE",
+        "validation_fingerprint": "1cba4056b8751b94",
+        "before_fingerprint": "a6a8aadf33d6a65c",
+        "after_fingerprint": "a6a8aadf33d6a65c",
+        "executed_at": "2026-11-15T17:22:39.820+00:00",
+        "test_sealed": true,
+        "observations": [
+          {
+            "metric": "系数范数",
+            "before": 0.8860793464110296,
+            "after": 0.6833272502785407
+          },
+          {
+            "metric": "训练MSE",
+            "before": 0.026958370892580186,
+            "after": 0.03822845793034423
+          }
+        ]
+      }
+    }
+  ]
+}

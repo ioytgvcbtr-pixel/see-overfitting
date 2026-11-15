@@ -6,7 +6,7 @@
 
 从合成曲线建立直觉，再到公开数据比较模型。支持参数干预、固定条件对照、配对划分复核，以及基于真实指标的AI解释。
 
-![从开始到下次继续](artifacts/screenshots/workspace-preview-v14.jpg)
+![自主反例与迁移观测](artifacts/screenshots/garden-transfer-v15.jpg)
 
 - [功能设计](docs/FUNCTIONAL_DESIGN.md)
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
@@ -31,9 +31,11 @@
 - [0.14启动与学习流程](docs/WORKSPACE_FLOW_V14.md)
 - [0.14实际验收](docs/VALIDATION_V14.md)
 - [0.14官方要求复核与严格自评](docs/REVIEW_V14.md)
+- [0.15教学质量改进](docs/TEACHING_QUALITY_V15.md)
+- [0.15实际验收](docs/VALIDATION_V15.md)
 - [AI开发记录](docs/ai-process/README.md)
 
-当前为本地可运行的0.14版。首页统一开始、继续与探索，课程/四岛/AI记录可在同一档案中回看；实验中途输入和未提交选择可准确续接。设置支持AI连接测试、规则模式与学习备份恢复。四岛的预测、实验、迁移及反例继续使用真实计算，首次作答保留。界面延续稳定数字、同心圆角、分组淡入和轻柔阴影。实际范围见[0.14验收](docs/VALIDATION_V14.md)、[0.13验收](docs/VALIDATION_V13.md)和[此前记录](docs/VALIDATION.md)。
+当前为本地可运行的0.15版。四岛用实测观测支持迁移判断；约束花园新增自主反例搜索与三种迁移表达，观测可以载入对应场景。AI围绕已提交依据提出单变量假设，执行后如实核验支持或不支持。首答、失败尝试、提示与AI辅助分别保留，刷新和备份可恢复；核心流程不依赖公网API。Windows持续集成覆盖安装、构建和关键浏览器流程。范围与限制见[0.15验收](docs/VALIDATION_V15.md)。
 
 ## 从打开，到下次继续
 
