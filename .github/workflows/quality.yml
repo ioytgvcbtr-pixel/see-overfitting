@@ -1,0 +1,71 @@
+name: Windows quality and reproduction
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      AI_ENABLED: '0'
+      FITLAB_ENV_FILE: artifacts/local/ci-no-api.env
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Begin reproduction clock
+        shell: pwsh
+        run: '"FITLAB_REPRO_STARTED=$([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())" >> $env:GITHUB_ENV'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Install into fresh environment
+        shell: pwsh
+        run: |
+          python -m venv .venv
+          $fitlabPython = (Resolve-Path .venv/Scripts/python.exe).Path
+          "FITLAB_PYTHON=$fitlabPython" >> $env:GITHUB_ENV
+          & $fitlabPython -m pip install -r requirements-dev.txt
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm ci
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Build and time app readiness
+        shell: pwsh
+        run: |
+          npm run build
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./scripts/start.ps1 -Production -NoBrowser -SmokeTest -WebPort 3002 -ApiPort 8002
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $seconds = ([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() - [long]$env:FITLAB_REPRO_STARTED)/1000
+          @{ seconds=$seconds; scope='After checkout: runtime setup, uncached dependency installation, build and loopback readiness'; environment='Fresh GitHub-hosted Windows VM with preinstalled base tools; no API key' } | ConvertTo-Json | Set-Content artifacts/local/reproduction.json
+      - name: Core regression
+        shell: pwsh
+        run: |
+          & $env:FITLAB_PYTHON -m pytest -q
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm run typecheck
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm run test:ui
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Browser regression
+        shell: pwsh
+        run: |
+          npx playwright install chromium
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npx playwright test
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-quality-evidence
+          path: |
+            artifacts/local/reproduction.json
+            artifacts/local/playwright-report
+            artifacts/local/playwright-results
+          retention-days: 14

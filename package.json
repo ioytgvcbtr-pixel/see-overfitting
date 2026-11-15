@@ -11,15 +11,16 @@
     "test:ui": "node --test tests/learning-guide.test.mjs tests/exploration.test.mjs tests/island-experiments.test.mjs tests/island-progress.test.mjs tests/island-learning.test.mjs"
   },
   "dependencies": {
+    "lucide-react": "1.72.0",
     "next": "16.4.6",
     "react": "19.3.1",
-    "react-dom": "19.3.1",
-    "lucide-react": "1.72.0"
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
+    "@playwright/test": "1.65.1",
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0"
+    "@types/react-dom": "^19.2.0",
+    "typescript": "^5.9.3"
   }
 }
