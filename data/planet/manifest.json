@@ -1,0 +1,114 @@
+[
+  {
+    "id": "penguins",
+    "file": "penguins.csv",
+    "rows": 344,
+    "columns": [
+      "species",
+      "island",
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g",
+      "sex",
+      "year"
+    ],
+    "source": "https://allisonhorst.github.io/palmerpenguins/",
+    "download": "https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/inst/extdata/penguins.csv",
+    "kind": "实测/实验采集",
+    "license": "CC0",
+    "raw_sha256": "f204db2c753b0937caac3cb35258562c14f073e4bbc76be24b4c51ce22767a93",
+    "csv_sha256": "f204db2c753b0937caac3cb35258562c14f073e4bbc76be24b4c51ce22767a93"
+  },
+  {
+    "id": "banknote",
+    "file": "banknote.csv",
+    "rows": 1372,
+    "columns": [
+      "variance",
+      "skewness",
+      "curtosis",
+      "entropy",
+      "class"
+    ],
+    "source": "https://archive.ics.uci.edu/dataset/267/banknote+authentication",
+    "download": "https://archive.ics.uci.edu/static/public/267/banknote%2Bauthentication.zip",
+    "kind": "实测/实验采集",
+    "license": "CC BY 4.0",
+    "raw_sha256": "1e2acd9a2085fadf3d8145c12d3d22af853320d52294a6590c2eaf75fdc05227",
+    "csv_sha256": "a4e6eb57f00dc0c5696badf6553001e8871644b5b98ab1b2869054af1d255125"
+  },
+  {
+    "id": "energy",
+    "file": "energy.csv",
+    "rows": 768,
+    "columns": [
+      "compactness",
+      "surface",
+      "wall",
+      "roof",
+      "height",
+      "orientation",
+      "glazing",
+      "glazing_distribution",
+      "heating",
+      "cooling"
+    ],
+    "source": "https://archive.ics.uci.edu/dataset/242/energy+efficiency",
+    "download": "https://archive.ics.uci.edu/static/public/242/energy%2Befficiency.zip",
+    "kind": "公开物理仿真",
+    "license": "CC BY 4.0",
+    "raw_sha256": "499441eee27929a4b00417f58fd8c63c9cc14b8a71520cd0dd27fcb626738351",
+    "csv_sha256": "73182020502e19d2a10fde7f24d2b3d909f7ec7708e6e9feacdcab58d02ff2a4"
+  },
+  {
+    "id": "bike",
+    "file": "bike.csv",
+    "rows": 731,
+    "columns": [
+      "instant",
+      "dteday",
+      "season",
+      "yr",
+      "mnth",
+      "holiday",
+      "weekday",
+      "workingday",
+      "weathersit",
+      "temp",
+      "atemp",
+      "hum",
+      "windspeed",
+      "casual",
+      "registered",
+      "cnt"
+    ],
+    "source": "https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset",
+    "download": "https://archive.ics.uci.edu/static/public/275/bike%2Bsharing%2Bdataset.zip",
+    "kind": "实测/实验采集",
+    "license": "CC BY 4.0",
+    "raw_sha256": "b70182d0d0508e9abbb79306ce5c0cec34869000f8220175ac83d11dbe845401",
+    "csv_sha256": "537e98e2c8b8f53e3094d953f847788b1dc224764a4a1e538b3e1ec4e30dac8a"
+  },
+  {
+    "id": "auto_raw",
+    "file": "auto_raw.csv",
+    "rows": 398,
+    "columns": [
+      "cylinders",
+      "displacement",
+      "horsepower",
+      "weight",
+      "acceleration",
+      "model_year",
+      "origin",
+      "mpg"
+    ],
+    "source": "https://archive.ics.uci.edu/dataset/9/auto+mpg",
+    "download": "https://archive.ics.uci.edu/static/public/9/auto%2Bmpg.zip",
+    "kind": "实测/实验采集",
+    "license": "CC BY 4.0",
+    "raw_sha256": "5fc1507522b73b8050d3aa45df51eefe1b666ae5f428a5f1347b6483339f1003",
+    "csv_sha256": "88585032f19b4535acd7136cd419e9d015970a5b8303e2651bbf260003406edf"
+  }
+]
