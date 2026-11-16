@@ -129,7 +129,7 @@ def overview(connection):
         passed = s.get('transfer_answer', {}).get('passed') if s.get('transfer_answer') else None
         wrong = passed is False or (s.get('observation') or {}).get('matched') is False
         if s['stage'] == 'complete': rounds += 1
-        items.append({'kind': 'island', 'id': s['id'], 'title': islands.NAMES[s['panel']], 'panel': s['panel'], 'mode': s['mode'],
+        items.append({'kind': 'island', 'id': s['id'], 'title': islands.NAMES[s['panel']]+(' · AI后验证' if s.get('transfer_only') else ''), 'panel': s['panel'], 'mode': s['mode'],
                       'stage': s['stage'], 'status': ('迁移通过' if passed else '迁移需复练') if s['stage'] == 'complete' else STAGES[s['stage']],
                       'updated_at': s.get('updated_at') or s.get('completed_at') or (s.get('observation') or {}).get('observed_at') or s['created_at'],
                       'needs_review': wrong, 'assisted': bool(s['hints_used'] or s['ai_before_transfer']), 'imported': bool(s.get('imported_at'))})

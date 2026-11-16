@@ -36,6 +36,8 @@ export type IslandAttempt = {
     choice_correct: boolean; reason_correct: boolean; correct_reason: number; proof: IslandProof;
   } | null;
   transfer_decision?: {task_id:string;choice:number;submitted_at:string};
+  transfer_only?: boolean;
+  ai_origin?: {action_id:string;attempt_id:string;focus:string;source_seed:number};
   checkpoint?: IslandDraft;
   practice_of?: string;
   practice_focus?: string;

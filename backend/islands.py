@@ -61,6 +61,13 @@ class Decision(Strict):
     choice: int = Field(ge=0, le=2)
 
 
+class FollowupOrigin(Strict):
+    action_id: str = Field(pattern=r'^[0-9a-f]{32}$')
+    attempt_id: str = Field(pattern=r'^[0-9a-f]{32}$')
+    focus: str = Field(max_length=80)
+    source_seed: int
+
+
 class Checkpoint(Strict):
     stage: Literal['predict', 'experiment', 'transfer']
     parameters: dict
@@ -311,7 +318,7 @@ def make_router(connect):
     def history():
         with connect() as connection:
             rows = connection.execute('SELECT content FROM island_attempts ORDER BY rowid DESC LIMIT 60').fetchall()
-        return [{k: s.get(k) for k in ('id', 'created_at', 'panel', 'mode', 'stage', 'prediction', 'hints_used', 'transfer_answer', 'ai_before_transfer')}
+        return [{k: s.get(k) for k in ('id', 'created_at', 'panel', 'mode', 'stage', 'prediction', 'hints_used', 'transfer_answer', 'ai_before_transfer','transfer_only','ai_origin')}
                 for row in rows if (s := json.loads(row['content'])).get('prediction') or s.get('transfer_only')]
 
     @router.get('/actions')
@@ -543,5 +550,36 @@ def make_router(connect):
                     attempt['ai_before_transfer'].append(saved['id'])
                     save(connection, 'island_attempts', attempt)
         return saved
+
+    @router.post('/actions/{key}/transfer-task')
+    def action_transfer(key: str):
+        with connect() as connection:
+            connection.execute('BEGIN IMMEDIATE')
+            action=load(connection,'island_actions',key)
+            original=load(connection,'island_attempts',action['attempt_id'])
+            if not action['execution'] or not original['transfer_answer']:
+                raise HTTPException(409,'先执行AI实验并完成原迁移，再进入新情境。')
+            if action.get('followup_id'):
+                row=connection.execute('SELECT content FROM island_attempts WHERE id=?',(action['followup_id'],)).fetchone()
+                if row:return public(json.loads(row['content']))
+            panel=action['panel'];source_seed=action['baseline_parameters']['seed']
+            seeds=(42,43,44) if panel=='forest' else (2026,314,2718)
+            used={source_seed,original['_case']['seed'],original['_transfer']['seed']}
+            seed=next((s for s in seeds if s not in used),next(s for s in seeds if s!=source_seed))
+            focus=pedagogy.diagnosis(original)
+            form=('controlled_design' if focus['tag']=='confounded_design' else 'model_selection') if panel=='regularization' else 'comparison'
+            variant=(original.get('transfer_variant',0)+1)%3
+            task=pedagogy.version3(panel,'discovery',seed,form,variant)
+            source=pedagogy.version3(panel,'discovery',source_seed)
+            saved={'id':uuid.uuid4().hex,'created_at':learning.now(),'panel':panel,'mode':'discovery','protocol_version':3,
+                'stage':'transfer','transfer_only':True,'prediction':None,'observation':None,'transfer_answer':None,
+                'hints_used':0,'ai_before_transfer':[key],'trials':[],'transfer_variant':variant,
+                'ai_origin':{'action_id':key,'attempt_id':original['id'],'focus':focus['label'],'source_seed':source_seed},
+                '_case':source,'_transfer':task,'_transfer_id':uuid.uuid4().hex}
+            older=[json.loads(r['content']) for r in connection.execute('SELECT content FROM island_attempts').fetchall()]
+            saved['repeated_case']=seen_case(older,task)
+            save(connection,'island_attempts',saved)
+            action['followup_id']=saved['id'];save(connection,'island_actions',action)
+        return public(saved)
 
     return router

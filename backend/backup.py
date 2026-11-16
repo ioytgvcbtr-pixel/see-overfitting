@@ -103,6 +103,13 @@ def rebuild_island(raw):
          'ai_before_transfer': [identity(v) for v in raw.get('ai_before_transfer', [])[:100]], 'imported_at': learning.now()}
     if not 0 <= s['hints_used'] <= 2: raise ValueError('提示层级不合法。')
     if not 0 <= s['transfer_variant'] <= 2: raise ValueError('迁移表达不合法。')
+    if raw.get('transfer_only'):
+        if not raw.get('_transfer'):raise ValueError('AI后验证缺少新情境。')
+        if raw.get('prediction') or raw.get('observation') or raw.get('trials'): raise ValueError('独立验证不能伪造预测或实验。')
+        origin=islands.FollowupOrigin.model_validate(raw['ai_origin'])
+        if origin.source_seed!=task['seed']: raise ValueError('AI验证的来源条件不一致。')
+        s.update(transfer_only=True,ai_origin=origin.model_dump())
+        if origin.action_id not in s['ai_before_transfer']:s['ai_before_transfer'].append(origin.action_id)
     if raw.get('prediction'):
         p = prediction(raw['prediction'])
         s['prediction'] = p.model_dump() | {'submitted_at': stamp(raw['prediction']['submitted_at'])}
@@ -134,7 +141,7 @@ def rebuild_island(raw):
                 first_choice=s['trials'][0]['proof']['choice'], conclusion='找到一个实算反例：系数收缩与验证误差降低不是同一个目标。')
     if raw.get('_transfer'):
         transfer = rebuild_task(raw['_transfer'])
-        if not s['observation'] or transfer['panel'] != s['panel'] or transfer['seed'] == task['seed']:
+        if (not s['observation'] and not s.get('transfer_only')) or transfer['panel'] != s['panel'] or transfer['seed'] == task['seed']:
             raise ValueError('迁移条件不符合本轮协议。')
         s.update(_transfer=transfer, _transfer_id=identity(raw['_transfer_id']), stage='transfer')
     if raw.get('transfer_answer'):
@@ -214,6 +221,7 @@ def rebuild_action(raw, island=False):
          'hypothesis':suggestion.hypothesis, 'expected':suggestion.expected, 'baseline_parameters':before, 'target_parameters':target, 'execution':None}
     if island:
         s.update(panel=panel, attempt_id=identity(raw['attempt_id']))
+        if raw.get('followup_id'):s['followup_id']=identity(raw['followup_id'])
         a, b = islands.calculate(panel, before), islands.calculate(panel, target)
         x, y = islands.error_metric(panel, a), islands.error_metric(panel, b)
         observed = ('lower','higher','unchanged')[islands.direction(x,y)]

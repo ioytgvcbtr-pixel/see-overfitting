@@ -70,3 +70,49 @@ export async function offlineSettings(tab) {
   assert.doesNotMatch(text,/sk-[a-zA-Z0-9_-]{12,}/);
   return {flow:'offline-settings-no-credential-echo',passed:true};
 }
+
+export async function gardenCausality(tab){
+  const p=tab.playwright;
+  await p.getByRole('button',{name:'概念工坊',exact:true}).click();
+  await p.getByRole('button',{name:'约束的形状',exact:true}).click();
+  const alpha=p.getByRole('slider',{name:'工坊正则化强度α',exact:true});
+  await alpha.waitFor({state:'visible'});
+  const layout=await p.evaluate(()=>{const input=document.querySelector('input[aria-label="工坊正则化强度α"]');const r=input.getBoundingClientRect();return{height:innerHeight,bottom:r.bottom,overflow:document.documentElement.scrollWidth>innerWidth+1};});
+  assert.ok(!layout.overflow);
+  assert.ok(layout.bottom<layout.height,'primary alpha control should be in the first desktop viewport');
+  await p.getByRole('button',{name:/查看第\d+项对预测的贡献/}).first().press('Enter');
+  await p.getByText(/第\d+项怎样影响曲线/).waitFor({state:'visible'});
+  const select=p.getByRole('combobox',{name:'选择验证探针',exact:true});
+  await select.selectOption('0');
+  const before=await p.locator('.garden-probe-readout').innerText();
+  const metric=await p.locator('[data-evidence="validation"] b').innerText();
+  await p.getByRole('slider',{name:'验证探针位置',exact:true}).press('ArrowRight');
+  assert.equal(await select.getAttribute('value'),'1');
+  assert.notEqual(await p.locator('.garden-probe-readout').innerText(),before);
+  assert.equal(await p.locator('[data-evidence="validation"] b').innerText(),metric,'probe movement must not retrain or change aggregate MSE');
+  await alpha.press('End');
+  await p.getByRole('status',{name:'工坊正则化强度α 7',exact:true}).waitFor({state:'visible'});
+  await p.getByText('已实算',{exact:true}).waitFor({state:'visible'});
+  await p.getByRole('button',{name:'重设局部刻度',exact:true}).press('Enter');
+  assert.equal(await p.getByRole('img',{name:/弱约束范数/}).count(),1);
+  return {flow:'garden-contribution-probe-and-first-screen',passed:true,layout};
+}
+
+export async function aiTransfer(tab){
+  await autonomousGarden(tab);
+  const p=tab.playwright,learning=p.getByRole('region',{name:'约束花园学习挑战',exact:true});
+  const original=await learning.getByText('首次迁移：',{exact:false}).innerText();
+  await learning.locator('.island-ai-tool summary').click();
+  await learning.getByRole('button',{name:'生成可执行方案',exact:true}).click();
+  await learning.getByRole('button',{name:'执行这项操作',exact:true}).click();
+  await learning.getByRole('button',{name:'带着这个结果再验证',exact:false}).click();
+  await learning.getByText('这次独立检验：',{exact:false}).waitFor({state:'visible'});
+  assert.equal(await learning.locator('.island-reason-options button').count(),0);
+  await learning.locator('.island-answer-options button').nth(0).click();
+  await learning.getByRole('button',{name:'锁定判断，选择依据',exact:true}).click();
+  await learning.locator('.island-reason-options button').nth(0).click();
+  await learning.getByRole('button',{name:'提交判断与依据',exact:false}).click();
+  await learning.getByRole('button',{name:'返回原学习记录',exact:true}).click();
+  assert.equal(await learning.getByText('首次迁移：',{exact:false}).innerText(),original);
+  return {flow:'ai-result-to-new-marked-transfer',passed:true};
+}

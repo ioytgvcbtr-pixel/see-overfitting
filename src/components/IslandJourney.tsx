@@ -145,10 +145,10 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
   const stage = active?.stage;
   return <section className="island-learning" aria-label={`${islandNames[panel]}学习挑战`} aria-busy={!!busy}>
     <header className="island-learning-heading"><span className="learning-emblem"><Compass size={24} /></span>
-      <h3>{active?.task.title ?? "带着一个猜想出发"}</h3>
+      <h3>{active?.ai_origin?"带着AI结果，再验证一次":active?.task.title ?? "带着一个猜想出发"}</h3>
       <HelpHint title="这次怎样学"><p>先留下预测，再动手实验，最后换一组数据验证。首次判断保留，提示和AI辅助另作标记；四岛记录与原课程成绩分开。</p></HelpHint>
     </header>
-    {stage && <ol className="island-learning-steps" aria-label="学习阶段">{["预测", "实验", "迁移"].map((label, i) => {
+    {stage && !active?.transfer_only && <ol className="island-learning-steps" aria-label="学习阶段">{["预测", "实验", "迁移"].map((label, i) => {
       const current = stage === "predict" ? 0 : stage === "experiment" || stage === "review" ? 1 : 2;
       return <li key={label} aria-current={i === current ? "step" : undefined} data-done={i < current || stage === "complete"}><span>{i < current || stage === "complete" ? <Check size={18} /> : i+1}</span>{label}</li>;
     })}</ol>}
@@ -205,6 +205,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
     </>}
 
     {active && transfer && stage === "transfer" && <>
+      {active.ai_origin&&<p className="island-insight">这次独立检验：{active.ai_origin.focus}。新记录保留AI辅助来源，原题首答保持。</p>}
       <p className="island-transfer-intro"><Target size={24} />换一组数据，独立判断</p>
       <p className="island-condition">{transfer.context}；seed {task!.seed} → {transfer.seed}。{transfer.assessment?"根据实测观测判断，作答后核验依据。":"本题结果在作答后揭示。"}</p>
       <p className="island-operation">{transfer.operation}</p>
@@ -237,6 +238,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
       </details>}
       <div className="island-action-pair"><button className="button secondary" disabled={isLocked} onClick={() => { apply(transfer.target_parameters, transfer.row ?? transfer.selected); onLocate(transfer.focus); }}><Eye size={20} />查看场景</button>
         <button className="button secondary" disabled={isLocked} onClick={() => start(active.mode)}><RotateCcw size={20} />新建练习</button></div>
+      {active.ai_origin&&<button className="text-button" disabled={isLocked} onClick={()=>void run<IslandAttempt>("返回来源记录",`/islands/attempts/${active.ai_origin!.attempt_id}`,undefined,restore)}>返回原学习记录</button>}
     </>}
 
     {active && (stage === "review" || stage === "complete") && <details className="island-ai-tool" onToggle={e => {
@@ -260,13 +262,14 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
           if (!active.transfer_answer) remember({...active,ai_before_transfer:[...new Set([...active.ai_before_transfer,v.id])]});
         })}>执行这项操作<FlaskConical size={20} /></button> : <div className="island-ai-result" role="status"><strong>{({supported:"这次结果支持预期",not_supported:"这次结果不支持预期",observed:"已记录实际变化"})[plan.execution.verdict]}</strong><p>{plan.execution.metric} {proofNumber(plan.execution.before, panel === "forest" ? "forest" : "error")} → {proofNumber(plan.execution.after, panel === "forest" ? "forest" : "error")}</p>
           {plan.execution.observations?.map(row=><p key={row.metric}>{row.metric} {proofNumber(row.before,panel==="forest"?"forest":"error")} → {proofNumber(row.after,panel==="forest"?"forest":"error")}</p>)}
+          {active.transfer_answer&&<button className="button primary" disabled={isLocked} onClick={()=>void run<IslandAttempt>("准备AI后的新情境",`/islands/actions/${plan.id}/transfer-task`,{},restore)}>带着这个结果再验证<ArrowRight size={20}/></button>}
           <button className="text-button" disabled={isLocked} onClick={() => apply(plan.baseline_parameters)}><RotateCcw size={20} />恢复执行前条件</button></div>}
         {!planMatches && !plan.execution && <p role="status">画布条件已变化，请重新生成方案。</p>}</div>}
       {actionHistory.filter(row => row.execution && row.id !== plan?.id).length > 0 && <div className="island-ai-past"><p>已核验的实验</p>{actionHistory.filter(row => row.execution && row.id !== plan?.id).slice(0,3).map(row => <button className="text-button" disabled={isLocked} key={row.id} onClick={() => setPlan(row)}>{row.change.label} {String(row.change.to_value)} · 回看</button>)}</div>}
     </details>}
 
     <details className="island-learning-history" onToggle={e => { if (e.currentTarget.open) void api<IslandAttempt[]>("/islands/history").then(rows => setHistory(rows.filter(r => r.panel === panel))).catch(e => setError(e.message)); }}><summary><History size={20} />本岛学习记录</summary>
-      {history.length === 0 ? <p>留下首次预测后，学习过程会保存在这里。</p> : <ul>{history.slice(0, 8).map(row => <li key={row.id}><div><strong>{row.mode === "counterexample" ? "反例挑战" : "一次发现"}</strong><span>{row.stage === "complete" ? row.transfer_answer?.passed ? "迁移通过" : "迁移需重练" : "进行中"}{row.hints_used || row.ai_before_transfer.length ? " · 有辅助" : ""}</span></div><button className="text-button" disabled={isLocked} onClick={() => void run<IslandAttempt>("载入学习", `/islands/attempts/${row.id}`, undefined, restore)}>回看</button></li>)}</ul>}
+      {history.length === 0 ? <p>留下首次预测后，学习过程会保存在这里。</p> : <ul>{history.slice(0, 8).map(row => <li key={row.id}><div><strong>{row.transfer_only?"AI后验证":row.mode === "counterexample" ? "反例挑战" : "一次发现"}</strong><span>{row.stage === "complete" ? row.transfer_answer?.passed ? "迁移通过" : "迁移需重练" : "进行中"}{row.hints_used || row.ai_before_transfer.length ? " · 有辅助" : ""}</span></div><button className="text-button" disabled={isLocked} onClick={() => void run<IslandAttempt>("载入学习", `/islands/attempts/${row.id}`, undefined, restore)}>回看</button></li>)}</ul>}
     </details>
     {active && <button className="text-button island-learning-pause" disabled={isLocked} onClick={async () => {
       const d=draftRef.current;if(d)await persistDraft(d);
