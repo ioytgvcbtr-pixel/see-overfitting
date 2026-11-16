@@ -6,7 +6,7 @@
 
 从合成曲线建立直觉，再到公开数据比较模型。支持参数干预、固定条件对照、配对划分复核，以及基于真实指标的AI解释。
 
-![自主反例与迁移观测](artifacts/screenshots/garden-transfer-v15.jpg)
+![系数、曲线与验证残差联动](artifacts/screenshots/garden-main-v16.jpg)
 
 - [功能设计](docs/FUNCTIONAL_DESIGN.md)
 - [开发计划](docs/DEVELOPMENT_PLAN.md)
@@ -34,9 +34,11 @@
 - [0.15教学质量改进](docs/TEACHING_QUALITY_V15.md)
 - [0.15实际验收](docs/VALIDATION_V15.md)
 - [0.15官方对照评分与改进优先级](docs/REVIEW_V15.md)
+- [0.16题目、因果可视化与迁移改进](docs/LEARNING_REFINEMENT_V16.md)
+- [0.16实际验收](docs/VALIDATION_V16.md)
 - [AI开发记录](docs/ai-process/README.md)
 
-当前为本地可运行的0.15版。四岛用实测观测支持迁移判断；约束花园新增自主反例搜索与三种迁移表达，观测可以载入对应场景。AI围绕已提交依据提出单变量假设，执行后如实核验支持或不支持。首答、失败尝试、提示与AI辅助分别保留，刷新和备份可恢复；核心流程不依赖公网API。Windows持续集成覆盖安装、构建和关键浏览器流程。范围与限制见[0.15验收](docs/VALIDATION_V15.md)。
+当前为本地可运行的0.16版。新迁移题先锁定判断，再选择依据；候选和答案位置由确定性实算组织。约束花园可选择系数项、移动验证探针，联动观察预测曲线与残差，主控件和关键读数相邻。AI实验核验后可直接进入另存的新情境，保留来源与辅助标记。原始首答、失败尝试、旧题成绩和备份恢复继续保留；核心流程不依赖公网API。范围与限制见[0.16验收](docs/VALIDATION_V16.md)。
 
 ## 从打开，到下次继续
 

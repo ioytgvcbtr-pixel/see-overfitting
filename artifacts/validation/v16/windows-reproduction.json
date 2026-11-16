@@ -1,0 +1,5 @@
+{
+  "environment": "Fresh GitHub-hosted Windows VM with preinstalled base tools; no API key",
+  "seconds": 56.72,
+  "scope": "After checkout: runtime setup, uncached dependency installation, build and loopback readiness"
+}
