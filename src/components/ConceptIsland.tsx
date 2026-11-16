@@ -132,7 +132,7 @@ export default function ConceptIsland({
           v: Math.max(Math.abs(v), Math.abs(plant.current.weights[i])),
         }))
         .sort((a, b) => b.v - a.v)
-        .slice(0, width < 450 ? 4 : 6)
+        .slice(0, width < 340 ? 3 : width < 450 ? 4 : 6)
         .sort((a, b) => a.i - b.i)
         .map((v) => v.i)
     : [];
@@ -595,7 +595,7 @@ export default function ConceptIsland({
                       <g key={index} role="button" tabIndex={0} aria-label={`查看第${index+1}项对预测的贡献`} aria-pressed={focusedTerm===index}
                         className="garden-term" onClick={()=>setFocusedTerm(focusedTerm===index?null:index)}
                         onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();setFocusedTerm(focusedTerm===index?null:index);}}}>
-                        <rect x={px-23} y="146" width="46" height="158" rx="14" fill={focusedTerm===index?'#7845bb12':'transparent'} />
+                        <rect x={px-26} y="146" width="52" height="158" rx="14" fill={focusedTerm===index?'#7845bb12':'transparent'} />
                         <path
                           d={`M${px - 4} 257v${-weak}`}
                           stroke="#a8a0af"

@@ -140,6 +140,8 @@ def version3(panel, mode, seed, form='comparison', variant=0, autonomous=False):
         best=min(path,key=lambda p:p['validation_mse'])
         alternatives=[p for p in path if not math.isclose(p['validation_mse'],best['validation_mse'],rel_tol=1e-7,abs_tol=1e-10)]
         if len(alternatives)<2: raise ValueError('当前候选近似并列，请换一组实验条件。')
+        readable=[p for p in alternatives if p['validation_mse']<=max(best['validation_mse']*12,best['validation_mse']+.05)]
+        if len(readable)>=2:alternatives=readable
         low=min(alternatives,key=lambda p:p['alpha'])
         high=max((p for p in alternatives if p['alpha']!=low['alpha']),key=lambda p:p['alpha'])
         winner=(ordinal+variant)%3
