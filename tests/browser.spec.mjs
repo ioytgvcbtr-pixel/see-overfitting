@@ -42,5 +42,6 @@ test('mobile garden keeps primary controls and branch targets readable',async({p
   expect(state.overflow).toBe(false);
   expect(state.alphaBottom).toBeLessThan(844);
   expect(state.small).toBe(0);
-  await page.screenshot({path:'artifacts/local/playwright-results/garden-mobile.png',fullPage:true});
+  await expect(page.locator('.island-workbench')).toHaveCSS('opacity','1');
+  await page.screenshot({path:'artifacts/local/playwright-results/garden-mobile.png',fullPage:true,animations:'disabled'});
 });
