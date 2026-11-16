@@ -126,16 +126,17 @@ export default function ConceptIsland({
     setZoomScale(Math.max(...plant.current.weights.map(Math.abs), 1e-12) * 1.15);
   }, [input, result, plant, pending]);
   const indices = plant
-    ? plant.weak.weights
+    ? plant.current.weights
         .map((v, i) => ({
           i,
-          v: Math.max(Math.abs(v), Math.abs(plant.current.weights[i])),
+          v: Math.abs(v),
         }))
         .sort((a, b) => b.v - a.v)
         .slice(0, width < 340 ? 3 : width < 450 ? 4 : 6)
-        .sort((a, b) => a.i - b.i)
         .map((v) => v.i)
     : [];
+  if(plant&&focusedTerm!==null&&focusedTerm<plant.current.weights.length&&!indices.includes(focusedTerm))indices[indices.length-1]=focusedTerm;
+  indices.sort((a,b)=>a-b);
   const maximum =
     zoomScale ??
     (plant
@@ -572,7 +573,7 @@ export default function ConceptIsland({
                     textAnchor="middle"
                     className="island-svg-label"
                   >
-                    同一特征基
+                    当前主要系数
                   </text>
                   <text
                     x={width * 0.6}
