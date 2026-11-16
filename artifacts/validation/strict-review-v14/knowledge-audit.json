@@ -1,0 +1,178 @@
+{
+  "scope": "Current 18 knowledge checks, not the older mechanism challenge banks",
+  "code": "2f983c0",
+  "lessons": 18,
+  "correct_positions": {
+    "1": 9,
+    "3": 3,
+    "2": 6
+  },
+  "unique_longest_correct": 16,
+  "practice_links": 13,
+  "median_body_chars": 193.5,
+  "method": "Compare literal choice lengths in the current authored pool. This audits a guessing cue, not student learning outcomes.",
+  "lessons_audited": [
+    {
+      "id": "ml-intro",
+      "title": "什么是机器学习？",
+      "choice_count": 3,
+      "correct_position": 1,
+      "unique_longest_correct": true,
+      "has_practice": true,
+      "body_chars": 220
+    },
+    {
+      "id": "task-types",
+      "title": "分类、回归，还有聚类",
+      "choice_count": 3,
+      "correct_position": 3,
+      "unique_longest_correct": false,
+      "has_practice": true,
+      "body_chars": 194
+    },
+    {
+      "id": "train-infer",
+      "title": "训练与预测有什么区别？",
+      "choice_count": 3,
+      "correct_position": 1,
+      "unique_longest_correct": true,
+      "has_practice": true,
+      "body_chars": 205
+    },
+    {
+      "id": "features",
+      "title": "特征、标签与数据质量",
+      "choice_count": 3,
+      "correct_position": 1,
+      "unique_longest_correct": false,
+      "has_practice": true,
+      "body_chars": 201
+    },
+    {
+      "id": "splits",
+      "title": "训练、验证、测试各管什么？",
+      "choice_count": 3,
+      "correct_position": 1,
+      "unique_longest_correct": true,
+      "has_practice": true,
+      "body_chars": 198
+    },
+    {
+      "id": "preprocess",
+      "title": "清洗与缩放也要学习",
+      "choice_count": 3,
+      "correct_position": 2,
+      "unique_longest_correct": true,
+      "has_practice": true,
+      "body_chars": 196
+    },
+    {
+      "id": "linear",
+      "title": "从线性模型到正则化",
+      "choice_count": 3,
+      "correct_position": 1,
+      "unique_longest_correct": true,
+      "has_practice": true,
+      "body_chars": 193
+    },
+    {
+      "id": "local-models",
+      "title": "邻居与核：局部怎样影响预测？",
+      "choice_count": 3,
+      "correct_position": 2,
+      "unique_longest_correct": true,
+      "has_practice": true,
+      "body_chars": 181
+    },
+    {
+      "id": "trees",
+      "title": "决策树、森林与梯度提升",
+      "choice_count": 3,
+      "correct_position": 3,
+      "unique_longest_correct": true,
+      "has_practice": true,
+      "body_chars": 190
+    },
+    {
+      "id": "generalize",
+      "title": "训练得好，为什么还会失败？",
+      "choice_count": 3,
+      "correct_position": 1,
+      "unique_longest_correct": true,
+      "has_practice": true,
+      "body_chars": 189
+    },
+    {
+      "id": "metrics",
+      "title": "读懂指标与错误类型",
+      "choice_count": 3,
+      "correct_position": 1,
+      "unique_longest_correct": true,
+      "has_practice": true,
+      "body_chars": 200
+    },
+    {
+      "id": "controlled",
+      "title": "一次只改一个决定",
+      "choice_count": 3,
+      "correct_position": 2,
+      "unique_longest_correct": true,
+      "has_practice": true,
+      "body_chars": 181
+    },
+    {
+      "id": "transformers",
+      "title": "神经网络与注意力",
+      "choice_count": 3,
+      "correct_position": 2,
+      "unique_longest_correct": true,
+      "has_practice": false,
+      "body_chars": 212
+    },
+    {
+      "id": "transfer",
+      "title": "自监督、预训练与迁移",
+      "choice_count": 3,
+      "correct_position": 3,
+      "unique_longest_correct": true,
+      "has_practice": false,
+      "body_chars": 180
+    },
+    {
+      "id": "rag",
+      "title": "提示、RAG与微调怎么选？",
+      "choice_count": 3,
+      "correct_position": 1,
+      "unique_longest_correct": true,
+      "has_practice": false,
+      "body_chars": 185
+    },
+    {
+      "id": "multimodal",
+      "title": "多模态与生成模型",
+      "choice_count": 3,
+      "correct_position": 2,
+      "unique_longest_correct": true,
+      "has_practice": false,
+      "body_chars": 186
+    },
+    {
+      "id": "agents",
+      "title": "智能体为什么需要工具？",
+      "choice_count": 3,
+      "correct_position": 2,
+      "unique_longest_correct": true,
+      "has_practice": true,
+      "body_chars": 188
+    },
+    {
+      "id": "responsible",
+      "title": "把模型放到真实世界之前",
+      "choice_count": 3,
+      "correct_position": 1,
+      "unique_longest_correct": true,
+      "has_practice": false,
+      "body_chars": 208
+    }
+  ]
+}

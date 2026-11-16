@@ -77,6 +77,7 @@ API在网页“设置”中配置；留空密钥会保留已有配置。配置�
 
 ## 设计、实现与验证
 
+- [1.4官方对照严格评审与改进顺序](docs/STRICT_REVIEW_MODEL_PLANET_V14.md)
 - [1.2学习航线与记录验收](docs/VALIDATION_LEARNING_V12.md)
 - [6章18课设计与资料](docs/LEARNING_PATH_V12.md)
 - [统一课堂与Q版星球验收](docs/VALIDATION_CLASSROOM_V11.md)
