@@ -67,7 +67,7 @@ def main():
         kind = payload.get('type')
         if kind == 'message' and payload.get('role') in ('user', 'assistant'):
             # The runtime uses phase for public assistant messages; reasoning has its own type.
-            if payload.get('channel') == 'analysis' or payload.get('phase') == 'analysis':
+            if payload.get('channel') not in (None,'commentary','final') or payload.get('phase') in ('analysis','summary','compaction'):
                 continue
             body = '\n'.join(c.get('text', '') for c in payload.get('content', []) if c.get('type') in ('input_text', 'output_text'))
             if '那就做“看见过拟合”吧' in body:
@@ -87,7 +87,7 @@ def main():
                 reference_calls.add(payload.get('call_id'))
             if 'image_gen__imagegen' in command:
                 asset_calls.add(payload.get('call_id'))
-            if any(marker in command for marker in ('ALL_TOOLS', 'cua.getState(', 'cua.getApp(', 'cua.listBrowsers(', 'cua.listApps(', 'cua.listWindows(', 'cua.listTabs(', 'browser.user.openTabs(', 'browser.tabs.list(', 'SKILL.md', 'RUNTIME-MATRIX.md', 'pro-rules.md', 'quick-reference.md', 'browser-troubleshooting')):
+            if any(marker in command for marker in ('ALL_TOOLS', 'cua.getState(', 'cua.getApp(', 'cua.listBrowsers(', 'cua.listApps(', 'cua.listWindows(', 'cua.listTabs(', 'browser.user.openTabs(', 'browser.tabs.list(', 'SKILL.md', 'AGENTS.md', 'RUNTIME-MATRIX.md', 'pro-rules.md', 'quick-reference.md', 'browser-troubleshooting')):
                 omitted_calls.add(payload.get('call_id'))
                 continue
             if payload.get('call_id') in omitted_calls:

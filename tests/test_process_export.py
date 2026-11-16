@@ -4,6 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 from export_ai_process import read_entries, omit_binary_previews
+import export_ai_process
 
 
 def event(at, kind='message', **payload):
@@ -47,3 +48,15 @@ def test_async_image_preview_is_removed_without_losing_text_or_failure_evidence(
     assert cleaned[3]['metadata']['width'] == 1536
     assert 'data:image/' not in json.dumps(cleaned)
     assert output[1]['image_url'].startswith('data:image/')
+
+
+def test_public_export_excludes_internal_summary_and_analysis(tmp_path,monkeypatch):
+    root=tmp_path/'project';root.mkdir()
+    entries=[event('00:00.000',role='user',content=[{'type':'input_text','text':'那就做“看见过拟合”吧'}])]
+    entries += [event(f'00:0{i+1}.000',role='assistant',channel=channel,content=[{'type':'output_text','text':text}])
+        for i,(channel,text) in enumerate([('analysis','private reasoning'),('summary','internal handoff'),('commentary','public progress'),('final','public result')])]
+    source=save(tmp_path/'source.jsonl',entries)
+    monkeypatch.setattr(export_ai_process,'ROOT',root);monkeypatch.setattr(sys,'argv',['export','--session',str(source)])
+    export_ai_process.main();content=(root/'docs/ai-process/conversation.md').read_text(encoding='utf8')
+    assert 'public progress' in content and 'public result' in content
+    assert 'private reasoning' not in content and 'internal handoff' not in content

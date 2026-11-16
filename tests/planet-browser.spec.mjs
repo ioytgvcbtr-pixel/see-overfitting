@@ -10,7 +10,7 @@ async function exampleRun(page,task,card,model){
  await expect(page.getByRole('region',{name:'真实训练结果'})).toBeVisible({timeout:45000});
 }
 test('Model Planet blank fields, real pipeline and paired AI transfer',async({page})=>{
- await page.goto('/');await expect(page.getByRole('heading',{name:'把模型，亲手跑明白。'})).toBeVisible();
+ await page.goto('/');await expect(page.getByRole('heading',{name:/把模型，.*亲手跑明白。/})).toBeVisible();
  await exampleRun(page,'回归任务','混凝土','tree_r');
  await page.getByRole('tab',{name:'预测机制',exact:true}).click();await expect(page.locator('.pp-tree-nodes')).toBeVisible();
  await page.getByRole('tab',{name:'边界/条件切片',exact:true}).click();await page.getByRole('button',{name:'计算当前条件视图',exact:true}).click();await expect(page.locator('.pp-chart figcaption').filter({hasText:'条件切片'})).toBeVisible({timeout:45000});
