@@ -52,11 +52,11 @@ def make_router(connect):
                 row=c.execute('SELECT content FROM study_progress WHERE id=?',(lesson['id'],)).fetchone();progress=json.loads(row['content']) if row else None
             submitted=bool(progress and progress.get('attempts'))
             if request.share_context:evidence['lesson']={'id':lesson['id'],'title':lesson['title'],'goal':lesson['goal'],'sections':lesson['sections'],'first_answer_submitted':submitted}
-            seeking=bool(re.search(r'答案|选项|选哪|哪个选|正确选|直接给|选[ABCabc123]',request.question)) or lesson['quiz']['question'] in request.question or any(v['text'] in request.question for v in lesson['quiz']['choices'])
+            seeking=bool(re.search(r'答案|选项|这题|本题|这道|正确选|选[ABCabc123]',request.question)) or lesson['quiz']['question'] in request.question or any(v['text'] in request.question for v in lesson['quiz']['choices'])
             if not submitted and seeking:
                 guard=True;hint=f"这道检查的首答还没有提交，我先陪你梳理，不直接指出选项。\n\n本课要抓住：{lesson['goal']}\n先用自己的话描述问题中的输入、目标或判断依据，再回到课题选择。提交后，我们可以一起回看你的理由。"
             actions.append({'type':'lesson','id':lesson['id'],'label':'回到当前课题'})
-        elif request.context.view in ('mechanisms','workbench') and re.search(r'答案|选项|选哪|哪个选|正确选|直接给|选[ABCabc123]',request.question):
+        elif request.context.view in ('mechanisms','workbench') and re.search(r'答案|选项|这题|本题|这道|正确选|选[ABCabc123]',request.question):
             guard=True;hint='先保留这次的独立判断，我陪你看证据：当前要比较的是什么，A和B是否使用同一批验证样本，实际误差怎样变化？\n\n把模型复杂程度、训练表现与验证表现分开考虑，再锁定你的判断。'
         if request.share_context and request.context.view=='workbench' and request.context.run_id and exists(c,'planet_runs'):
             row=c.execute('SELECT content FROM planet_runs WHERE id=?',(request.context.run_id,)).fetchone()
@@ -81,6 +81,7 @@ def make_router(connect):
         if any(x in question for x in ('过拟合','泛化','overfit')):return '过拟合可以理解为模型过于贴合训练中的偶然细节。训练误差下降，并不能保证新样本表现也改善。\n\n到曲线山试着只改变复杂度，保持验证样本不变，比较训练与验证，再换个情境核对。'
         if any(x in question for x in ('正则','alpha','α')):return '正则化为模型增加约束。以Ridge为例，α控制约束强度；系数缩小和验证效果变好需要分别核对。\n\n可以去约束花园，固定条件只调整α，看系数、预测与真实验证误差怎样联动。'
         if any(x in question for x in ('训练集','测试集','验证集','划分')):return '训练集用来拟合模型与处理统计，验证集帮助比较设置，测试集留到锁定配置后评估。\n\n先写下三份数据各自的职责，再选择比例；相同实体和时间顺序也要一起考虑。'
+        if '模型' in question and any(x in question for x in ('选择','怎么选','选哪')):return '先明确分类还是回归，再从简单、可解释的基线开始比较。距离和核方法要关注缩放，树与集成可表达非线性关系；模型更复杂不保证验证更好。\n\n在模型图鉴选一种方法，用相同验证样本比较真实结果，再决定是否调整。'
         if any(x in question for x in ('分类','回归')):return '分类回答属于哪个类别，回归回答一个数值。类别可以写成0或1，所以判断任务要看目标的含义。\n\n识别企鹅物种是分类；预测混凝土强度是回归。可以从这两个内置课例开始。'
         return '我现在可以提供本地学习提示。先明确你想预测的目标，再区分数据处理、模型设置和评估证据。\n\n你可以问“什么是过拟合”，也可以打开一个课题或已完成实验后，勾选使用当前摘要，再一起分析。'
     @router.get('/sessions')

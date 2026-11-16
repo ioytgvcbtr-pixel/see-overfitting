@@ -57,6 +57,7 @@ def test_pet_preserves_unsubmitted_knowledge_answers_and_omits_private_context(c
     assert not c.get('/study/lessons/ml-intro').json()['progress']['attempts']
     assert ask(c,question='这题答案是哪个？',context={'view':'learning','lesson_id':'ml-intro'},share_context=False)[1]['mode']=='guided'
     assert ask(c,question='迁移题哪个选项正确？',context={'view':'workbench'})[1]['mode']=='guided'
+    assert ask(c,question='我应该选哪个模型来分类？',context={'view':'workbench'})[1]['mode']=='rules'
     calls=[]
     class Fake:
         def __init__(self,**k):pass
