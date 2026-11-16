@@ -82,7 +82,7 @@ type Modal = "guide" | "save" | "report" | "final" | "sources" | null;
 const alphaLabel = (a: number) =>
   a < 0.001 ? a.toExponential(0).replace("e-", " × 10⁻") : String(a);
 
-export default function Home({embedded=false,section="explore",onSectionChange}:{embedded?:boolean;section?:AppView;onSectionChange?:(view:AppView)=>void}) {
+export default function Home({embedded=false,section="explore",onSectionChange,topicRequest,resumeRequest}:{embedded?:boolean;section?:AppView;onSectionChange?:(view:AppView)=>void;topicRequest?:{panel:ConceptPanel;serial:number}|null;resumeRequest?:{entry:WorkspaceEntry;serial:number}|null}) {
   const ContentTag=embedded?"div":"main";
   const [view, setViewState] = useState<View>(section);
   const [navigationReady, setNavigationReady] = useState(false);
@@ -165,6 +165,7 @@ export default function Home({embedded=false,section="explore",onSectionChange}:
         ? `${params.samples}个样本`
         : `α ${alphaLabel(params.alpha)}`;
   function setView(next: View) {
+    if(embedded&&next==="history"){onSectionChange?.(next);return;}
     setViewState(next);
     if(embedded)onSectionChange?.(next);
     else if (window.location.hash !== hashForView(next))
@@ -202,6 +203,9 @@ export default function Home({embedded=false,section="explore",onSectionChange}:
     setSceneReady(true);
   }, []);
   useEffect(()=>{if(embedded){setViewState(section);setNavigationReady(true);}},[embedded,section]);
+  useEffect(()=>{if(embedded&&topicRequest){setViewState("concepts");setConceptLaunch(topicRequest.panel);}},[embedded,topicRequest?.serial]);
+  const resumedSerial=useRef<number|null>(null);
+  useEffect(()=>{if(embedded&&sceneReady&&resumeRequest&&resumedSerial.current!==resumeRequest.serial){resumedSerial.current=resumeRequest.serial;void openWorkspaceEntry(resumeRequest.entry);}},[embedded,sceneReady,resumeRequest?.serial]);
   useEffect(() => {
     if(embedded)return;
     const apply = () => {

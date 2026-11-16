@@ -54,3 +54,25 @@ test('task cards align actions and six palettes leave the main page within the v
  for(const name of ['鸢尾紫','海湾青','杏子橙','晴空蓝','森林绿','星空靛']){await page.getByRole('button',{name,exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);}
  await page.getByRole('button',{name:'跟随学习场景',exact:true}).click();await expect(page.locator('.planet-app')).toHaveAttribute('data-palette','lagoon');
 });
+
+test('learning route persists understanding and experiment edits without student data upload',async({page})=>{
+ await page.goto('/');await expect(page.getByText(/机制基础课.*3/)).toHaveCount(0);
+ await page.getByRole('button',{name:'学习航线',exact:true}).click();await page.getByRole('button',{name:'从什么是机器学习开始',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'什么是机器学习？',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'读完了，做个小检查',exact:true}).click();await page.getByRole('button',{name:'输入信息与要预测的目标',exact:true}).click();await page.getByRole('button',{name:'保存判断并核对',exact:true}).click();
+ await expect(page.getByText('检查通过，本课增加一格。',{exact:true})).toBeVisible();await page.reload();await expect(page.getByText('本课已完成',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'我的学习记录',exact:true}).click();await expect(page.getByRole('progressbar',{name:'知识航线',exact:true})).toHaveAttribute('aria-valuenow','1');
+ await page.getByRole('button',{name:'分类任务',exact:true}).click();await expect(page.getByRole('button',{name:'导入一份CSV',exact:true})).toHaveCount(0);await expect(page.locator('input[accept*=csv]')).toHaveCount(0);
+ await page.getByRole('button',{name:/企鹅物种识别/}).click();await page.getByRole('button',{name:'4 划分数据',exact:true}).click();await page.getByLabel('训练比例 %',{exact:true}).fill('62');await page.getByLabel('验证比例 %',{exact:true}).click();
+ await page.getByRole('button',{name:'我的学习记录',exact:true}).click();await page.getByRole('button',{name:'实验操作',exact:true}).click();await expect(page.getByRole('heading',{name:'修改实验配置',exact:true}).first()).toBeVisible();
+ await page.getByText(/查看\d+项选择变化/).first().click();await expect(page.getByText('训练比例',{exact:true}).first()).toBeVisible();
+ await page.screenshot({path:'artifacts/local/playwright-results/study-records.png',fullPage:true,animations:'disabled'});
+});
+
+test('all completed lessons fill every progress segment green',async({page,request})=>{
+ const answers=[1,2,0,1,0,2,1,2,0,2,1,0,2,0,1,2,1,0];
+ const response=await request.get('http://127.0.0.1:3002/api/study/overview');const overview=await response.json();
+ for(let i=0;i<overview.lessons.length;i++){const id=overview.lessons[i].id;await request.post(`http://127.0.0.1:3002/api/study/lessons/${id}/open`,{data:{}});await request.post(`http://127.0.0.1:3002/api/study/lessons/${id}/read`,{data:{}});const a=await request.post(`http://127.0.0.1:3002/api/study/lessons/${id}/answer`,{data:{id:crypto.randomUUID().replaceAll('-',''),choice:`${id}-${answers[i]}`}});expect(a.ok()).toBe(true);}
+ await page.goto('/#classroom/learning');const meter=page.getByRole('progressbar',{name:'知识航线',exact:true});await expect(meter).toHaveAttribute('aria-valuenow','18');await expect(page.locator('.pp-learning-progress.is-complete')).toBeVisible();await expect(page.locator('.pp-segment-meter>span[data-state=done]')).toHaveCount(18);
+ await expect(page.locator('.pp-segment-meter>span').last()).toHaveCSS('background-color','rgb(45, 113, 79)');
+});

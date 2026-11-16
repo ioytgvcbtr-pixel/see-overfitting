@@ -1,7 +1,7 @@
 import type {AppView} from './navigation';
 
-export type ClassroomView='start'|'classification'|'regression'|'models'|'experiments'|'workbench'|'mechanisms';
-export type LocationState={view:ClassroomView;section:AppView};
+export type ClassroomView='start'|'classification'|'regression'|'models'|'experiments'|'workbench'|'mechanisms'|'learning';
+export type LocationState={view:ClassroomView;section:AppView;lesson?:string;panel?:string};
 export const workshopSections:{id:AppView;label:string}[]=[
  {id:'explore',label:'探索地图'},{id:'concepts',label:'概念工坊'},
  {id:'classification',label:'分类边界'},{id:'studio',label:'实验工作台'},
@@ -11,15 +11,15 @@ const legacySections=new Set(['explore','concepts','classification','studio','be
 export function readClassroomLocation(hash:string,initialMechanism=false):LocationState{
  const value=hash.replace(/^#/,'');
  if(value.startsWith('mechanisms/')){
-  const section=value.slice(11);return {view:'mechanisms',section:legacySections.has(section)?(section==='bench'||section==='learn'?'studio':section) as AppView:'explore'};
+  const [section,panel]=value.slice(11).split('/');return {view:'mechanisms',section:legacySections.has(section)?(section==='bench'||section==='learn'?'studio':section) as AppView:'explore',...(['error','sensitivity','regularization'].includes(panel)?{panel}:{})};
  }
  if(value.startsWith('classroom/')){
-  const view=value.slice(10);return {view:['start','classification','regression','models','experiments','workbench'].includes(view)?view as ClassroomView:'start',section:'explore'};
+  const [view,lesson]=value.slice(10).split('/');return {...(view==='learning'&&/^[a-z0-9-]{1,60}$/.test(lesson||'')?{lesson}:{}),view:['start','classification','regression','models','experiments','workbench','learning'].includes(view)?view as ClassroomView:'start',section:'explore'};
  }
  if(legacySections.has(value))return {view:'mechanisms',section:(value==='bench'||value==='learn'?'studio':value) as AppView};
  return {view:initialMechanism?'mechanisms':'start',section:'explore'};
 }
-export const classroomHash=(view:ClassroomView,section:AppView='explore')=>view==='mechanisms'?`#mechanisms/${section}`:`#classroom/${view}`;
+export const classroomHash=(view:ClassroomView,section:AppView='explore',lesson:string|null=null,panel:string|null=null)=>view==='mechanisms'?`#mechanisms/${section}${panel?'/'+panel:''}`:`#classroom/${view}${view==='learning'&&lesson?'/'+lesson:''}`;
 
 export const palettes={
  orchid:{name:'鸢尾紫',brand:'#7443a5',ink:'#2d243d',muted:'#6c6078',bg:'#f8f6fc',soft:'#eee6f6',nav:'#30223f'},
@@ -35,7 +35,7 @@ export function readPalette(value:string|null):PalettePreference{return value&&O
 export function contextPalette(view:ClassroomView,task?:string,step=0,section:AppView='explore'):Palette{
  if(view==='workbench')return step===1||step===2?'meadow':task==='classification'?'lagoon':'apricot';
  if(view==='classification')return 'lagoon';if(view==='regression')return 'apricot';
- if(view==='models')return 'indigo';if(view==='experiments')return 'sky';
+ if(view==='learning')return 'orchid';if(view==='models')return 'indigo';if(view==='experiments')return 'sky';
  if(view==='mechanisms')return section==='classification'?'lagoon':section==='settings'||section==='history'?'sky':'meadow';
  return 'orchid';
 }

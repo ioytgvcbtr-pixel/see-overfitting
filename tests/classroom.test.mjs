@@ -18,3 +18,9 @@ test('every palette retains readable body, secondary text and primary button tex
   for(const [fg,bg] of [[p.ink,p.bg],[p.muted,p.bg],[p.brand,'#ffffff'],['#ffffff',p.nav]])assert.ok(contrast(fg,bg)>=4.5,`${id}: ${fg} on ${bg}`);
  }
 });
+
+test('knowledge and mechanism deep links keep a specific lesson or station',()=>{
+ assert.deepEqual(readClassroomLocation('#classroom/learning/ml-intro'),{view:'learning',section:'explore',lesson:'ml-intro'});
+ assert.equal(classroomHash('learning','explore','ml-intro'),'#classroom/learning/ml-intro');
+ assert.deepEqual(readClassroomLocation('#mechanisms/concepts/regularization'),{view:'mechanisms',section:'concepts',panel:'regularization'});
+});
