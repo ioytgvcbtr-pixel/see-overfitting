@@ -16,7 +16,7 @@
 
 [独立设置与小模验收](docs/VALIDATION_SETTINGS_PET_V13.md) · [在线问答效果](artifacts/screenshots/pet-online-v13.jpg)
 
-[1.4星球向导与整体流程复核](docs/PLANET_GUIDE_REVIEW_V14.md)：知识实践可回原课，继续学习优先未完成课题；课例按任务类型筛选，模型可检索，训练完成可直达结果，操作记录标明实际模型。
+[1.4星球向导与整体流程复核](docs/PLANET_GUIDE_REVIEW_V14.md) · [实际验收与截图](docs/VALIDATION_PLANET_GUIDE_V14.md)：知识实践可回原课，继续学习优先未完成课题；课例按任务类型筛选，模型可检索，训练完成可直达结果，操作记录标明实际模型。
 
 ## 从知识到实验
 
