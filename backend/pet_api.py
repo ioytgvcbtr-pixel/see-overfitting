@@ -56,7 +56,7 @@ def make_router(connect):
             if not submitted and seeking:
                 guard=True;hint=f"这道检查的首答还没有提交，我先陪你梳理，不直接指出选项。\n\n本课要抓住：{lesson['goal']}\n先用自己的话描述问题中的输入、目标或判断依据，再回到课题选择。提交后，我们可以一起回看你的理由。"
             actions.append({'type':'lesson','id':lesson['id'],'label':'回到当前课题'})
-        elif request.context.view=='mechanisms' and re.search(r'答案|选项|选哪|哪个选|正确选|直接给|选[ABCabc123]',request.question):
+        elif request.context.view in ('mechanisms','workbench') and re.search(r'答案|选项|选哪|哪个选|正确选|直接给|选[ABCabc123]',request.question):
             guard=True;hint='先保留这次的独立判断，我陪你看证据：当前要比较的是什么，A和B是否使用同一批验证样本，实际误差怎样变化？\n\n把模型复杂程度、训练表现与验证表现分开考虑，再锁定你的判断。'
         if request.share_context and request.context.view=='workbench' and request.context.run_id and exists(c,'planet_runs'):
             row=c.execute('SELECT content FROM planet_runs WHERE id=?',(request.context.run_id,)).fetchone()
@@ -66,7 +66,7 @@ def make_router(connect):
                     'cleaning':{k:r['cleaning'][k] for k in ('actual_training','dropped','processed_features','fit_scope')},'split':r['split'],
                     'training_metrics':r['training_metrics'],'validation_metrics':r['validation_metrics'],'baseline':r['baseline'],
                     'targets':r['targets'],'warnings':r['warnings'],'draft_changed':request.context.draft_changed}
-                evidence['note']='只按已完成运行回答；当前草稿如有更改，需要重新训练。测试集信息未提供。'
+                evidence['note']='只按已完成运行回答；当前草稿如有更改，需提交当前配置后再核对新结果。测试集信息未提供。'
                 actions.append({'type':'run','id':run['id'],'label':'回到这份实验结果'})
         if not actions:actions.append({'type':'lesson','id':'ml-intro','label':'从机器学习入门'})
         return evidence,actions,guard,hint
