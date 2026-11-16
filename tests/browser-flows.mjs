@@ -43,11 +43,16 @@ export async function autonomousGarden(tab,onCheckpoint=async()=>{}) {
   await onCheckpoint('transfer');
   // Leave a draft and restore it before the immutable first answer.
   await learning.locator('.island-answer-options button').nth(0).click();
+  const firstChoice=await learning.locator('.island-answer-options button').nth(0).innerText();
+  const lock=learning.getByRole('button',{name:'锁定判断，选择依据',exact:true});
+  const twoStep=await lock.count()===1;
+  if(twoStep)await lock.click();
   await learning.locator('.island-reason-options button').nth(0).click();
   await learning.getByRole('button',{name:'暂存学习，继续探索'}).click();
   await tab.reload();
   await learning.getByRole('button',{name:'继续学习',exact:true}).click();
-  assert.equal(await learning.locator('.island-answer-options button').nth(0).getAttribute('aria-pressed'),'true');
+  if(twoStep)assert.match(await learning.locator('.island-locked-decision').innerText(),new RegExp(firstChoice));
+  else assert.equal(await learning.locator('.island-answer-options button').nth(0).getAttribute('aria-pressed'),'true');
   await learning.getByRole('button',{name:'提交判断与依据'}).click();
   await learning.getByText('首次迁移：',{exact:false}).waitFor({state:'visible'});
   await onCheckpoint('complete');

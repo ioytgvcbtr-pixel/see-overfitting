@@ -13,6 +13,7 @@ def client(tmp_path, monkeypatch):
 
 
 def post(c, path, body=None):
+    if path=='/islands/tasks': body={**(body or {}),'content_version':2}
     r=c.post(path,json=body or {})
     assert r.status_code==200,r.text
     return r.json()

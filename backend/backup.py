@@ -54,6 +54,15 @@ def prediction(raw):
 def rebuild_task(raw):
     panel, mode = raw['panel'], raw['mode']
     if panel not in islands.NAMES or mode not in ('discovery', 'counterexample'): raise ValueError('未知岛屿任务。')
+    if raw.get('content_version')==3:
+        variant=raw.get('variant',0)
+        form=raw.get('question_kind','comparison')
+        if type(variant) is not int or not 0<=variant<=2 or form not in ('comparison','model_selection','controlled_design'):
+            raise ValueError('题目变体不合法。')
+        task=pedagogy.version3(panel,mode,raw['seed'],form,variant,bool(raw.get('investigation')))
+        if task['before_parameters']!=raw['before_parameters'] or (not raw.get('investigation') and task['target_parameters']!=raw['target_parameters']):
+            raise ValueError('题目条件不符合版本协议。')
+        return task
     if raw.get('investigation'):
         if panel != 'regularization' or mode != 'counterexample': raise ValueError('自主反例任务不合法。')
         task = pedagogy.investigation(raw['seed'])
@@ -87,7 +96,7 @@ def rebuild_task(raw):
 def rebuild_island(raw):
     task = rebuild_task(raw['_case'])
     s = {'id': identity(raw['id']), 'created_at': stamp(raw['created_at']), 'updated_at': learning.now(),
-         'panel': task['panel'], 'mode': task['mode'], 'protocol_version': 2, '_case': task, '_transfer': None,
+         'panel': task['panel'], 'mode': task['mode'], 'protocol_version': task.get('content_version',2), '_case': task, '_transfer': None,
          'stage': 'predict', 'prediction': None, 'observation': None, 'transfer_answer': None,
          'hints_used': int(raw.get('hints_used', 0)), 'trials': [],
          'transfer_variant': int(raw.get('transfer_variant',0)),
@@ -132,12 +141,18 @@ def rebuild_island(raw):
         a = islands.Answer.model_validate({k: raw['transfer_answer'][k] for k in ('task_id', 'choice', 'reason')})
         transfer = s['_transfer']
         if not transfer or a.task_id != s['_transfer_id']: raise ValueError('迁移作答与题目不匹配。')
+        if transfer.get('content_version')==3 and (not raw.get('transfer_decision') or raw['transfer_decision']['choice']!=a.choice):
+            raise ValueError('迁移作答缺少锁定判断。')
         proof = transfer['_proof']
         s['transfer_answer'] = a.model_dump() | {'passed': a.choice == proof['choice'] and a.reason == transfer['_reason'],
             'choice_correct': a.choice == proof['choice'], 'reason_correct': a.reason == transfer['_reason'],
             'correct_reason': transfer['_reason'], 'proof': proof, 'assisted': bool(s['hints_used'] or s['ai_before_transfer']),
             'submitted_at': stamp(raw['transfer_answer']['submitted_at'])}
         s.update(stage='complete', completed_at=stamp(raw.get('completed_at', raw['transfer_answer']['submitted_at'])))
+    if raw.get('transfer_decision'):
+        d=islands.Decision.model_validate({k:raw['transfer_decision'][k] for k in ('task_id','choice')})
+        if not s.get('_transfer') or d.task_id!=s['_transfer_id']: raise ValueError('锁定判断与题目不匹配。')
+        s['transfer_decision']=d.model_dump()|{'submitted_at':stamp(raw['transfer_decision']['submitted_at'])}
     cp = raw.get('checkpoint')
     if cp and cp.get('stage') == s['stage']:
         s['checkpoint'] = islands.checkpoint_value(s, islands.Checkpoint.model_validate({k:v for k,v in cp.items() if k != 'updated_at'}))

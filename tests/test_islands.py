@@ -15,7 +15,7 @@ def client(tmp_path, monkeypatch):
 
 
 def begin(client, panel='error', mode='discovery'):
-    response = client.post('/islands/tasks', json={'panel': panel, 'mode': mode})
+    response = client.post('/islands/tasks', json={'panel': panel, 'mode': mode, 'content_version':2})
     assert response.status_code == 200, response.text
     return response.json()
 

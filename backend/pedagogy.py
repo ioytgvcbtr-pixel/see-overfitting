@@ -1,5 +1,6 @@
 """Versioned question data. Observations are public; grading keys remain private."""
 import copy
+import math
 
 
 def upgrade(task, form='comparison'):
@@ -121,3 +122,58 @@ def action_observations(panel,before,after):
     if panel=='sensitivity':
         return [{'metric':'模型B变化RMS','before':before['pairs'][1]['shift_rms'],'after':after['pairs'][1]['shift_rms']}]
     return [{'metric':'训练准确率','before':before['metrics']['train_accuracy'],'after':after['metrics']['train_accuracy']}]
+
+
+def version3(panel, mode, seed, form='comparison', variant=0, autonomous=False):
+    """Reconstructable v3: balanced model labels and evidence-neutral reasons."""
+    from backend import islands, concepts
+    raw = islands.case(panel,mode,seed)
+    if form=='model_selection' and panel=='regularization':
+        base={**raw['before_parameters'],'noise':(.06,.22,.55)[variant%3]}
+        raw=islands.package(panel,mode,base,{**base,'alpha':100},'alpha')
+    t=investigation(seed) if autonomous else upgrade(raw,form)
+    t.update(content_version=3,variant=variant)
+    ordinal=((42,43,44) if panel=='forest' else (2026,314,2718)).index(seed)
+    if form=='model_selection' and not autonomous:
+        base=t['before_parameters']
+        path=islands.calculate(panel,base)['regularization']['path']
+        best=min(path,key=lambda p:p['validation_mse'])
+        alternatives=[p for p in path if not math.isclose(p['validation_mse'],best['validation_mse'],rel_tol=1e-7,abs_tol=1e-10)]
+        if len(alternatives)<2: raise ValueError('当前候选近似并列，请换一组实验条件。')
+        low=min(alternatives,key=lambda p:p['alpha'])
+        high=max((p for p in alternatives if p['alpha']!=low['alpha']),key=lambda p:p['alpha'])
+        winner=(ordinal+variant)%3
+        candidates=[low,high];candidates.insert(winner,best)
+        t['assessment']['rows']=[{'label':f"{chr(65+i)} · α={p['alpha']:g}",
+            'values':[p['train_mse'],p['validation_mse'],p['norm']], 'parameters':{**base,'alpha':p['alpha']}}
+            for i,p in enumerate(candidates)]
+        t['target_parameters']={**base,'alpha':best['alpha']}
+        t['_proof']=islands.evidence(panel,islands.calculate(panel,base),islands.calculate(panel,t['target_parameters']))
+        t['_proof']['choice']=winner
+        t['title']='约束花园 · 选择一个模型'
+        t['context']+=f"；噪声σ={base['noise']:g}"
+    # Reasons name a criterion, never the winning letter or numeric verdict.
+    if form=='controlled_design':
+        options=[('evidence_based','固定数据、阶数与验证划分，只改变α，才能区分这项操作的作用。'),
+                 ('confounded_design','同时增加训练样本，利用更多信息判断α的独立作用。'),
+                 ('confounded_design','同时降低模型阶数，利用更简单的模型判断α的独立作用。')]
+    elif panel=='regularization':
+        options=[('evidence_based','以固定验证集上的误差判断泛化，训练误差与系数范数分别用于解释。'),
+                 ('training_as_validation','以训练误差较低作为选择标准，更充分地拟合已经见过的样本。'),
+                 ('norm_as_validation','以系数范数较小作为选择标准，优先采用收缩更强的模型。')]
+    elif panel=='error':
+        options=[('evidence_based','比较同一验证集上的整体误差，将已见样本的拟合另作解释。'),
+                 ('training_as_validation','比较训练集上的整体误差，将训练拟合作为新样本表现的依据。'),
+                 ('singlepoint_as_global','比较当前浮标的残差，将该点的改善作为整体泛化的依据。')]
+    elif panel=='forest':
+        options=[('evidence_based','核对全体验证准确率，将固定包裹的纠正另作局部证据。'),
+                 ('training_as_validation','核对训练准确率，将已见样本的表现作为整体泛化证据。'),
+                 ('singlepoint_as_global','核对固定包裹是否送对，将该点的纠正作为整体提升证据。')]
+    else:
+        options=[('evidence_based','按题目目标分别比较RMS或验证MSE，扰动幅度与预测误差各自衡量。'),
+                 ('rms_as_accuracy','按曲线变化RMS作判断，将稳定程度作为验证准确程度的依据。'),
+                 ('complexity_as_evidence','按模型阶数作判断，将表达能力作为本次扰动幅度的依据。')]
+    correct=(ordinal+variant+list(islands.NAMES).index(panel))%3
+    ordered=options[1:];ordered.insert(correct,options[0])
+    t['_reason']=correct;t['reasons']=[r[1] for r in ordered];t['_reason_tags']=[r[0] for r in ordered]
+    return t

@@ -22,6 +22,7 @@ export type IslandTask = {
   selected: number; row: number | null;
   before_parameters: IslandInput; target_parameters: IslandInput;
   investigation?: boolean; question_kind?: string;
+  content_version?: number;
   assessment?: {columns:string[];rows:{label:string;values:number[];parameters?:IslandInput}[];percent:boolean;note:string};
 };
 export type IslandAttempt = {
@@ -34,6 +35,7 @@ export type IslandAttempt = {
     choice: number; reason: number; passed: boolean; assisted: boolean;
     choice_correct: boolean; reason_correct: boolean; correct_reason: number; proof: IslandProof;
   } | null;
+  transfer_decision?: {task_id:string;choice:number;submitted_at:string};
   checkpoint?: IslandDraft;
   practice_of?: string;
   practice_focus?: string;

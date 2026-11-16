@@ -36,6 +36,7 @@ class Prepare(Strict):
     mode: Mode = 'discovery'
     avoid_seed: int = 0
     autonomous: bool = False
+    content_version: Literal[2,3] = 3
 
 
 class Predict(Strict):
@@ -53,6 +54,11 @@ class Answer(Strict):
     task_id: str = Field(max_length=40)
     choice: int = Field(ge=0, le=2)
     reason: int = Field(ge=0, le=2)
+
+
+class Decision(Strict):
+    task_id: str = Field(max_length=40)
+    choice: int = Field(ge=0, le=2)
 
 
 class Checkpoint(Strict):
@@ -82,6 +88,8 @@ def checkpoint_value(saved, request):
         raise ValueError('首轮α不在候选范围中。')
     if request.stage != 'transfer':
         value.update(transfer_choice=None, transfer_reason=None)
+    elif saved.get('transfer_decision'):
+        value['transfer_choice']=saved['transfer_decision']['choice']
     return value
 
 
@@ -240,10 +248,12 @@ def seen_case(records, task):
 def public(saved):
     value = {k: copy.deepcopy(v) for k, v in saved.items() if not k.startswith('_')}
     value['task'] = descriptor(saved['_case'])
-    if not saved.get('observation') and saved['_case'].get('content_version') == 2:
+    if not saved.get('observation') and saved['_case'].get('content_version',1) >= 2:
         value['task'].pop('assessment', None)
         value['task']['reasons'] = []
     value['transfer_task'] = descriptor(saved['_transfer']) | {'id': saved['_transfer_id']} if saved.get('_transfer') else None
+    if value['transfer_task'] and saved['_transfer'].get('content_version')==3 and not saved.get('transfer_decision'):
+        value['transfer_task']['reasons']=[]
     return value
 
 
@@ -280,10 +290,12 @@ def make_router(connect):
         seed = next(s for s in seeds if s != request.avoid_seed)
         if request.autonomous and request.panel != 'regularization':
             raise HTTPException(422, '自主反例目前位于约束花园。')
-        try: task = pedagogy.investigation(seed) if request.autonomous else pedagogy.upgrade(case(request.panel, request.mode, seed))
+        try:
+            task=(pedagogy.version3(request.panel,request.mode,seed,autonomous=request.autonomous) if request.content_version==3 else
+                  pedagogy.investigation(seed) if request.autonomous else pedagogy.upgrade(case(request.panel,request.mode,seed)))
         except ValueError as error: raise HTTPException(409, str(error))
         saved = {'id': uuid.uuid4().hex, 'created_at': learning.now(), 'panel': request.panel, 'mode': request.mode,
-                 'protocol_version': 2,
+                 'protocol_version': request.content_version,
                  'stage': 'predict', 'prediction': None, 'observation': None, 'transfer_answer': None,
                  'hints_used': 0, 'ai_before_transfer': [], '_case': task, '_transfer': None}
         with connect() as connection:
@@ -300,7 +312,7 @@ def make_router(connect):
         with connect() as connection:
             rows = connection.execute('SELECT content FROM island_attempts ORDER BY rowid DESC LIMIT 60').fetchall()
         return [{k: s.get(k) for k in ('id', 'created_at', 'panel', 'mode', 'stage', 'prediction', 'hints_used', 'transfer_answer', 'ai_before_transfer')}
-                for row in rows if (s := json.loads(row['content']))['prediction']]
+                for row in rows if (s := json.loads(row['content'])).get('prediction') or s.get('transfer_only')]
 
     @router.get('/actions')
     def action_history(attempt_id: str):
@@ -336,11 +348,12 @@ def make_router(connect):
             previous = original['_transfer']
             seeds = (42, 43, 44) if original['panel'] == 'forest' else (2026, 314, 2718)
             seed = next(s for s in seeds if s not in (original['_case']['seed'], previous['seed']))
-            task = pedagogy.upgrade(case(original['panel'], previous['mode'], seed))
+            task = (pedagogy.version3(original['panel'],previous['mode'],seed) if original['_case'].get('content_version')==3 else
+                    pedagogy.upgrade(case(original['panel'],previous['mode'],seed)))
             older = [json.loads(r['content']) for r in connection.execute('SELECT content FROM island_attempts').fetchall()]
             repeated = seen_case(older, task)
             saved = {'id': uuid.uuid4().hex, 'created_at': learning.now(), 'panel': original['panel'], 'mode': task['mode'],
-                     'protocol_version': 2, 'stage': 'predict', 'prediction': None, 'observation': None,
+                     'protocol_version': task.get('content_version',2), 'stage': 'predict', 'prediction': None, 'observation': None,
                      'transfer_answer': None, 'hints_used': 0, 'ai_before_transfer': [], '_case': task, '_transfer': None,
                      'practice_of': key, 'practice_focus': REASONS[original['panel']][0], 'repeated_case': repeated,
                      'transfer_variant': (original.get('transfer_variant',0)+1)%3, 'trials': []}
@@ -421,11 +434,28 @@ def make_router(connect):
                 seed = next(s for s in seeds if s != saved['_case']['seed'])
                 mode = 'discovery' if saved['mode'] == 'counterexample' else 'counterexample'
                 form = ('comparison','model_selection','controlled_design')[saved.get('transfer_variant',0)] if saved['panel']=='regularization' else 'comparison'
-                try: saved['_transfer'] = pedagogy.upgrade(case(saved['panel'], mode, seed), form)
+                try: saved['_transfer'] = (pedagogy.version3(saved['panel'],mode,seed,form,saved.get('transfer_variant',0)) if saved['_case'].get('content_version')==3 else
+                                          pedagogy.upgrade(case(saved['panel'], mode, seed), form))
                 except ValueError as error: raise HTTPException(409, str(error))
                 saved['_transfer_id'] = uuid.uuid4().hex
                 saved['stage'] = 'transfer'
                 save(connection, 'island_attempts', saved)
+        return public(saved)
+
+    @router.post('/attempts/{key}/decision')
+    def decision(key: str, request: Decision):
+        with connect() as connection:
+            connection.execute('BEGIN IMMEDIATE')
+            saved=load(connection,'island_attempts',key)
+            if not saved.get('_transfer') or request.task_id!=saved.get('_transfer_id'):
+                raise HTTPException(409,'请先进入本轮迁移题。')
+            old=saved.get('transfer_decision')
+            if old:
+                if any(old[k]!=v for k,v in request.model_dump().items()): raise HTTPException(409,'首次判断已锁定，请继续选择依据。')
+            else:
+                if saved['stage']!='transfer': raise HTTPException(409,'本轮已提交。')
+                saved['transfer_decision']=request.model_dump()|{'submitted_at':learning.now()}
+                save(connection,'island_attempts',saved)
         return public(saved)
 
     @router.post('/attempts/{key}/answer')
@@ -440,6 +470,8 @@ def make_router(connect):
                 if any(old[k] != v for k, v in request.model_dump().items()): raise HTTPException(409, '本题首次作答已保留，请新建练习。')
             else:
                 task = saved['_transfer']
+                if task.get('content_version')==3 and (not saved.get('transfer_decision') or saved['transfer_decision']['choice']!=request.choice):
+                    raise HTTPException(409,'先锁定判断，再选择依据；首次判断不能改写。')
                 proof = task['_proof']
                 passed = request.choice == proof['choice'] and request.reason == task['_reason']
                 saved['transfer_answer'] = request.model_dump() | {'passed': passed, 'choice_correct': request.choice == proof['choice'],

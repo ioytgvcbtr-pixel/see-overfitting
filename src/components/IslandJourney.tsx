@@ -135,7 +135,7 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
     setChoice(value.prediction?.choice ?? d?.choice ?? null);setConfidence(value.prediction?.confidence ?? d?.confidence ?? 2);
     setReason(value.prediction?.reason ?? d?.reason ?? "");
     setPlannedAlpha(value.prediction?.planned_alpha ?? d?.planned_alpha ?? .1);
-    setTransferChoice(value.transfer_answer?.choice ?? d?.transfer_choice ?? null);setTransferReason(value.transfer_answer?.reason ?? d?.transfer_reason ?? null);
+    setTransferChoice(value.transfer_decision?.choice ?? value.transfer_answer?.choice ?? d?.transfer_choice ?? null);setTransferReason(value.transfer_answer?.reason ?? d?.transfer_reason ?? null);
     if (value.stage === "complete" && value.transfer_task) apply(value.transfer_task.target_parameters, value.transfer_task.row ?? value.transfer_task.selected, true);
     else if (d && value.stage!=="predict") apply(d.parameters,d.selected,true);
     else if(value.stage==="transfer"&&value.transfer_task) apply(value.transfer_task.assessment?.rows[0]?.parameters??value.transfer_task.before_parameters,value.transfer_task.row??value.transfer_task.selected,true);
@@ -209,12 +209,14 @@ export default function IslandJourney({ panel, input, selected, pending, onApply
       <p className="island-condition">{transfer.context}；seed {task!.seed} → {transfer.seed}。{transfer.assessment?"根据实测观测判断，作答后核验依据。":"本题结果在作答后揭示。"}</p>
       <p className="island-operation">{transfer.operation}</p>
       {!onEvidenceChange&&<TransferEvidence task={transfer} current={input} onInspect={p=>apply(p,transfer.row??transfer.selected)}/>}
-      <fieldset disabled={isLocked}><legend>{transfer.question}</legend><div className="island-answer-options">{transfer.choices.map((label, i) => <button key={label} aria-pressed={transferChoice === i} onClick={() => setTransferChoice(i)}>{label}</button>)}</div></fieldset>
+      {!active.transfer_decision?<fieldset disabled={isLocked}><legend>{transfer.question}</legend><div className="island-answer-options">{transfer.choices.map((label, i) => <button key={label} aria-pressed={transferChoice === i} onClick={() => setTransferChoice(i)}>{label}</button>)}</div></fieldset>:
+        <p className="island-locked-decision" role="status"><Check size={20}/>判断已锁定：{transfer.choices[active.transfer_decision.choice]}</p>}
+      {transfer.content_version===3&&!active.transfer_decision?<button className="button primary" disabled={isLocked||transferChoice===null} onClick={()=>void run<IslandAttempt>("锁定首次判断",`/islands/attempts/${active.id}/decision`,{task_id:transfer.id,choice:transferChoice},remember)}>锁定判断，选择依据<ArrowRight size={20}/></button>:<>
       <fieldset disabled={isLocked}><legend>哪条依据更可靠？</legend><div className="island-reason-options">{transfer.reasons.map((label, i) => <button key={label} aria-pressed={transferReason === i} onClick={() => setTransferReason(i)}>{label}</button>)}</div></fieldset>
       <button className="button primary" disabled={isLocked || transferChoice === null || transferReason === null} onClick={() => void run<IslandAttempt>("核验迁移", `/islands/attempts/${active.id}/answer`, {task_id:transfer.id,choice:transferChoice,reason:transferReason}, v => {
         remember(v); setMotion(n => n+1);
         if (v.transfer_task) apply(v.transfer_task.target_parameters, v.transfer_task.row ?? v.transfer_task.selected, true);
-      })}>提交判断与依据<Check size={20} /></button>
+      })}>提交判断与依据<Check size={20} /></button></>}
     </>}
 
     {active && transfer && stage === "complete" && active.transfer_answer && <>

@@ -20,7 +20,7 @@ def client(tmp_path, monkeypatch):
 
 
 def island(c, mode='counterexample'):
-    return c.post('/islands/tasks',json={'panel':'error','mode':mode}).json()
+    return c.post('/islands/tasks',json={'panel':'error','mode':mode,'content_version':2}).json()
 
 
 def predict(c, s):
