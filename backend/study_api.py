@@ -84,7 +84,7 @@ def make_router(connect):
         done=sum(p['completed'] for p in progress.values());next_id=next((l['id'] for l in LESSONS if not progress.get(l['id'],{}).get('completed')),None)
         return {'chapters':CHAPTERS,'lessons':[{'id':l['id'],'title':l['title'],'chapter':l['chapter'],'goal':l['goal'],'visual':l['visual'],'version':l['version']} for l in LESSONS],
             'progress':progress,'mechanisms':islands,'completed':done,'total':len(LESSONS),'all_complete':done==len(LESSONS),'next_id':next_id,
-            'resume_id':opened[0]['id'] if opened else next_id,'experiment_count':runs,'event_count':total_events}
+            'resume_id':next((p['id'] for p in opened if not p['completed']),next_id),'experiment_count':runs,'event_count':total_events}
     @router.get('/lessons/{key}')
     def get_lesson(key:str):
         l=known(key)
@@ -136,11 +136,11 @@ def make_router(connect):
                 if i['kind']=='step_open':i['title']='进入'+STAGES[i.get('step') or 0]
                 i['category']='knowledge' if i['kind'].startswith('lesson_') else 'experiments'
             if c.execute("SELECT 1 FROM sqlite_master WHERE name='planet_runs'").fetchone():
-                rows=c.execute("SELECT id,json_extract(content,'$.created_at') stamp,json_extract(content,'$.operation') op,json_extract(content,'$.state') state,json_extract(content,'$.dataset_title') dataset,json_extract(content,'$.source_id') parent,json_extract(content,'$.error') error FROM planet_runs")
+                rows=c.execute("SELECT id,json_extract(content,'$.created_at') stamp,json_extract(content,'$.operation') op,json_extract(content,'$.state') state,json_extract(content,'$.dataset_title') dataset,json_extract(content,'$.source_id') parent,json_extract(content,'$.error') error,json_extract(content,'$.spec.model') model_id FROM planet_runs")
                 for r in rows:
                     run_state='unfinished' if r['state'] in ('queued','running') and (r['id'] not in CANCEL or CANCEL[r['id']].is_set()) else r['state']
                     items.append({'id':r['id'],'created_at':r['stamp'],'kind':r['op'],'category':'experiments','title':OPERATIONS.get(r['op'],'实验操作'),
-                    'dataset_title':r['dataset'],'state':run_state,'run_id':r['id'] if r['op'] in ('train','decision') else r['parent'],'error':r['error']})
+                    'dataset_title':r['dataset'],'model':r['model_id'],'state':run_state,'run_id':r['id'] if r['op'] in ('train','decision') else r['parent'],'error':r['error']})
             for s in c.execute('SELECT content FROM island_attempts'):
                 v=json.loads(s['content']);panel=v.get('panel')
                 if panel in PANELS:items.append({'id':v['id'],'created_at':v.get('updated_at') or v['created_at'],'kind':'mechanism','category':'mechanisms','title':PANELS[panel],

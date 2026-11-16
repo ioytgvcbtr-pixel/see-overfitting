@@ -39,3 +39,24 @@ test('companion preferences preserve typed choices and ignore unknown input',()=
  assert.equal(p.enabled,false);assert.equal(p.answer_style,'detailed');assert.equal(p.reader_size,'large');assert.ok(!('secret' in p));
  assert.equal(companionPreferences('{"motion":"yes","reader_size":"tiny"}').motion,true);
 });
+
+import {orbitalFrame,orbitCenter,orbitSpeed} from '../src/lib/orbital-motion.ts';
+import {taskKinds,taskKindLabel,modelMatches} from '../src/lib/learning-flow.ts';
+test('planet satellite stays on one continuous ellipse with correct front depth',()=>{
+ for(let i=0;i<720;i++){const phase=i*Math.PI/180;const f=orbitalFrame(phase,i/60,'idle',0);const ellipse=((f.x-orbitCenter.x)/orbitCenter.rx)**2+((f.y-orbitCenter.y)/orbitCenter.ry)**2;assert.ok(Math.abs(ellipse-1)<1e-10);assert.ok(f.x-9>0&&f.x+9<200&&f.y>0&&f.y<210);assert.ok(f.blink>0&&f.blink<=1);if(Math.abs(Math.sin(phase))>1e-10)assert.equal(f.front,Math.sin(phase)>0);}
+ const a=orbitalFrame(0,0,'idle',0),b=orbitalFrame(2*Math.PI,0,'idle',0);assert.equal(a.x,b.x);assert.equal(a.y,b.y);
+});
+test('planet response poses stay bounded and preserve the same orbit geometry',()=>{
+ for(const mood of ['idle','wave','thinking','happy','feed','orbit','sleep'])for(let i=0;i<100;i++){const f=orbitalFrame(i/10,i/60,mood,i/30);assert.ok(Number.isFinite(f.bob)&&Math.abs(f.roll)<=4&&f.scale>=1&&f.scale<1.03);assert.ok(f.feed>=0&&f.feed<=1);}
+ assert.ok(orbitSpeed('sleep')<orbitSpeed('idle'));assert.ok(orbitSpeed('orbit')>orbitSpeed('idle'));
+});
+test('dataset task filters reflect targets and time/count roles',()=>{
+ assert.deepEqual(taskKinds({task:'classification',targets:[{classes:['0','1']}]}),['二分类']);
+ assert.deepEqual(taskKinds({task:'classification',targets:[{},{}]}),['多标签']);
+ const bike={task:'regression',targets:[{}],time_column:'date',count_target:true};assert.deepEqual(taskKinds(bike),['单目标','时间顺序','计数']);assert.equal(taskKindLabel(bike),'时间顺序 · 计数');
+ assert.equal(taskKindLabel({task:'regression',targets:[{},{}]}),'多目标回归');
+});
+test('model search supports ids, names and combined keywords',()=>{
+ const ridge={id:'ridge',title:'岭回归',family:'正则化线性',summary:'观察约束与验证误差'};
+ assert.ok(modelMatches(ridge,'  RIDGE '));assert.ok(modelMatches(ridge,'正则 验证'));assert.ok(!modelMatches(ridge,'KNN'));assert.ok(modelMatches(ridge,''));
+});

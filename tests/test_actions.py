@@ -86,6 +86,7 @@ def test_json_request_keeps_xhigh_and_bad_json_has_visible_fallback(client, monk
             return httpx.Response(200, json={'choices': [{'message': {'content': ' '}}]})
     monkeypatch.setenv('AI_API_KEY', 'test-fixture')
     monkeypatch.setenv('AI_ENABLED', '1')
+    monkeypatch.setenv('AI_REASONING_EFFORT','xhigh')
     monkeypatch.setattr(coach.httpx, 'AsyncClient', Provider)
     value = create(client)
     assert captured['reasoning_effort'] == 'xhigh'

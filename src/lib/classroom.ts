@@ -5,7 +5,7 @@ export type LocationState={view:ClassroomView;section:AppView;lesson?:string;pan
 export const workshopSections:{id:AppView;label:string}[]=[
  {id:'explore',label:'探索地图'},{id:'concepts',label:'概念工坊'},
  {id:'classification',label:'分类边界'},{id:'studio',label:'实验工作台'},
- {id:'path',label:'学习路径'},{id:'history',label:'学习档案'},
+ {id:'path',label:'基础实验课'},{id:'history',label:'学习档案'},
 ];
 const legacySections=new Set(['explore','concepts','classification','studio','bench','datasets','path','learn','history','settings']);
 export function readClassroomLocation(hash:string,initialMechanism=false):LocationState{

@@ -91,7 +91,7 @@ test('settings is independent and DeepSeek depth/key preferences save without ec
 test('space pet supports interaction, local answers, history and mobile placement',async({page,request})=>{
  await page.goto('/#classroom/start');const before=(await (await request.get('http://127.0.0.1:3002/api/study/overview')).json()).completed;
  await page.getByRole('button',{name:'和小模聊聊',exact:true}).click();const panel=page.getByRole('dialog',{name:'小模学习助手',exact:true});await expect(panel).toBeVisible();
- await panel.getByRole('button',{name:'喂星星',exact:true}).click();await expect(panel.getByRole('status').filter({hasText:'收到一颗星星'})).toBeVisible();
+ await panel.getByRole('button',{name:'投喂星光',exact:true}).click();await expect(panel.getByRole('status').filter({hasText:'收到了星光'})).toBeVisible();
  await panel.getByRole('textbox',{name:'向小模提问',exact:true}).fill('什么是过拟合？');await panel.getByRole('button',{name:'发送给小模',exact:true}).click();await expect(panel.locator('.pp-pet-answer-text')).toContainText('过拟合');await expect(panel.getByText('本地提示',{exact:true})).toBeVisible();
  expect((await (await request.get('http://127.0.0.1:3002/api/study/overview')).json()).completed).toBe(before);
  await panel.getByRole('button',{name:'关闭小模问答',exact:true}).click();await page.reload();await page.getByRole('button',{name:'和小模聊聊',exact:true}).click();await expect(panel.locator('.pp-pet-answer-text')).toContainText('过拟合');
@@ -100,4 +100,27 @@ test('space pet supports interaction, local answers, history and mobile placemen
  const target=await page.getByRole('button',{name:'和小模聊聊',exact:true}).boundingBox();expect(target.width).toBeGreaterThanOrEqual(44);expect(target.y).toBeLessThan(65);
  await page.getByRole('button',{name:'和小模聊聊',exact:true}).click();await expect(panel).toBeVisible();await expect(panel.getByRole('textbox',{name:'向小模提问',exact:true})).toBeVisible();
  await page.screenshot({path:'artifacts/local/playwright-results/pet-mobile.png',fullPage:true,animations:'disabled'});
+});
+
+
+test('course practice keeps its return path through mechanism and data tasks',async({page})=>{
+ await page.goto('/#classroom/learning/ml-intro');await page.getByRole('button',{name:'去对应场景试一试',exact:true}).click();
+ const ribbon=page.getByRole('complementary',{name:'课题实践',exact:true});await expect(ribbon).toContainText('什么是机器学习？');
+ await ribbon.getByRole('button',{name:'回到原课题',exact:true}).click();await expect(page.getByRole('heading',{name:'什么是机器学习？',exact:true})).toBeVisible();
+ await page.goto('/#classroom/learning/linear');await page.getByRole('button',{name:'去对应场景试一试',exact:true}).click();await expect(page.getByRole('slider',{name:'工坊正则化强度α',exact:true})).toBeVisible();await expect(ribbon).toContainText('从线性模型到正则化');
+ await page.reload();await expect(ribbon).toContainText('从线性模型到正则化');await ribbon.getByRole('button',{name:'回到原课题',exact:true}).click();await expect(page.getByRole('heading',{name:'从线性模型到正则化',exact:true})).toBeVisible();
+});
+
+test('task filters and model search help students find an appropriate experiment',async({page})=>{
+ await page.goto('/#classroom/classification');await page.getByRole('button',{name:'二分类',exact:true}).click();await expect(page.locator('.pp-task-card')).toHaveCount(1);await expect(page.locator('.pp-task-card')).toContainText('票据');
+ await page.getByRole('button',{name:'多标签',exact:true}).click();await expect(page.locator('.pp-task-card')).toHaveCount(1);await expect(page.locator('.pp-task-card')).toContainText('多标签');
+ await page.getByRole('button',{name:'模型图鉴',exact:true}).click();await page.getByRole('searchbox',{name:'搜索模型',exact:true}).fill('Ridge');await expect(page.locator('.pp-atlas>article')).toHaveCount(1);await expect(page.locator('.pp-atlas>article')).toContainText('岭回归');
+ await page.getByRole('searchbox',{name:'搜索模型',exact:true}).fill('not-a-model');await expect(page.getByRole('button',{name:'清除搜索',exact:true})).toBeVisible();await page.getByRole('button',{name:'清除搜索',exact:true}).click();await expect(page.locator('.pp-atlas>article')).toHaveCount(17);
+});
+
+test('planet companion respects motion preferences and keeps interactions local',async({page,request})=>{
+ await page.goto('/#classroom/settings');const switcher=page.getByRole('switch',{name:/待机动作/});await expect(switcher).toBeChecked();
+ await expect(page.locator('.pp-pet-launcher>svg')).toHaveAttribute('data-animating','true');await switcher.uncheck();await expect(page.locator('.pp-pet-launcher>svg')).toHaveAttribute('data-animating','false');
+ await page.reload();await expect(switcher).not.toBeChecked();await switcher.check();await page.getByRole('button',{name:'和小模聊聊',exact:true}).click();const panel=page.getByRole('dialog',{name:'小模学习助手',exact:true});
+ const before=(await(await request.get('http://127.0.0.1:3002/api/study/overview')).json()).completed;await panel.getByRole('button',{name:'卫星绕行',exact:true}).click();await expect(panel.locator('.pp-pet-panel-avatar>svg')).toHaveAttribute('data-mood','orbit');expect((await(await request.get('http://127.0.0.1:3002/api/study/overview')).json()).completed).toBe(before);
 });

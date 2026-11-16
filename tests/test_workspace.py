@@ -16,6 +16,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(workspace, 'CONNECTION', {'state':'untested','checked_at':None,'notice':'','fingerprint':''})
     monkeypatch.setenv('AI_API_KEY', 'unit-test-token-12345')
     monkeypatch.setenv('AI_ENABLED', '1')
+    monkeypatch.setenv('AI_REASONING_EFFORT','xhigh')
     with TestClient(main.app) as c: yield c
 
 

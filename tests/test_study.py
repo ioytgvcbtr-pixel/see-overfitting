@@ -62,3 +62,10 @@ def test_backups_recompute_choices_and_merge_without_overwriting_first_answer(cl
     assert c.post('/study/backup/restore',json=new).status_code==200
     assert c.get('/study/lessons/'+l['id']).json()['progress']['first_answer']==first['first_answer']
     assert c.post('/study/backup/restore',json=None).status_code==422
+
+def test_resume_moves_past_completed_lessons_but_keeps_unfinished_work(client):
+    c=client;first,second=curriculum.LESSONS[:2]
+    c.post('/study/lessons/'+first['id']+'/open');c.post('/study/lessons/'+first['id']+'/read');answer(c,first)
+    assert c.get('/study/overview').json()['resume_id']==second['id']
+    last=curriculum.LESSONS[7];c.post('/study/lessons/'+last['id']+'/open')
+    assert c.get('/study/overview').json()['resume_id']==last['id']
