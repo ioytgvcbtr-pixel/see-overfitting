@@ -119,7 +119,7 @@ test('task filters and model search help students find an appropriate experiment
 });
 
 test('planet companion respects motion preferences and keeps interactions local',async({page,request})=>{
- await page.emulateMedia({reducedMotion:'no-preference'});await page.goto('/#classroom/settings');const switcher=page.getByRole('switch',{name:/待机动作/});await expect(switcher).toBeChecked();
+ await page.emulateMedia({reducedMotion:'no-preference'});await page.goto('/#classroom/settings');const switcher=page.getByRole('switch',{name:/^待机动作/});await expect(switcher).toBeChecked();
  await expect(page.locator('.pp-pet-launcher>svg')).toHaveAttribute('data-animating','true');await switcher.uncheck();await expect(page.locator('.pp-pet-launcher>svg')).toHaveAttribute('data-animating','false');
  await page.reload();await expect(switcher).not.toBeChecked();await switcher.check();await page.emulateMedia({reducedMotion:'reduce'});await expect(page.locator('.pp-pet-launcher>svg')).toHaveAttribute('data-animating','false');await page.emulateMedia({reducedMotion:'no-preference'});await expect(page.locator('.pp-pet-launcher>svg')).toHaveAttribute('data-animating','true');await page.getByRole('button',{name:'和小模聊聊',exact:true}).click();const panel=page.getByRole('dialog',{name:'小模学习助手',exact:true});
  const before=(await(await request.get('http://127.0.0.1:3002/api/study/overview')).json()).completed;await panel.getByRole('button',{name:'卫星绕行',exact:true}).click();await expect(panel.locator('.pp-pet-panel-avatar>svg')).toHaveAttribute('data-mood','orbit');expect((await(await request.get('http://127.0.0.1:3002/api/study/overview')).json()).completed).toBe(before);
