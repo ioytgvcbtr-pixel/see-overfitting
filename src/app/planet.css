@@ -22,7 +22,7 @@
 .pp-sidebar-footer a { display:flex;align-items:center;justify-content:space-between;color:#cfc3df;padding:12px 0;min-height:44px;text-decoration:none; }
 .pp-sidebar-footer>span { display:block;color:#766582;margin-top:12px; }
 .pp-main-shell { margin-left:216px;min-width:0; }
-.pp-topbar { height:72px;position:sticky;top:0;z-index:30;padding:10px 36px;display:flex;align-items:center;gap:16px;background:var(--pp-bg,#f8f8fc)eb;backdrop-filter:blur(16px);box-shadow:0 1px 0 #37214d08; }
+.pp-topbar { height:72px;position:sticky;top:0;z-index:30;padding:10px 36px;display:flex;align-items:center;gap:16px;background:var(--pp-bg,#f8f8fc);backdrop-filter:blur(16px);box-shadow:0 1px 0 #37214d08; }
 .pp-topbar>strong { font-size:15px;font-weight:600; }
 .pp-ai-mode { color:#7a7087;font-size:12px; }
 .pp-ai-mode:before { content:"";display:inline-block;width:7px;height:7px;background:#7bbda8;border-radius:50%;margin-right:8px; }
