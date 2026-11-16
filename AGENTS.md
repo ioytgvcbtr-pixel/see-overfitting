@@ -13,6 +13,7 @@
 - Keep Chinese product copy concrete. Responsive, keyboard-accessible UI; reduced-motion support.
 - Use conventional commits on the current feature branch. Local author `Codex <codex@local.invalid>` identifies AI-created commits, not the entrant's personal identity.
 - Current user priority: improve project features and interactions. Continue real development records, but defer competition videos, submission PDFs and other submission-material preparation until requested.
+- Score against the official rubric and product evidence. Do not treat student trials as a required deliverable or deduct points for their absence.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
