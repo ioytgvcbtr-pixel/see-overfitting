@@ -81,7 +81,7 @@ def main():
         elif active and kind in ('function_call', 'function_call_output', 'custom_tool_call', 'custom_tool_call_output'):
             # Discovery inventories and agent instructions are not project evidence.
             command = str(payload.get('input', payload.get('arguments', '')))
-            if any(marker in command for marker in ('rulesReview15Tab', 'rulesNotice15Tab')):
+            if any(marker in command for marker in ('rulesReview15Tab', 'rulesNotice15Tab', 'officialPlanetAudit')):
                 reference_calls.add(payload.get('call_id'))
             if 'web__run' in command or 'web_run' in str(payload.get('name', '')) or any(marker in command for marker in ('tfReference', 'theoryReference', 'courseReference', 'rulesReviewTab', 'museumMathRef', 'museumExploreRef', 'conceptTheoryRef', 'conceptMomentumRef', 'rulesV07', 'officialTrackTab', 'officialAudit14', 'officialNoticeAudit14', 'playRef', 'canvasRef', 'visualStudyRef', 'duoVisualRef', 'phetVisualRef', 'codeSceneRef', 'visualCodeRef', 'nativeStudyChrome', 'node_modules/next/dist/docs')) or ('ui-ux-pro-max' in command and 'search.py' in command):
                 reference_calls.add(payload.get('call_id'))
