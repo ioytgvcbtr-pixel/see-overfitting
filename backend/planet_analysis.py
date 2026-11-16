@@ -20,7 +20,8 @@ def first_estimator(a,target):
 def inspect(a,row=None,target=0,feature=0):
     valid=a['validation'];rows=a['split']['rows'];index=next((i for i in valid if rows[int(i)]['id']==str(row)),int(valid[0]))
     target=max(0,min(target,a['y'].shape[1]-1));T=transform(a,a['X'][[index]]);m=first_estimator(a,target)
-    pred=np.asarray(a['model'].predict(T)).reshape(-1).tolist()
+    pred=(engine.classifier_prediction(a['model'],T,a['split']['classes'],engine.Decision.model_validate(a['spec']['decision']))[0].reshape(-1).tolist()
+          if a['spec']['task']=='classification' else np.asarray(a['model'].predict(T)).reshape(-1).tolist())
     result={'row':rows[int(index)]['id'],'actual':a['y'][index].tolist(),'prediction':pred,'mechanism':a['spec']['model'],
         'features':[{'name':name,'value':float(v)} for name,v in zip(a['feature_names'],T[0])],'target':target}
     if hasattr(m,'coef_'):
@@ -30,6 +31,9 @@ def inspect(a,row=None,target=0,feature=0):
             for name,w,x in zip(a['feature_names'],co[0],T[0])]
         result['intercept']=float(inter[0])
         result['link']='对数链接的线性预测子' if a['spec']['model']=='poisson' else '分类决策的线性部分' if a['spec']['task']=='classification' else '贡献项加截距构成预测'
+        if a['spec']['task']=='classification':
+            labels=a['split']['classes'][target]
+            result['link']+=f"（类别{labels[1] if len(labels)==2 else labels[0]}的分数方向，不是直接概率）"
     if hasattr(m,'kneighbors'):
         distances,indices=m.kneighbors(T)
         ds=distances[0];weights=np.ones(len(ds))
@@ -64,7 +68,10 @@ def inspect(a,row=None,target=0,feature=0):
         result['stages']={'points':points,'metric':'验证准确率' if a['spec']['task']=='classification' else '验证RMSE','note':'来自已训练集成的实际阶段输出，不是伪造实时训练轮数。'}
     if a['spec']['task']=='classification' and a['y'].shape[1]==1:
         if hasattr(m,'predict_proba'):result['probabilities']=engine.safe_json(m.predict_proba(T)[0])
-        elif hasattr(m,'decision_function'):result['decision_score']=engine.safe_json(m.decision_function(T)[0])
+        elif hasattr(m,'decision_function'):
+            score=m.decision_function(T)[0]
+            if len(a['split']['classes'][0])==2 and a['split']['classes'][0].index(a['spec']['decision']['positive_class'])==0:score=-score
+            result['decision_score']=engine.safe_json(score)
     return engine.safe_json(result)
 
 
@@ -75,6 +82,7 @@ def surface(a,axes=None,target=0):
     if len(selected)<2:return {'available':False,'note':'至少选择两个输入特征，或使用预测/残差视图。'}
     xaxis,yaxis=selected[:2]
     if min(selected)<0 or max(selected)>=len(s['features']):raise ValueError('展示坐标不在当前训练输入中。')
+    if xaxis==yaxis:raise ValueError('请选择两个不同的展示坐标。')
     defaults=[]
     for i,kind in enumerate(kinds):
         values=a['X'][a['training'],i]
@@ -82,6 +90,8 @@ def surface(a,axes=None,target=0):
         else:
             vals=[v for v in values if isinstance(v,str)];defaults.append(max(set(vals),key=vals.count) if vals else np.nan)
     categorical=kinds[xaxis]=='categorical' or kinds[yaxis]=='categorical'
+    if any(kinds[i]=='numeric' and np.isnan(np.asarray(a['X'][a['training'],i],float)).all() for i in selected):
+        return {'available':False,'note':'所选坐标在训练样本中全部缺失，请换一个有实际观测范围的特征。'}
     def domain(i):
         if kinds[i]=='categorical':return sorted({str(v) for v in a['X'][a['training'],i] if isinstance(v,str)})[:12]
         values=np.asarray(a['X'][np.r_[a['training'],a['validation']],i],float);lo,hi=np.nanmin(values),np.nanmax(values);pad=max((hi-lo)*.08,.01)
@@ -90,16 +100,19 @@ def surface(a,axes=None,target=0):
     for vy in ys:
         for vx in xs:
             v=list(defaults);v[xaxis]=vx;v[yaxis]=vy;inputs.append(v)
-    pred=np.asarray(a['model'].predict(transform(a,inputs)));pred=pred[:,None] if pred.ndim==1 else pred
+    def predict(X):
+        if s['task']=='classification':return engine.classifier_prediction(a['model'],transform(a,X),a['split']['classes'],engine.Decision.model_validate(s['decision']))[0]
+        p=np.asarray(a['model'].predict(transform(a,X)));return p[:,None] if p.ndim==1 else p
+    pred=predict(inputs)
     target=max(0,min(target,pred.shape[1]-1))
     points=[]
     for role,ids in [('training',a['training']),('validation',a['validation'])]:
         subset=ids[np.linspace(0,len(ids)-1,min(250,len(ids))).astype(int)]
-        p=np.asarray(a['model'].predict(transform(a,a['X'][subset])));p=p[:,None] if p.ndim==1 else p
+        p=predict(a['X'][subset])
         for i,idx in enumerate(subset):
             points.append({'row':a['split']['rows'][int(idx)]['id'],'x':engine.safe_json(a['X'][idx,xaxis]),'y':engine.safe_json(a['X'][idx,yaxis]),
                 'role':role,'actual':float(a['y'][idx,target]),'prediction':float(p[i,target])})
-    return engine.safe_json({'available':True,'categorical':categorical,'xs':xs,'ys':ys,'values':pred[:,target], 'points':points,
+    return engine.safe_json({'available':True,'categorical':categorical,'axis_kinds':[kinds[xaxis],kinds[yaxis]],'xs':xs,'ys':ys,'values':pred[:,target], 'points':points,
         'axes':[s['features'][xaxis],s['features'][yaxis]],'conditional':len(s['features'])>2,
         'fixed':{name:engine.safe_json(v) for i,(name,v) in enumerate(zip(s['features'],defaults)) if i not in selected},
         'note':'合法类别组合的预测网格' if categorical else '条件切片：其余输入固定为训练中位数/众数' if len(s['features'])>2 else '使用这两个输入训练的真实决策/预测区域'})

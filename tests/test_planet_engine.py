@@ -53,3 +53,10 @@ def test_group_anchor_and_ratio_validation():
     assert second['anchor']['test_entities']==sp['anchor']['test_entities']
     s.split.test=30;s.split.train=50
     with pytest.raises(ValueError,match='测试比例'):engine.split_rows(d,s,sp['anchor'])
+
+
+def test_model_parameter_change_preserves_both_validation_and_test():
+    d=data.builtin('iris');s=spec_for();first=engine.split_rows(d,s)
+    s.parameters['max_depth']='8';second=engine.split_rows(d,s,first['anchor'])
+    assert second['roles']==first['roles']
+    assert second['signature']==first['signature']

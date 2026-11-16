@@ -42,15 +42,17 @@ def inspect_environment(root=ROOT):
     except (OSError,ValueError,KeyError): actual='未安装'
     add('frontend','前端依赖',actual==package['dependencies']['next'],actual,'在项目目录运行 npm.cmd ci。')
     failures=[]
-    for relative in ('data/public','data/public/classification'):
+    count=0
+    for relative in ('data/public','data/public/classification','data/planet'):
         folder=root/relative
         try:
             for item in json.loads((folder/'manifest.json').read_text(encoding='utf-8')):
+                count+=1
                 path=folder/item['file']
                 if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=item['csv_sha256']:
                     failures.append(item['file'])
         except (OSError,ValueError,KeyError): failures.append(relative+'/manifest.json')
-    add('datasets','公开数据快照',not failures,'5组快照校验通过' if not failures else '、'.join(failures),'从仓库恢复data/public下的原始快照，不需要重新下载数据。')
+    add('datasets','公开数据快照',not failures,f'{count}组快照校验通过' if not failures else '、'.join(failures),'从仓库恢复data下的原始快照，不需要重新下载数据。')
     return {'ok':all(c['ok'] for c in checks),'checks':checks}
 
 if __name__=='__main__':

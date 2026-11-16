@@ -13,7 +13,7 @@ from pydantic import BaseModel,ConfigDict,Field
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler,MinMaxScaler,RobustScaler,OneHotEncoder,PolynomialFeatures
+from sklearn.preprocessing import StandardScaler,MinMaxScaler,RobustScaler,OneHotEncoder,OrdinalEncoder,PolynomialFeatures
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import (mean_squared_error,mean_absolute_error,r2_score,accuracy_score,balanced_accuracy_score,
     f1_score,precision_score,recall_score,confusion_matrix,roc_curve,precision_recall_curve,roc_auc_score,hamming_loss)
@@ -29,6 +29,7 @@ class Cleaning(Strict):
     numeric:Literal['keep','mean','median','constant']
     constant:float|None=None
     categorical:Literal['keep','mode','missing']
+    encoding:Literal['onehot','ordinal']='onehot'
     scale:Literal['none','standard','minmax','robust']
     deduplicate:bool
     drop_missing:bool=False
@@ -133,7 +134,9 @@ def split_rows(d,s,anchor=None):
             if locked:
                 test=all_ids[np.isin(groups,list(locked))];available=np.asarray([g for g in unique if g not in locked]);available=rng.permutation(available)
                 val_count=max(1,round(len(available)*s.split.validation/(100-s.split.test)))
-                val_groups=available[:val_count];train_groups=available[val_count:]
+                if anchor.get('seed')==s.seed and anchor.get('strategy')==s.split.strategy and anchor.get('train_ratio')==s.split.train and anchor.get('validation_ratio')==s.split.validation and anchor.get('validation_entities'):
+                    val_groups=anchor['validation_entities'];train_groups=[g for g in available if g not in set(val_groups)]
+                else:val_groups=available[:val_count];train_groups=available[val_count:]
             else:
                 shuffled=rng.permutation(unique);nt=max(1,round(len(unique)*s.split.test/100));nv=max(1,round(len(unique)*s.split.validation/100))
                 test=all_ids[np.isin(groups,shuffled[:nt])];val_groups=shuffled[nt:nt+nv];train_groups=shuffled[nt+nv:]
@@ -149,7 +152,8 @@ def split_rows(d,s,anchor=None):
     if sets[0]&sets[1] or sets[0]&sets[2] or sets[1]&sets[2]:raise ValueError('该划分会拆开相同实体，请调整划分。')
     roles=dict(zip(('training','validation','test'),[p.tolist() for p in chosen]))
     return {'rows':rows,'y':y,'classes':classes,'roles':roles,'selection_offset':offset,
-        'anchor':{'dataset':s.dataset,'test_ratio':s.split.test,'test_entities':sorted(sets[2])},
+        'anchor':{'dataset':s.dataset,'test_ratio':s.split.test,'test_entities':sorted(sets[2]),'validation_entities':sorted(sets[1]),
+            'seed':s.seed,'strategy':s.split.strategy,'train_ratio':s.split.train,'validation_ratio':s.split.validation},
         'signature':hash_config({'source':d['version'],'targets':s.targets,'validation':[rows[i]['id'] for i in roles['validation']]})}
 
 
@@ -209,6 +213,9 @@ def prepare(d,s,split):
     if models.MODELS[s.model]['task']!=s.task:raise ValueError('模型与分类/回归任务不匹配。')
     if s.model=='poisson' and (np.any(y<0) or not np.all(y==np.floor(y))):raise ValueError('Poisson课程需要非负整数计数目标。')
     steps=[]
+    expanded=math.comb(len(numeric)+c.polynomial_degree,c.polynomial_degree)-1 if numeric else 0
+    expanded+=sum(max(1,len({str(v) for v in X[train,i] if isinstance(v,str)})+int(any(isinstance(v,float) and np.isnan(v) for v in X[train,i]))) for i in categorical) if c.encoding=='onehot' else len(categorical)
+    if expanded>500:raise ValueError('处理后预计超过500列，请排除ID/高基数列或减少多项式阶数。')
     if numeric:
         n=[]
         if c.numeric in ('mean','median') and any(np.isnan(np.asarray(X[train,i],float)).all() for i in numeric):
@@ -230,7 +237,7 @@ def prepare(d,s,split):
             if any(all(isinstance(v,float) and np.isnan(v) for v in X[train,i]) for i in categorical):raise ValueError('训练类别列全缺失，请选择显式缺失类别。')
             cat.append(('impute',SimpleImputer(strategy='most_frequent',keep_empty_features=True)))
         elif c.categorical=='missing':cat.append(('impute',SimpleImputer(strategy='constant',fill_value='(缺失)',keep_empty_features=True)))
-        cat.append(('encode',OneHotEncoder(handle_unknown='ignore',sparse_output=False)))
+        cat.append(('encode',OneHotEncoder(handle_unknown='ignore',sparse_output=False) if c.encoding=='onehot' else OrdinalEncoder(handle_unknown='use_encoded_value',unknown_value=-1,encoded_missing_value=-2)))
         steps.append(('categories',Pipeline(cat),categorical))
     pre=ColumnTransformer(steps,verbose_feature_names_out=False)
     report={'training_pool':len(roles['training']),'requested_training':original_size,'actual_training':len(train),'dropped':len(dropped),
@@ -311,6 +318,7 @@ def fit_payload(payload,progress=None):
     def points(ids,ys,ps,limit):
         chosen=np.linspace(0,len(ids)-1,min(len(ids),limit)).astype(int)
         return [{'row':split['rows'][int(ids[k])]['id'],'actual':safe_json(ys[k]),'prediction':safe_json(ps[k]),
+                 'residual':safe_json(ys[k]-ps[k]) if s.task=='regression' else None,
             'features':[split['rows'][int(ids[k])]['values'][f] for f in s.features]} for k in chosen]
     if s.task=='classification':
         baseline=np.asarray([np.bincount(y[train,j],minlength=len(split['classes'][j])).argmax() for j in range(y.shape[1])])
@@ -328,6 +336,11 @@ def fit_payload(payload,progress=None):
     if 'categories' in pre.named_transformers_:stats['categories']=safe_json(pre.named_transformers_['categories'].named_steps['encode'].categories_)
     cleaning.update(learned=stats,processed_features=int(Xt.shape[1]))
     feature_names=[str(n) for n in pre.get_feature_names_out(s.features)]
+    cleaning['preview']=[{'row':split['rows'][int(idx)]['id'],
+        'before':{name:split['rows'][int(idx)]['values'][name] for name in s.features},
+        'after':{name:safe_json(value) for name,value in zip(feature_names[:12],Xt[j,:12])}}
+        for j,idx in enumerate(train[:6])]
+    cleaning['preview_note']='仅展示实际训练样本和处理后前12列；统计拟合仅使用当前训练子集。'
     artifact={'preprocessor':pre,'model':model,'X':X,'y':y,'training':train,'validation':val,'split':split,'spec':s.model_dump(),
         'target_meta':target_meta,'feature_names':feature_names,'parameters':p,'cleaning':cleaning}
     result={'spec':s.model_dump(),'dataset':data.public(d),'model':{k:v for k,v in models.MODELS[s.model].items() if k!='constructor'},
@@ -336,5 +349,6 @@ def fit_payload(payload,progress=None):
         'validation_error':error,'training_error':tr_error,'baseline':{'metrics':bm,'error':be},
         'training':points(train,y[train],tr_pred,200),'validation':points(val,y[val],pred,300),'validation_total':len(val),
         'split':{k:len(v) for k,v in split['roles'].items()},'evaluation_signature':split['signature'],
-        'warnings':list(dict.fromkeys(str(w.message)[:300] for w in captured)), 'fit_ms':round(fit_ms,2),'elapsed_ms':round((time.perf_counter()-started)*1000,2),'test_sealed':True}
+        'warnings':list(dict.fromkeys(str(w.message)[:300] for w in captured)), 'fit_ms':round(fit_ms,2),'elapsed_ms':round((time.perf_counter()-started)*1000,2),'test_sealed':True,
+        'dependencies':{'scikit-learn':__import__('sklearn').__version__,'numpy':np.__version__}}
     return safe_json(result),artifact
