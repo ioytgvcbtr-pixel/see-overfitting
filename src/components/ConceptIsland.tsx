@@ -19,6 +19,7 @@ import IslandJourney from "./IslandJourney";
 import CausalTrace from "./CausalTrace";
 import type { IslandLaunch, NextLesson, IslandTask } from "@/lib/island-learning";
 import TransferEvidence from "./TransferEvidence";
+import GardenCausalPlot from "./GardenCausalPlot";
 import HelpHint from "./HelpHint";
 import { pauseProgress, type ConceptDraft } from "@/lib/island-progress";
 
@@ -58,6 +59,7 @@ export default function ConceptIsland({
   const [zoomScale, setZoomScale] = useState<number | null>(null);
   const [freeOpen, setFreeOpen] = useState(false);
   const [evidenceTask,setEvidenceTask]=useState<IslandTask|null>(null);
+  const [focusedTerm,setFocusedTerm]=useState<number|null>(null);
   useEffect(() => { if (resume) setFreeOpen(true); }, [resume]);
   const fitLearningFrame = useRef(false);
   const stageRef = useRef<HTMLElement>(null);
@@ -84,7 +86,11 @@ export default function ConceptIsland({
       el?.focus({ preventScroll: true });
     });
   }
-  useEffect(() => setZoomScale(null), [input.degree, result.data_fingerprint]);
+  useEffect(() => {
+    const current=result.regularization?.current;
+    setZoomScale(current?Math.max(...current.weights.map(Math.abs),1e-12)*1.15:null);
+    setFocusedTerm(null);
+  }, [result.parameters.degree,result.data_fingerprint,input.panel]);
   const p = result.train[selected] ?? result.train[0],
     pointIndex = p === result.train[selected] ? selected : 0;
   const sameSamples = ["seed", "samples", "noise"].every(
@@ -177,6 +183,13 @@ export default function ConceptIsland({
       </header>
       <div className="island-workbench-grid">
         <div className="island-scene-column">
+          {plant&&<div className="garden-command-bar">
+            <SceneRange label="工坊正则化强度α" value={conceptAlphas.indexOf(input.alpha)} display={`α=${alphaText(input.alpha)}`} min={0} max={7} onChange={n=>set('alpha',conceptAlphas[n])}/>
+            <div className="garden-primary-readouts" aria-label="花园关键实算读数" data-pending={pending}>
+              <span data-evidence="norm" tabIndex={-1}>系数范数<b>{pending?'—':conceptNumber(plant.current.weight_norm)}</b></span>
+              <span data-evidence="validation" tabIndex={-1}>验证MSE<b>{pending?'—':conceptNumber(plant.current.validation_mse)}</b></span>
+            </div>
+          </div>}
           <div className="island-live-scene" ref={ref}>
             <svg
               viewBox={`0 0 ${width} ${height}`}
@@ -579,7 +592,10 @@ export default function ConceptIsland({
                       h = Math.min(rawHeight, 100),
                       weak = Math.min(rawWeak, 100);
                     return (
-                      <g key={index} aria-hidden="true">
+                      <g key={index} role="button" tabIndex={0} aria-label={`查看第${index+1}项对预测的贡献`} aria-pressed={focusedTerm===index}
+                        className="garden-term" onClick={()=>setFocusedTerm(focusedTerm===index?null:index)}
+                        onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();setFocusedTerm(focusedTerm===index?null:index);}}}>
+                        <rect x={px-23} y="146" width="46" height="158" rx="14" fill={focusedTerm===index?'#7845bb12':'transparent'} />
                         <path
                           d={`M${px - 4} 257v${-weak}`}
                           stroke="#a8a0af"
@@ -666,6 +682,7 @@ export default function ConceptIsland({
               )}
             </svg>
           </div>
+          {plant&&<GardenCausalPlot result={result} term={focusedTerm} pending={pending}/>}
           {plant && (
             <div className="garden-zoom">
               <button
@@ -683,16 +700,19 @@ export default function ConceptIsland({
                 {zoomScale === null ? "放大当前枝条" : "恢复全量刻度"}
               </button>
               <span>
-                |w| ≤ <b>{conceptNumber(maximum)}</b>
+                {zoomScale===null?'全量':'局部'} |w| ≤ <b>{conceptNumber(maximum)}</b>
               </span>
               <HelpHint title="系数刻度与放大">
                 <p>
                   当前与弱约束虚影共用线性窗口，↑表示超出窗口。点击放大后冻结当时的窗口；缩放前后不要直接比较图上高度，数值不受缩放影响。
                 </p>
               </HelpHint>
+              {zoomScale!==null&&<button className="text-button" disabled={pending} onClick={()=>setZoomScale(Math.max(...plant.current.weights.map(Math.abs),1e-12)*1.15)}>重设局部刻度</button>}
+              {zoomScale!==null&&Math.max(...plant.current.weights.map(Math.abs))/maximum<.05&&<span className="garden-scale-notice" role="status">枝条已明显缩小，可重设局部刻度查看。</span>}
             </div>
           )}
-          <div className="island-readouts" aria-label="场景实算读数">
+          {plant&&<div className="garden-global-scale"><span>全量范数参照</span><svg viewBox="0 0 320 20" role="img" aria-label={`弱约束范数${plant.weak.weight_norm}，当前${plant.current.weight_norm}；共用零起点`}><path d="M5 10H315" stroke="#d6d4dc" strokeWidth="6" strokeLinecap="round"/><path d={`M5 10H${5+310*plant.current.weight_norm/Math.max(plant.weak.weight_norm,1e-12)}`} stroke="#7845bb" strokeWidth="6"/><circle cx={5+310*plant.current.weight_norm/Math.max(plant.weak.weight_norm,1e-12)} cy="10" r="4" fill="#7845bb"/></svg><span>0—{conceptNumber(plant.weak.weight_norm)}</span></div>}
+          {!plant&&<div className="island-readouts" aria-label="场景实算读数">
             {result.linear && (
               <>
                 <span>
@@ -741,30 +761,21 @@ export default function ConceptIsland({
                   <b>{conceptNumber(pair.edited.validation_mse)}</b>
                 </span>
               ))}
-            {plant && (
-              <>
-                <span data-evidence="norm" tabIndex={-1}>
-                  当前系数范数 <b>{conceptNumber(plant.current.weight_norm)}</b>
-                </span>
-                <span data-evidence="validation" tabIndex={-1}>
-                  验证MSE <b>{conceptNumber(plant.current.validation_mse)}</b>
-                </span>
-              </>
-            )}
-          </div>
+          </div>}
           {plant && (
             <details className="coefficient-disclosure">
-              <summary>系数读数</summary>
+              <summary>阶数与完整系数</summary>
+              <SceneRange label="工坊多项式阶数" value={input.degree} display={`${input.degree}阶`} min={1} max={15} onChange={n=>set('degree',n)}/>
               <p className="island-coefficient-key">
-                {indices.map((i) => (
+                {plant.current.weights.map((weight,i) => (
                   <span key={i}>
-                    w{i + 1} = {conceptNumber(plant.current.weights[i])}
+                    <button className="text-button" aria-pressed={focusedTerm===i} onClick={()=>setFocusedTerm(focusedTerm===i?null:i)}>w{i + 1} = {conceptNumber(weight)}</button>
                   </span>
                 ))}
               </p>
             </details>
           )}
-          <div className="island-object-controls">
+          {!plant&&<div className="island-object-controls">
             {input.panel !== "regularization" && (
               <>
                 <label className="island-select">
@@ -871,7 +882,7 @@ export default function ConceptIsland({
                 />
               </>
             )}
-          </div>
+          </div>}
           {evidenceTask&&<TransferEvidence task={evidenceTask} current={input} onInspect={next=>onInput(next as ConceptInput)}/>}
         </div>
         <aside className="island-control-desk" aria-label="场景操作与任务">

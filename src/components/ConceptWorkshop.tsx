@@ -236,7 +236,7 @@ export default function ConceptWorkshop({
       }
     : null;
   return (
-    <section className="concept-workshop" aria-label="概念工坊">
+    <section className={`concept-workshop concept-${input.panel}`} aria-label="概念工坊">
       <header className="concept-heading">
         <div>
           <div className="concept-title-with-guide">

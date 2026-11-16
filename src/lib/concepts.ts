@@ -33,6 +33,8 @@ export type ConceptModel = {
   sse: number;
   penalty: number;
   objective: number;
+  explanation?: {intercept:number;terms:{power:number;curve:number[];validation:number[]}[];
+    residuals:{observed:number;predicted:number;error:number;squared:number}[]};
 };
 export type ConceptResult = {
   parameters: ConceptInput;

@@ -1,0 +1,53 @@
+.garden-command-bar { grid-column:1/-1; display:grid; grid-template-columns:minmax(180px,1fr) minmax(220px,1fr); align-items:center; gap:24px; padding:0 0 20px; }
+.garden-command-bar .island-range { margin:0; }
+.garden-primary-readouts { display:grid; grid-template-columns:1fr 1fr; gap:18px; font-size:13px; color:#665c73; }
+.garden-primary-readouts span { display:grid; gap:8px; min-width:0; }
+.garden-primary-readouts b { font-size:22px; line-height:1.3; color:#392c4c; font-variant-numeric:tabular-nums; }
+.garden-primary-readouts[data-pending="true"] b { color:#86788e; }
+.island-regularization .island-scene-column { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-content:start; gap:20px; }
+.island-regularization .island-live-scene { align-self:start; }
+.island-regularization .garden-zoom,.island-regularization .coefficient-disclosure,.island-regularization .transfer-observations { grid-column:1/-1; margin:0; }
+.island-regularization .garden-zoom { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; }
+.garden-zoom .text-button { min-height:44px; }
+.garden-scale-notice { flex-basis:100%; font-size:13px; color:#6d497d; }
+.garden-global-scale { grid-column:1/-1; display:grid; grid-template-columns:auto minmax(80px,1fr) auto; align-items:center; gap:16px; font-size:12px; color:#6d6475; font-variant-numeric:tabular-nums; }
+.garden-global-scale svg { width:100%; height:20px; }
+.garden-term { cursor:pointer; outline:none; }
+.garden-term:focus-visible>rect { stroke:#7845bb; stroke-width:2; }
+.garden-causal { min-width:0; padding:0; }
+.garden-causal>header { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:15px; }
+.garden-causal>svg { width:100%; display:block; overflow:visible; touch-action:none; }
+.garden-causal svg text { font-family:inherit; font-size:16px; fill:#6d6475; }
+.garden-causal[aria-busy="true"]>svg { opacity:.5; }
+.garden-curve-key { display:flex; flex-wrap:wrap; gap:8px 12px; font-size:12px; color:#6d6475; line-height:1.6; }
+.garden-curve-key span:first-child { color:#7845bb; }
+.garden-probe-selector { display:flex; align-items:center; gap:14px; font-size:13px; margin:16px 0; }
+.garden-probe-selector select { min-width:0; flex:1; min-height:44px; background:#f4f1f7; border:0; border-radius:12px; padding:10px; color:#513b66; font:inherit; font-variant-numeric:tabular-nums; }
+.garden-probe-readout { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; font-size:12px; line-height:1.6; color:#75667c; }
+.garden-probe-readout span { display:grid; gap:6px; }
+.garden-probe-readout b { color:#3e304f; font-size:14px; font-variant-numeric:tabular-nums; }
+.garden-contribution-value { font-size:13px; line-height:1.7; color:#237d92; }
+.island-locked-decision { display:flex; align-items:center; gap:12px; padding:16px 0; color:#356d56; }
+.concept-regularization .concept-heading { margin-bottom:16px; }
+.concept-regularization .concept-heading .chapter-scene { width:64px; height:64px; }
+.concept-regularization .concept-heading h1 { font-size:28px; margin:0; }
+.concept-regularization .concept-heading p { margin:6px 0 0; }
+.concept-regularization .illustrated-topic-tabs { margin-bottom:14px; }
+.concept-regularization .illustrated-topic-tabs button { padding:10px 14px; min-height:74px; }
+.concept-regularization .illustrated-topic-tabs .topic-scene { width:56px; height:56px; }
+.concept-regularization .concept-data-bar { margin:12px 0 16px; }
+.concept-regularization .island-stage-heading { margin-bottom:18px; }
+@media(max-width:1200px) and (min-width:1001px){
+ .island-regularization .island-scene-column { grid-template-columns:minmax(0,1fr); }
+ .garden-command-bar { grid-template-columns:minmax(0,1fr);gap:16px; }
+}
+@media(max-width:700px){
+ .island-regularization .island-scene-column { grid-template-columns:minmax(0,1fr);gap:24px; }
+ .garden-command-bar { grid-template-columns:minmax(0,1fr);gap:18px; padding-bottom:0; }
+ .garden-global-scale { grid-template-columns:auto minmax(40px,1fr);gap:10px; }
+ .garden-global-scale>span:last-child { grid-column:1/-1; }
+ .garden-causal svg text { font-size:20px; }
+ .concept-regularization .concept-heading .chapter-scene { width:48px;height:48px; }
+ .concept-regularization .illustrated-topic-tabs button { padding:8px; }
+ .concept-regularization .illustrated-topic-tabs .topic-scene { width:44px;height:44px; }
+}

@@ -58,7 +58,7 @@ def mse(actual, predicted):
     return float(np.mean((actual - predicted) ** 2))
 
 
-def polynomial(x, y, validation, degree, alpha):
+def polynomial(x, y, validation, degree, alpha, explain=False):
     model = make_pipeline(PolynomialFeatures(degree, include_bias=False), StandardScaler(), Ridge(alpha=alpha, solver='svd'))
     model.fit(x[:, None], y)
     predicted = model.predict(x[:, None])
@@ -67,10 +67,18 @@ def polynomial(x, y, validation, degree, alpha):
     weights = model.named_steps['ridge'].coef_
     sse = float(np.sum((y - predicted) ** 2))
     norm_squared = float(np.dot(weights, weights))
-    return {'degree': degree, 'alpha': alpha, 'train_mse': mse(y, predicted),
+    value = {'degree': degree, 'alpha': alpha, 'train_mse': mse(y, predicted),
             'validation_mse': mse(validation[1], validation_predicted), 'curve': curve.tolist(),
             'weights': weights.tolist(), 'weight_norm': float(np.sqrt(norm_squared)),
             'sse': sse, 'penalty': float(alpha * norm_squared), 'objective': sse + alpha * norm_squared}
+    if explain:
+        grid_terms=model[:-1].transform(GRID[:,None])*weights
+        validation_terms=model[:-1].transform(validation[0][:,None])*weights
+        value['explanation']={'intercept':float(model.named_steps['ridge'].intercept_),
+            'terms':[{'power':i+1,'curve':grid_terms[:,i].tolist(),'validation':validation_terms[:,i].tolist()} for i in range(degree)],
+            'residuals':[{'observed':float(actual),'predicted':float(pred),'error':float(actual-pred),'squared':float((actual-pred)**2)}
+                         for actual,pred in zip(validation[1],validation_predicted)]}
+    return value
 
 
 def linear_geometry(params, x, y, validation):
@@ -132,7 +140,7 @@ def _run(serialized):
         result['label_shift_rms'] = float(np.sqrt(np.mean((y-original)**2)))
     else:
         weak = polynomial(x, y, validation, params.degree, ALPHAS[0])
-        current = polynomial(x, y, validation, params.degree, params.alpha)
+        current = polynomial(x, y, validation, params.degree, params.alpha, explain=True)
         path = [polynomial(x, y, validation, params.degree, alpha) for alpha in ALPHAS]
         result['regularization'] = {'weak': weak, 'current': current,
             'path': [{'alpha': item['alpha'], 'norm': item['weight_norm'], 'train_mse': item['train_mse'],
