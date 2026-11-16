@@ -259,3 +259,4 @@
 @media(max-width:1200px){.pp-world {height:400px;}.pp-island img {height:200px;}}
 @media(max-width:650px){.pp-world {height:390px;}.pp-island img {height:165px;}.pp-world .pp-regress {top:78px;}.pp-mechanism-satellite {left:10%;bottom:0;}.pp-mechanism-satellite img {width:80px;height:80px;}.pp-shelf-heading {gap:16px;}.pp-shelf-planet {width:86px;height:86px;}.pp-shelf-heading h1 {font-size:26px;}.pp-shelf-heading p {font-size:14px;}.pp-mechanism-host .world-host {width:80px;height:80px;}.pp-mechanism-host .world-host img {width:80px;height:80px;}}
 @media(prefers-reduced-motion:reduce){.pp-mechanism-satellite:hover img,.pp-island:hover img {transform:none;}}
+@media(max-width:650px){.pp-task-card h2,.pp-task-card p {min-block-size:0;}.pp-task-card p {margin:12px 0 18px;}.pp-task-card small {margin-bottom:12px;}}
