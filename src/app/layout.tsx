@@ -13,10 +13,12 @@ import "./companion.css";
 import "./island-learning.css";
 import "./workspace.css";
 import "./garden.css";
+import "./planet.css";
 
 export const metadata: Metadata = {
-  title: "看见过拟合 · FitLab 交互实验室",
-  description: "先预测，再实验，用新数据验证理解；让AI建议接受真实计算的检验。",
+  title: "模力星球 · 机器学习实验课堂",
+  description: "亲手清洗数据、填写参数、训练模型，让每次选择都看见结果。",
+  icons: {icon:"/brand/model-planet.svg"},
 };
 export default function RootLayout({
   children,

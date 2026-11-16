@@ -1,0 +1,90 @@
+"use client";
+import {useEffect,useState} from 'react';
+import {ArrowRight,Check,FlaskConical,LoaderCircle} from 'lucide-react';
+import {api} from '@/lib/experiment';
+import {buildSpec,example,type Catalog,type Dataset,type Draft,type Job,type Preview,type Field,type Value} from '@/lib/planet';
+import {ModelGlyph,SmallGuide} from './PlanetArt';
+import HelpHint from '../HelpHint';
+import PlanetResults from './PlanetResults';
+
+export const stages=['认识任务','数据体检','清洗方案','划分数据','模型参数','训练验证','对照解释','测试迁移'];
+const parameterHints:Record<string,string>={C:'C增大通常减弱约束、加强对训练误差的惩罚。效果要在同一批验证样本上比较。',gamma:'γ控制RBF核对距离的敏感程度，增大后影响范围更局部，也更依赖输入尺度。',alpha:'α控制正则化强度，增大通常加强收缩；是否改善验证表现取决于数据与模型。',max_iter:'优化器最多迭代的次数。它是计算上限，不保证充分收敛，也不是所有模型都有训练轮数。',max_depth:'树可以分裂的最大深度。更深能表达更细的规则，也可能拟合噪声。',min_samples_leaf:'每个叶节点至少保留多少训练样本。增大可限制过细切分。',n_estimators:'实际拟合的树或提升阶段数量。增加会改变预测与计算成本，不保证更好。',n_neighbors:'K决定采用多少个真实训练邻居，不能超过实际训练样本数。',weights:'均匀权重让每个邻居贡献相同；距离权重让近邻贡献更大。',fit_intercept:'是否学习截距。关闭后，处理空间中的预测关系受到过原点的约束。',var_smoothing:'为数值稳定加入的方差平滑，影响各类密度估计。',epsilon:'目标单位中的不敏感带宽，控制SVR忽略多小的训练偏差。',l1_ratio:'L1惩罚占比；0侧重收缩，1侧重稀疏。',learning_rate:'每个提升阶段的贡献大小，应与阶段数量一起理解。'};
+export function FormField({label,value,onChange,options,hint,range}:{label:string;value:Value|undefined;onChange:(v:string)=>void;options?:{value:string;label:string}[];hint?:string;range?:string}){
+ return <label className="pp-field"><span>{label}{hint&&<HelpHint title={`${label}的含义`}><p>{hint}</p></HelpHint>}</span>{options?<select value={String(value??'')} onChange={e=>onChange(e.target.value)}><option value="">请选择</option>{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select>:<input value={String(value??'')} onChange={e=>onChange(e.target.value)} inputMode="decimal" placeholder="填写数值" autoComplete="off"/>}{range&&<small>{range}</small>}</label>;
+}
+
+export default function PlanetWorkbench({catalog,draft,setDraft,step,setStep,run,job,busy,error,onTrain,onCancel,onRun,onError,pinned,onPin}:{catalog:Catalog;draft:Draft;setDraft:(v:Draft)=>void;step:number;setStep:(v:number)=>void;run:Job|null;job:Job|null;busy:boolean;error:string;onTrain:()=>Promise<void>;onCancel:()=>void;onRun:(r:Job,adopt?:boolean)=>void;onError:(s:string)=>void;pinned:string|null;onPin:(id:string)=>void}){
+ const d=catalog.datasets.find(x=>x.id===draft.dataset)!;const model=catalog.models.find(m=>m.id===draft.model);
+ const [preview,setPreview]=useState<Preview|null>(null),[previewBusy,setPreviewBusy]=useState(false),[quiz,setQuiz]=useState<string|null>(null);
+ const [quality,setQuality]=useState<{eligible:number;missing_targets:number}|null>(null);
+ useEffect(()=>{setPreview(null);void api<{eligible:number;missing_targets:number}>('/lab/datasets/'+d.id).then(setQuality).catch(()=>{});},[d.id]);
+ const put=(key:keyof Draft,value:Draft[keyof Draft])=>setDraft({...draft,[key]:value});
+ const clean=(key:keyof Draft['cleaning'],value:string|boolean)=>setDraft({...draft,cleaning:{...draft.cleaning,[key]:value}});
+ const split=(key:keyof Draft['split'],value:string|boolean)=>{setPreview(null);setDraft({...draft,split:{...draft.split,[key]:value}});};
+ const hasCategory=d.features.some(f=>draft.features.includes(f.id)&&(draft.featureTypes[f.id]||f.kind)==='categorical');
+ const binary=draft.task==='classification'&&draft.targets.length===1&&d.targets.find(t=>t.id===draft.targets[0])?.classes?.length===2;
+ const targetMeta=d.targets.filter(t=>draft.targets.includes(t.id));
+ function chooseModel(id:string){const m=catalog.models.find(m=>m.id===id)!;put('model',id);setDraft({...draft,model:id,parameters:Object.fromEntries(m.parameters.map(f=>[f.key,'']))});}
+ function next(){
+  try{
+   if(step===0&&quiz!==d.task)throw Error('先判断这个任务要预测类别还是一个数。');
+   if(step===1&&(!draft.features.length||!draft.targets.length||binary&&!draft.positive))throw Error('请选择输入、目标，并为二分类明确正类。');
+   if(step===2&&(!draft.cleaning.numeric||!draft.cleaning.categorical||!draft.cleaning.scale||!draft.cleaning.deduplicate))throw Error('请完成清洗方案的适用选择。');
+   if(step===3)buildSpec(draft,catalog.models,'preview');
+   if(step===4)buildSpec({...draft,prediction:draft.prediction||'暂不确定'},catalog.models);
+   onError('');setStep(Math.min(7,step+1));
+  }catch(e){onError((e as Error).message);}
+ }
+ async function showPreview(){setPreviewBusy(true);try{setPreview(await api<Preview>('/lab/preview',buildSpec(draft,catalog.models,'preview')));onError('');}catch(e){onError((e as Error).message);}finally{setPreviewBusy(false);}}
+ function parameter(f:Field){let max=f.max;if(f.key==='epsilon'&&draft.model==='svr')max=d.id==='wine'?3:['auto','auto_raw'].includes(d.id)?10:20;
+  return <div className="pp-parameter-control" key={f.key}><FormField label={f.label} value={f.kind==='choice'&&draft.parameters[f.key]===null?'null':draft.parameters[f.key]} onChange={v=>put('parameters',{...draft.parameters,[f.key]:v})}
+   options={f.kind==='choice'?f.options!.map(o=>({value:String(o.value),label:o.label})):undefined}
+   range={f.kind==='choice'?undefined:`${f.min}～${max}${f.kind==='integer'?' · 整数':''}${f.key==='epsilon'?` · ${targetMeta[0]?.unit||'目标单位'}`:''}`}
+   hint={parameterHints[f.key]||'范围是课堂计算约束。只改变这一项，再用实际验证结果判断。'}/>
+   {run?.state==='completed'&&run.spec.model===draft.model&&f.kind!=='choice'&&String(draft.parameters[f.key]??'').trim()!==''&&Number.isFinite(Number(draft.parameters[f.key]))&&<input className="pp-linked-slider" type="range" aria-label={`${f.label}训练后调节`} min={f.min} max={max} step={f.kind==='integer'?1:(max!-f.min!)/1000} value={Number(draft.parameters[f.key])} onChange={e=>put('parameters',{...draft.parameters,[f.key]:e.target.value})}/>}
+  </div>;
+ }
+ return <div className="pp-workbench"><header className="pp-task-header"><div><span className="pp-breadcrumb">{draft.task==='classification'?'分类港':'回归谷'} / {d.kind}</span><h1>{d.title}</h1><p>把你的选择填进去，再看模型怎样回答。</p></div><HelpHint title="怎样完成这次实验"><p>按步骤决定数据、处理、划分和参数。核心数字留给你填写；问号提供范围与含义。已有结果保留为快照，改配置后需要重新训练。</p></HelpHint></header>
+ <nav className="pp-stages" aria-label="实验步骤">{stages.map((s,i)=><button key={s} aria-current={step===i?'step':undefined} onClick={()=>{onError('');setStep(i);}}><span>{i+1}</span>{s}</button>)}</nav>
+ {error&&<p className="pp-error" role="alert">{error}</p>}
+ <div className="pp-step-heading"><span className="pp-step-number">{step+1}</span><h2>{stages[step]}</h2><span className="pp-spacer"/>{draft.assisted&&<HelpHint title="本次使用过示例或AI"><p>这些辅助不会改写原始判断，实验档案保留辅助来源。</p></HelpHint>}</div>
+ {step===0&&<div className="pp-intro-layout"><div><h3>{draft.task==='classification'?'为新样本预测类别':'为新样本预测数值'}</h3><p>目标：{targetMeta.map(t=>t.label).join('、')}{draft.task==='regression'?`（${targetMeta.map(t=>t.unit).join('、')}）`:''}。</p><p>{draft.task==='classification'?'类别编码写成数字，目标也可能是分类。多个标签同时成立，则是多标签任务。':'回归回答“多少”。多个数值目标可以同时预测，但需要分别核对单位和误差。'}</p><fieldset><legend>这个课例属于哪一类任务？</legend><div className="pp-choice-row"><button aria-pressed={quiz==='classification'} onClick={()=>setQuiz('classification')}>分类 · 找类别</button><button aria-pressed={quiz==='regression'} onClick={()=>setQuiz('regression')}>回归 · 预测数</button></div></fieldset></div><SmallGuide>你做的每个决定都进入这次实验。先写下选择，再让真实计算回答。</SmallGuide></div>}
+ {step===1&&<><div className="pp-data-summary"><span><b>{d.rows}</b>源样本</span><span><b>{d.features.length}</b>输入列</span><span><b>{quality?.missing_targets??'—'}</b>目标缺失行</span><span><b>{d.duplicate_rows}</b>重复输入行</span></div>
+  <div className="pp-two-col"><section><h3>哪些信息交给模型？</h3><div className="pp-column-list">{d.features.map(f=><div className="pp-column" key={f.id}><label><input type="checkbox" checked={draft.features.includes(f.id)} onChange={e=>put('features',e.target.checked?[...draft.features,f.id]:draft.features.filter(v=>v!==f.id))}/><span>{f.label}</span></label><select aria-label={`${f.label}输入类型`} value={draft.featureTypes[f.id]||f.kind} onChange={e=>put('featureTypes',{...draft.featureTypes,[f.id]:e.target.value as 'numeric'|'categorical'})}><option value="numeric">数值</option><option value="categorical">类别</option></select><small>{f.missing?`缺失${f.missing}`:'完整'} · {f.unique}个值</small></div>)}</div></section>
+   <section><h3>模型需要预测什么？</h3>{d.targets.map(t=><label className="pp-check-row" key={t.id}><input type="checkbox" checked={draft.targets.includes(t.id)} onChange={e=>{put('targets',e.target.checked?[...draft.targets,t.id]:draft.targets.filter(v=>v!==t.id));}}/><span>{t.label}{d.task==='regression'?` · ${t.unit}`:` · ${t.classes?.length}类`}</span></label>)}
+   {binary&&<FormField label="本次重点检出的正类" value={draft.positive} onChange={v=>put('positive',v)} options={targetMeta[0].classes!.map(c=>({value:c,label:`类别 ${c}`}))} hint="Precision、Recall及评分方向都相对于正类解释。源数据未核定中文映射时，保留原类标。"/>}
+   {d.excluded.length>0&&<p className="pp-note">不进入训练的列：{d.excluded.join('、')}。ID或可直接得到目标的列已排除。</p>}
+   <p className="pp-note">{d.kind} · {d.license}。原始快照只读，体检不会把目标缺失行填造标签。</p><a href={d.source} target="_blank" rel="noreferrer" className="pp-text-link">数据来源与说明</a></section></div></>}
+ {step===2&&<><div className="pp-form-grid"><FormField label="数值缺失怎样处理" value={draft.cleaning.numeric} onChange={v=>clean('numeric',v)} options={[['keep','保持原样'],['mean','训练均值填补'],['median','训练中位数填补'],['constant','填写常量']].map(([value,label])=>({value,label}))} hint="填补统计量只从当前实际训练子集学习。某些模型不支持保留缺失，系统会明确提示。"/>
+  {draft.cleaning.numeric==='constant'&&<FormField label="常量填补值" value={draft.cleaning.constant} onChange={v=>clean('constant',v)} range="-1e9～1e9"/>}
+  {hasCategory?<><FormField label="类别缺失怎样处理" value={draft.cleaning.categorical} onChange={v=>clean('categorical',v)} options={[['keep','保留原样'],['mode','训练众数'],['missing','显式缺失类别']].map(([value,label])=>({value,label}))}/><FormField label="类别怎样编码" value={draft.cleaning.encoding} onChange={v=>clean('encoding',v)} options={[{value:'onehot',label:'One-Hot独热编码'},{value:'ordinal',label:'有序编码（需要解释顺序）'}]} hint="有序编码会引入数字顺序和距离，名义类别使用时要核对影响。词表只来自训练数据。"/></>:<p className="pp-note">当前没有类别输入，编码不参与计算。</p>}
+  <FormField label="数值怎样缩放" value={draft.cleaning.scale} onChange={v=>clean('scale',v)} options={[['none','不缩放'],['standard','标准化'],['minmax','Min-Max'],['robust','RobustScaler']].map(([value,label])=>({value,label}))}/>
+  <FormField label="训练内完全重复记录" value={draft.cleaning.deduplicate} onChange={v=>clean('deduplicate',v)} options={[{value:'keep',label:'保留'},{value:'remove',label:'训练内去重'}]} hint="相同输入但目标不同的观测不会偷偷挑选标签。重复实体始终不跨集合。"/></div>
+  <details className="pp-details"><summary>更多处理与教学扰动</summary><div className="pp-form-grid"><label className="pp-check-row"><input type="checkbox" checked={draft.cleaning.drop_missing} onChange={e=>clean('drop_missing',e.target.checked)}/>只在训练子集删除含缺失行</label>
+   <FormField label="异常特征处理" value={draft.cleaning.outlier} onChange={v=>clean('outlier',v)} options={[['none','不处理'],['winsor','训练分位截尾'],['iqr_drop','IQR筛选训练行']].map(([value,label])=>({value,label}))}/>
+   {draft.cleaning.outlier!=='none'&&<FormField label={draft.cleaning.outlier==='winsor'?'截尾比例':'IQR倍数'} value={draft.cleaning.outlier_value} onChange={v=>clean('outlier_value',v)} range={draft.cleaning.outlier==='winsor'?'0.01～0.1':'1～3'}/>}
+   <FormField label="数值多项式阶数" value={draft.cleaning.degree} onChange={v=>clean('degree',v)} range="1～6 · 展开后最多500列"/>
+   <FormField label="训练副本缺失比例（可选）" value={draft.cleaning.pollution} onChange={v=>clean('pollution',v)} range="留空保持原样；0～0.3" hint="只污染当前训练副本，明确标记为教学扰动，不改原始数据或验证/测试目标。"/></div></details>
+  <SmallGuide>先决定怎么处理。均值、尺度和编码词表会在划分之后，仅用本次实际训练样本拟合。</SmallGuide></>}
+ {step===3&&<><div className="pp-split-layout"><div className="pp-form-grid"><FormField label="训练比例 %" value={draft.split.train} onChange={v=>split('train',v)} range="20～90 · 整数"/><FormField label="验证比例 %" value={draft.split.validation} onChange={v=>split('validation',v)} range="5～40 · 整数"/><FormField label="测试比例 %" value={draft.split.test} onChange={v=>split('test',v)} range="5～40 · 整数"/><FormField label="实验种子" value={draft.seed} onChange={v=>{setPreview(null);put('seed',v);}} range="0～999999 · 整数"/>
+   <FormField label="划分方式" value={draft.split.strategy} onChange={v=>split('strategy',v)} options={[{value:'random',label:'按组随机'},...(draft.task==='classification'?[{value:'stratified',label:'按组尽量分层'}]:[]),...(d.time_column?[{value:'time',label:'保持时间顺序'}]:[])]}/>
+   <label className="pp-check-row"><input type="checkbox" checked={draft.split.keep_test} onChange={e=>split('keep_test',e.target.checked)}/>首次分配后保留测试角色<HelpHint title="重新划分意味着什么"><p>取消后可以自由重划分，旧训练/验证样本进入测试时会标为探索性重评，不能重新冒充未参与学习。</p></HelpHint></label>
+  </div><div className="pp-split-visual"><div className="pp-containers" aria-label="三份数据分配">{[['train','训练','背包'],['validation','验证','指南针'],['test','测试','封存箱']].map(([key,label,object])=><div key={key} className={`pp-container role-${key}`}><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="20" y="26" width="60" height="58" rx="15" fill="currentColor" opacity=".18"/><path d="M25 40H75M36 24V15H64V24M35 57H65" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/></svg><strong>{label}</strong><span>{draft.split[key as 'train'|'validation'|'test']||'—'}%</span><small>{object}</small></div>)}</div>
+   <p className="pp-split-sum">已分配 {['train','validation','test'].reduce((sum,k)=>sum+(Number(draft.split[k as 'train'])||0),0)}%</p>
+   <button className="pp-btn primary" disabled={previewBusy} onClick={()=>void showPreview()}>{previewBusy?<LoaderCircle className="spin" size={20}/>:<Check size={20}/>}核对实际划分</button></div></div>
+  <details className="pp-details"><summary>固定评估集的数据量实验</summary><FormField label="训练池使用比例（可选）" value={draft.fraction} onChange={v=>put('fraction',v)} range="留空使用全部训练样本；填写0.1～1" hint="只取训练池子集，验证/测试保持；每个子集独立拟合整个处理链。"/></details>
+  {preview&&<section className="pp-preview"><h3>这次实际分到多少？</h3><div className="pp-data-summary">{Object.entries(preview.counts).map(([k,v])=><span key={k}><b>{v}</b>{({training:'训练',validation:'验证',test:'测试'} as Record<string,string>)[k]}</span>)}</div><p>{preview.note}</p>{preview.test_previously_seen_entities>0&&<p className="pp-notice">新测试群体含已参与本平台学习或诊断的实体，最终结果将标为探索性重评。</p>}
+   {preview.classes.length>0&&<div className="pp-table-scroll"><table><caption>各部分的类别数量（分组后实际计数）</caption><thead><tr><th>部分</th>{preview.classes.flatMap((v,j)=>v.map(c=><th key={`${j}${c}`}>{j?`目标${j+1}·`:''}{c}</th>))}</tr></thead><tbody>{Object.entries(preview.distributions).map(([k,v])=><tr key={k}><th>{k}</th>{v.flat().map((n,i)=><td key={i}>{n}</td>)}</tr>)}</tbody></table></div>}</section>}
+ </>}
+ {step===4&&<><div className="pp-model-setup"><div className="pp-model-menu"><label className="pp-mobile-model">选择模型<select value={draft.model} onChange={e=>chooseModel(e.target.value)}><option value="">请选择</option>{catalog.models.filter(m=>m.task===draft.task).map(m=><option value={m.id} key={m.id}>{m.title}</option>)}</select></label><div className="pp-model-radio" role="group" aria-label="选择训练模型">{catalog.models.filter(m=>m.task===draft.task).map(m=><button key={m.id} aria-pressed={draft.model===m.id} onClick={()=>chooseModel(m.id)}><ModelGlyph kind={m.mechanism} size={38}/>{m.title}</button>)}</div></div>
+ <section className="pp-parameter-form">{model?<><div className="pp-model-title"><ModelGlyph kind={model.mechanism}/><div><h3>{model.title}</h3><p>{model.summary}</p></div></div><div className="pp-form-grid">{model.parameters.map(parameter)}</div>
+  <details className="pp-details"><summary>高级参数与显式默认项</summary>{model.advanced.length?model.advanced.map(f=><div key={f.key} className="pp-advanced-param"><label className="pp-check-row"><input type="checkbox" checked={f.key in draft.parameters} onChange={e=>{const p={...draft.parameters};if(e.target.checked)p[f.key]='';else delete p[f.key];put('parameters',p);}}/>{f.label} · 未启用时：{String(f.default??'原样本权重')}</label>{f.key in draft.parameters&&parameter(f)}</div>):<p>当前课堂模型没有额外开放项，运行后可查看完整实际参数。</p>}</details>
+  <details className="pp-details"><summary>需要一组可尝试的示例？</summary><p>示例不保证更好，采用后会标记辅助。之后你可以逐项修改并核验。</p><button className="pp-btn secondary" onClick={()=>{const e=example(d,model);setDraft({...e,features:draft.features,targets:draft.targets,session:draft.session,prediction:draft.prediction});}}>采用这组示例配置</button></details>
+ </>:<SmallGuide>先选一个模型，再亲自填写它的核心设置。每个模型的参数不同。</SmallGuide>}</section></div></>}
+ {step===5&&<><div className="pp-train-layout"><section><h3>先留下你的预期</h3><fieldset><legend>与简单基线相比，这组配置可能怎样？</legend><div className="pp-choice-stack">{['可能更好','未必更好','暂不确定'].map(v=><button key={v} aria-pressed={draft.prediction===v} onClick={()=>put('prediction',v)}>{v}</button>)}</div></fieldset><button className="pp-btn primary" disabled={busy} onClick={()=>void onTrain()}><FlaskConical size={20}/>训练这组配置</button>{busy&&<button className="pp-btn secondary" onClick={onCancel}>停止本次计算</button>}
+  {job&&<p className="pp-job-status" role="status">{['queued','running'].includes(job.state)&&<LoaderCircle size={20} className="spin"/>}{job.phase}</p>}</section><section className="pp-config-review"><h3>本次将使用</h3><p>{d.title} · {model?.title||'模型待选择'}</p><p>{draft.features.length}个输入，目标：{targetMeta.map(t=>t.label).join('、')}</p><p>划分 {draft.split.train||'—'} / {draft.split.validation||'—'} / {draft.split.test||'—'}%，种子 {draft.seed||'—'}</p><p>数值 {draft.cleaning.numeric||'待选择'} · 缩放 {draft.cleaning.scale||'待选择'} · {draft.fraction?`使用训练池${Number(draft.fraction)*100}%`:'使用全部训练样本'}</p><details><summary>核对填写的参数</summary><pre>{JSON.stringify(draft.parameters,null,2)}</pre></details></section></div></>}
+ {step>=5&&run&&<PlanetResults run={run} catalog={catalog} draft={draft} mode={step} onRun={onRun} onError={onError} pinned={pinned} onPin={onPin}/>}
+ {step>=6&&!run&&<SmallGuide>先完成一组真实训练，结果、对照与最终评估会在这里出现。</SmallGuide>}
+ <footer className="pp-step-footer"><button className="pp-btn secondary" disabled={step===0} onClick={()=>{onError('');setStep(step-1);}}>上一步</button><span>{step+1} / {stages.length}</span>{step<7&&<button className="pp-btn primary" onClick={next}>{step===4?'去训练':step===5?'看对照与解释':'完成这一步'}<ArrowRight size={20}/></button>}</footer>
+ </div>;
+}
