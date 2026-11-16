@@ -1,40 +1,42 @@
 "use client";
-import {useId} from 'react';
-export type PetMood='idle'|'wave'|'thinking'|'happy'|'feed'|'orbit'|'sleep';
+import {useEffect,useId,useRef} from 'react';
+import {orbitalFrame,orbitSpeed,type PlanetMood} from '@/lib/orbital-motion';
+export type PetMood=PlanetMood;
 export default function PetAvatar({mood='idle',motion=true}:{mood?:PetMood;motion?:boolean}){
- const id=useId().replaceAll(':','');
- return <svg className="pp-pet-avatar" data-mood={mood} data-motion={motion} viewBox="0 0 180 195" aria-hidden="true">
-  <defs><radialGradient id={id+'face'} cx="36%" cy="25%" r="80%"><stop stopColor="#fff7e9"/><stop offset="1" stopColor="#e6c9ac"/></radialGradient><linearGradient id={id+'suit'} x2="1" y2="1"><stop stopColor="#e0f4e6"/><stop offset="1" stopColor="#83b7a8"/></linearGradient><radialGradient id={id+'glass'} cx="26%" cy="18%" r="88%"><stop stopColor="#fff" stopOpacity=".28"/><stop offset=".76" stopColor="#e3f4ff" stopOpacity=".03"/><stop offset="1" stopColor="#afbedf" stopOpacity=".42"/></radialGradient></defs>
-  <ellipse className="pp-pet-shadow" cx="90" cy="180" rx="48" ry="7" fill="#182c39" opacity=".11"/>
-  <g className="pp-pet-body">
-   <path d="M123 140q33-8 22-26" stroke="#ead0b4" strokeWidth="15" strokeLinecap="round" fill="none"/>
-   <rect x="53" y="111" width="76" height="51" rx="19" fill="#a89cc1"/>
-   <g className="pp-pet-leg left"><path d="M63 151l-4 18q0 9 17 6l9-17" fill="#dfebd9"/><ellipse cx="68" cy="173" rx="17" ry="8" fill="#d7ad7e"/></g>
-   <g className="pp-pet-leg right"><path d="M96 155l3 16q2 8 19 4l-2-23" fill="#dfebd9"/><ellipse cx="110" cy="173" rx="17" ry="8" fill="#d7ad7e"/></g>
-   <path d="M58 115q32-18 65 0v35q-7 17-32 17-30-1-33-18Z" fill={`url(#${id}suit)`}/>
-   <path d="M58 126h66" stroke="#f5f5e6" strokeWidth="9"/>
-   <rect x="72" y="130" width="36" height="27" rx="9" fill="#fff9e7"/><path d="M81 147v-10l9 8 9-8v10" fill="none" stroke="#7d67a2" strokeWidth="3" strokeLinejoin="round"/><circle cx="112" cy="139" r="3" fill="#e2b665"/>
-   <g className="pp-pet-arm left"><path d="M60 126q-17 8-20 24" fill="none" stroke="#a8cebc" strokeWidth="17" strokeLinecap="round"/><circle cx="39" cy="152" r="11" fill="#f2ddc3"/></g>
-   <g className="pp-pet-arm right"><path d="M122 126q18 2 20-12" fill="none" stroke="#a8cebc" strokeWidth="17" strokeLinecap="round"/><circle cx="143" cy="112" r="11" fill="#f2ddc3"/></g>
-   <g className="pp-pet-head">
-    <path d="M85 16V7" stroke="#a99bbf" strokeWidth="3"/><circle cx="85" cy="6" r="5" fill="#e5bc70"/>
-    <circle cx="89" cy="70" r="60" fill="#edf4fb" fillOpacity=".28" stroke="#cabfdb" strokeWidth="3"/>
-    <path d="M46 65L44 29q2-10 25 8m43 0q23-18 25-8l-2 36" fill={`url(#${id}face)`}/>
-    <path d="M50 48l1-13 13 9m54 0 12-9v13" fill="#e8b6a2"/>
-    <ellipse cx="90" cy="75" rx="46" ry="40" fill={`url(#${id}face)`}/>
-    <path d="M82 37l4 11m8-10 3 9" stroke="#deb18c" strokeWidth="4" strokeLinecap="round"/>
-    <g className="pp-pet-eyes"><ellipse cx="74" cy="74" rx="5" ry="6" fill="#664c48"/><ellipse cx="107" cy="74" rx="5" ry="6" fill="#664c48"/><circle cx="75" cy="72" r="1.5" fill="white"/><circle cx="108" cy="72" r="1.5" fill="white"/></g>
-    <g className="pp-pet-sleep-eyes" fill="none" stroke="#71554e" strokeWidth="3" strokeLinecap="round"><path d="M68 75q6 5 12 0m21 0q6 5 12 0"/></g>
-    <ellipse cx="61" cy="88" rx="7" ry="4" fill="#e7ac9e" opacity=".62"/><ellipse cx="120" cy="88" rx="7" ry="4" fill="#e7ac9e" opacity=".62"/>
-    <path d="M86 83q4-4 8 0l-4 4Z" fill="#a37b68"/><path className="pp-pet-mouth" d="M80 92q10 11 20 0" fill="none" stroke="#9b6c5c" strokeWidth="2.6" strokeLinecap="round"/>
-    <path d="M43 82l-9-2m10 10-8 2m102-10 9-2m-10 10 8 2" stroke="#cba688" strokeWidth="2" strokeLinecap="round"/>
-    <circle cx="89" cy="70" r="60" fill={`url(#${id}glass)`}/><path d="M44 43q7-16 27-20" stroke="white" strokeOpacity=".7" strokeWidth="6" fill="none" strokeLinecap="round"/>
-    <rect x="27" y="65" width="13" height="30" rx="6" fill="#b8a9ca"/><rect x="137" y="65" width="13" height="30" rx="6" fill="#b8a9ca"/>
-    <path d="M55 119q35 17 70 0" stroke="#b0c7bd" strokeWidth="8" fill="none" strokeLinecap="round"/>
-   </g>
-  </g>
-  <g className="pp-pet-orbit" fill="none" stroke="#b5a3cd" opacity=".55"><ellipse cx="90" cy="176" rx="70" ry="13"/><circle cx="158" cy="172" r="4" fill="#e6c17f" stroke="none"/></g>
-  <path className="pp-pet-star" d="M152 130l4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1Z" fill="#edc66b"/>
-  <g className="pp-pet-thought" fill="#b4a2cf"><circle cx="145" cy="26" r="3"/><circle cx="155" cy="21" r="3"/><circle cx="165" cy="16" r="3"/></g>
- </svg>;
+ const id=useId().replaceAll(':',''),root=useRef<SVGSVGElement|null>(null),rig=useRef<SVGGElement|null>(null),front=useRef<SVGGElement|null>(null),back=useRef<SVGGElement|null>(null),eyes=useRef<SVGGElement|null>(null),starlight=useRef<SVGGElement|null>(null);
+ const paint=useRef<()=>void>(()=>{});
+ const state=useRef({phase:0,clock:0,speed:1,mood,age:0});
+ useEffect(()=>{state.current.mood=mood;state.current.age=0;paint.current();},[mood]);
+ useEffect(()=>{
+  let frame=0,last:number|null=null;const reduce=matchMedia('(prefers-reduced-motion: reduce)');
+  function draw(){const s=state.current,animated=root.current?.getAttribute('data-animating')==='true',f=orbitalFrame(s.phase,s.clock,s.mood,s.age);rig.current?.setAttribute('transform',animated?`translate(0 ${f.bob}) rotate(${f.roll} 100 103) translate(100 103) scale(${f.scale}) translate(-100 -103)`: "");
+   front.current?.setAttribute('transform',`translate(${f.x} ${f.y})`);back.current?.setAttribute('transform',`translate(${f.x} ${f.y})`);
+   if(front.current)front.current.style.opacity=f.front?'1':'0';if(back.current)back.current.style.opacity=f.front?'0':'1';
+   eyes.current?.setAttribute('transform',animated?`translate(100 97) scale(1 ${f.blink}) translate(-100 -97)`:"");
+   const p=1-(1-f.feed)**2;starlight.current?.setAttribute('transform',`translate(${168-64*p} ${48+47*p-18*Math.sin(p*Math.PI)}) scale(${1-.6*p})`);
+   if(starlight.current)starlight.current.style.opacity=s.mood==='feed'?String(Math.sin(f.feed*Math.PI)): '0';
+  }
+  function tick(now:number){const dt=last===null?0:Math.min((now-last)/1000,.04);last=now;const s=state.current;s.clock+=dt;s.age+=dt;s.speed+=(orbitSpeed(s.mood)-s.speed)*Math.min(1,dt*3);s.phase+=dt*s.speed*Math.PI*2/8;draw();frame=requestAnimationFrame(tick);}
+  function update(){cancelAnimationFrame(frame);last=null;const active=motion&&!reduce.matches&&!document.hidden;root.current?.setAttribute('data-animating',String(active));if(active)frame=requestAnimationFrame(tick);else{draw();rig.current?.setAttribute('transform','');eyes.current?.setAttribute('transform','');}}
+  paint.current=draw;update();reduce.addEventListener('change',update);document.addEventListener('visibilitychange',update);return()=>{cancelAnimationFrame(frame);reduce.removeEventListener('change',update);document.removeEventListener('visibilitychange',update);};
+ },[motion]);
+ const satellite=<><circle r="9" fill="#efcd87"/><circle cx="-2" cy="-2" r="5" fill="#fff1ca" opacity=".5"/><path d="M-3-3v6l3-2 3 2v-6Z" fill="none" stroke="#8a78ac" strokeWidth="1.4" strokeLinejoin="round"/></>;
+ return <svg ref={root} className="pp-pet-avatar pp-learning-planet" data-mood={mood} data-motion={motion} viewBox="0 0 200 210" aria-hidden="true">
+ <defs><radialGradient id={id+'globe'} cx="30%" cy="20%" r="82%"><stop stopColor="#f3efff"/><stop offset=".48" stopColor="#c6bfe7"/><stop offset="1" stopColor="#8a86be"/></radialGradient><radialGradient id={id+'light'}><stop stopColor="#ecd08b" stopOpacity=".34"/><stop offset="1" stopColor="#ecd08b" stopOpacity="0"/></radialGradient><clipPath id={id+'disc'}><circle cx="100" cy="103" r="56"/></clipPath></defs>
+ <ellipse cx="100" cy="184" rx="47" ry="6" fill="#263743" opacity=".10"/>
+ <g ref={rig} className="pp-orb-rig">
+  <circle className="pp-orb-halo" cx="100" cy="103" r="80" fill={`url(#${id}light)`}/>
+  <g transform="rotate(-14 100 115)"><ellipse cx="100" cy="115" rx="78" ry="24" fill="none" stroke="#b6a6d5" strokeWidth="6"/><g ref={back} transform="translate(178 115)" opacity="0">{satellite}</g></g>
+  <circle cx="100" cy="103" r="56" fill={`url(#${id}globe)`}/>
+  <g clipPath={`url(#${id}disc)`}><path d="M44 70q26-27 47-10t35-11q31-18 43 16-26 20-41 5T80 82Q60 95 44 70M47 137q32-26 46-8t43-3q24-10 24 19-25 31-60 19t-53-27" fill="#c8ddd1" opacity=".62"/><path d="M51 66q10-15 27-17" stroke="#fff9ff" strokeWidth="5" strokeLinecap="round" fill="none" opacity=".65"/><ellipse cx="128" cy="70" rx="9" ry="6" fill="#827eaf" opacity=".18"/><ellipse cx="128" cy="68" rx="7" ry="4" fill="#ede8fb" opacity=".52"/><circle cx="61" cy="116" r="5" fill="#7978a5" opacity=".14"/><circle cx="116" cy="146" r="7" fill="#7978a5" opacity=".14"/></g>
+  <g ref={eyes} className="pp-orb-eyes"><ellipse cx="83" cy="97" rx="4.5" ry="6" fill="#48445f"/><ellipse cx="117" cy="97" rx="4.5" ry="6" fill="#48445f"/><circle cx="84" cy="95" r="1.4" fill="white"/><circle cx="118" cy="95" r="1.4" fill="white"/></g>
+  <g className="pp-orb-closed-eyes" fill="none" stroke="#555067" strokeWidth="2.8" strokeLinecap="round"><path d="M77 99q6 5 12 0m22 0q6 5 12 0"/></g>
+  <ellipse cx="73" cy="109" rx="7" ry="3.5" fill="#e3b8bd" opacity=".65"/><ellipse cx="127" cy="109" rx="7" ry="3.5" fill="#e3b8bd" opacity=".65"/>
+  <path className="pp-orb-smile" d="M91 112q9 10 18 0" fill="none" stroke="#696078" strokeWidth="2.6" strokeLinecap="round"/>
+  <ellipse className="pp-orb-thinking-mouth" cx="101" cy="114" rx="3" ry="3.8" fill="#77708b"/>
+  <g transform="rotate(-14 100 115)"><path d="M22 115A78 24 0 0 0 178 115" fill="none" stroke="#ecc6ab" strokeWidth="7" strokeLinecap="round"/><path d="M31 124q65 32 131 0" fill="none" stroke="#fff0da" opacity=".38" strokeWidth="2"/><g ref={front} transform="translate(178 115)">{satellite}</g></g>
+  <g className="pp-orb-signal" fill="#b5a3cd"><circle cx="89" cy="29" r="3"/><circle cx="101" cy="25" r="3"/><circle cx="113" cy="29" r="3"/></g>
+  <path className="pp-orb-spark" d="M49 47l3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1Z" fill="#e8c57c"/>
+  <g ref={starlight} opacity="0"><path d="M0-10l3 7 8 1-6 5 2 8-7-4-7 4 2-8-6-5 8-1Z" fill="#edce87"/></g>
+ </g></svg>;
 }
