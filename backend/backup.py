@@ -16,7 +16,10 @@ MAX_BYTES = 16 * 1024 * 1024
 
 def without_hidden_answers(value):
     if isinstance(value, dict):
-        return {k:without_hidden_answers(v) for k,v in value.items() if k not in ('_proof','_reason','_answer','_reason_tags')}
+        result={k:without_hidden_answers(v) for k,v in value.items() if k not in ('_proof','_reason','_answer','_reason_tags')}
+        if value.get('content_version')==3 and value.get('question_kind')=='model_selection':
+            result['target_parameters']=result['before_parameters']
+        return result
     if isinstance(value, list): return [without_hidden_answers(v) for v in value]
     return value
 
@@ -60,7 +63,8 @@ def rebuild_task(raw):
         if type(variant) is not int or not 0<=variant<=2 or form not in ('comparison','model_selection','controlled_design'):
             raise ValueError('题目变体不合法。')
         task=pedagogy.version3(panel,mode,raw['seed'],form,variant,bool(raw.get('investigation')))
-        if task['before_parameters']!=raw['before_parameters'] or (not raw.get('investigation') and task['target_parameters']!=raw['target_parameters']):
+        allowed_target=task['target_parameters']==raw['target_parameters'] or (form=='model_selection' and raw['target_parameters']==task['before_parameters'])
+        if task['before_parameters']!=raw['before_parameters'] or (not raw.get('investigation') and not allowed_target):
             raise ValueError('题目条件不符合版本协议。')
         return task
     if raw.get('investigation'):

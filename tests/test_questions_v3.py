@@ -57,3 +57,16 @@ def test_reasons_require_immutable_first_decision_and_survive_backup(client,tmp_
     assert restored['transfer_task']==a['transfer_task']
     a=post(client,f'/islands/attempts/{key}/answer',{'task_id':t['id'],'choice':0,'reason':0})
     assert a['transfer_answer']['choice']==0
+
+
+def test_model_selection_destination_is_not_an_early_answer_key(client):
+    old=post(client,'/islands/tasks',{'panel':'regularization'})
+    post(client,f"/islands/attempts/{old['id']}/predict",{'choice':0,'confidence':2})
+    a=transfer(client);t=a['transfer_task']
+    assert t['question_kind']=='model_selection'
+    assert t['target_parameters']==t['before_parameters']
+    package=client.get('/workspace/backup').json()
+    for entry in package['entries']:
+        task=entry['content'].get('_transfer')
+        if task and task.get('question_kind')=='model_selection':
+            assert task['target_parameters']==task['before_parameters']

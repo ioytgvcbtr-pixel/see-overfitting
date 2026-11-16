@@ -261,6 +261,8 @@ def public(saved):
     value['transfer_task'] = descriptor(saved['_transfer']) | {'id': saved['_transfer_id']} if saved.get('_transfer') else None
     if value['transfer_task'] and saved['_transfer'].get('content_version')==3 and not saved.get('transfer_decision'):
         value['transfer_task']['reasons']=[]
+    if value['transfer_task'] and saved['_transfer'].get('content_version')==3 and not saved.get('transfer_answer') and saved['_transfer']['question_kind']=='model_selection':
+        value['transfer_task']['target_parameters']=copy.deepcopy(saved['_transfer']['before_parameters'])
     return value
 
 

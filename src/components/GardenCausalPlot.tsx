@@ -15,7 +15,7 @@ export default function GardenCausalPlot({result,term,pending}:{result:ConceptRe
   const part=term===null?null:explain.terms[term];
   const x=(n:number)=>28+404*n,y=(n:number)=>146-35*n;
   const path=(values:number[])=>values.map((v,i)=>`${i?'L':'M'}${x(result.grid_x[i]).toFixed(2)},${y(v).toFixed(2)}`).join(' ');
-  const outside=model.curve.some(v=>Math.abs(v)>3);
+  const outside=[model.curve,result.regularization!.weak.curve,...(part?[part.curve]:[])].some(values=>values.some(v=>Math.abs(v)>3));
   return <section className="garden-causal" aria-label="系数到预测的实算联动" aria-busy={pending}>
     <header><strong>{part?`第${part.power}项怎样影响曲线`:'模型怎样预测新样本'}</strong><HelpHint title="从系数到误差"><p>点击左侧枝条看标准化多项式项的贡献。各项贡献加截距等于紫色预测曲线。空心点是固定验证观测；移动探针核对单点残差。图窗固定±3，超窗曲线被裁切；总验证MSE仍用全部真实数值计算。</p></HelpHint></header>
     <svg viewBox="0 0 460 270" role="group" aria-label="固定验证点、真实拟合曲线与残差探针">
@@ -37,7 +37,7 @@ export default function GardenCausalPlot({result,term,pending}:{result:ConceptRe
         <circle cx={x(point.x)} cy={y(Math.max(-3,Math.min(3,e.observed)))} r="7" fill="white" stroke="#b66336" strokeWidth="2.5"/>
       </SceneHandle></g>
       <text x="230" y="267" textAnchor="middle">x · 固定验证样本</text>
-      {outside&&<text x="430" y="28" textAnchor="end">部分预测超出±3窗口</text>}
+      {outside&&<text x="430" y="28" textAnchor="end">部分曲线超出±3窗口</text>}
     </svg>
     <div className="garden-curve-key"><span>━ 当前预测</span><span>┄ 弱约束参照</span>{part&&<span>┄ 所选项贡献</span>}</div>
     <label className="garden-probe-selector">验证点<select aria-label="选择验证探针" value={probe} onChange={ev=>setProbe(Number(ev.target.value))}>{order.map((p,i)=><option value={i} key={p.i}>{i+1} · x={p.x.toFixed(3)}</option>)}</select></label>
