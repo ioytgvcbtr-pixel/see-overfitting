@@ -67,6 +67,7 @@ test('learning route persists understanding and experiment edits without student
  await page.getByRole('button',{name:'我的学习记录',exact:true}).click();await page.getByRole('button',{name:'实验操作',exact:true}).click();await expect(page.getByRole('heading',{name:'修改实验配置',exact:true}).first()).toBeVisible();
  await page.getByText(/查看\d+项选择变化/).first().click();await expect(page.getByText('训练比例',{exact:true}).first()).toBeVisible();
  await page.screenshot({path:'artifacts/local/playwright-results/study-records.png',fullPage:true,animations:'disabled'});
+ await page.getByRole('button',{name:'模型机制工坊',exact:true}).click();await page.getByRole('button',{name:'查看机制学习记录',exact:true}).click();await expect(page.getByRole('progressbar',{name:'机制探索四站',exact:true})).toBeVisible();
 });
 
 test('all completed lessons fill every progress segment green',async({page,request})=>{
