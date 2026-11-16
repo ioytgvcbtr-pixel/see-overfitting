@@ -510,3 +510,4 @@
 @media(max-width:650px){.planet-app[data-pet-open=true] .pp-task-grid {grid-template-columns:minmax(0,1fr);}}
 
 .pp-pet-context-choice {min-height:44px;}
+.pp-pet-compose textarea:focus-visible {outline:2px solid var(--pp-brand);outline-offset:2px;}
