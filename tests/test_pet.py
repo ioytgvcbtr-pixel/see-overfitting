@@ -34,7 +34,7 @@ def test_deepseek_only_settings_apply_depth_to_real_request_and_never_echo_key(c
 
 def test_settings_refuse_other_hosts_models_and_validation_does_not_return_key(client):
     c=client
-    for host in ['https://example.org/v1','https://api.deepseek.com.evil.org','https://api.deepseek.com@evil.org/v1','http://api.deepseek.com','https://api.deepseek.com/v1?token=x']:
+    for host in ['https://example.org/v1','https://api.deepseek.com.evil.org','https://api.deepseek.com@evil.org/v1','http://api.deepseek.com','https://api.deepseek.com/v1?invalid=x']:
         assert c.post('/workspace/settings',json={'base_url':host}).status_code==422
     assert c.post('/workspace/settings',json={'model':'other-provider'}).status_code==422
     bad='sensitive-key\nnew-line';r=c.post('/workspace/settings',json={'api_key':bad});assert r.status_code==422 and bad not in r.text and 'sensitive-key' not in r.text
