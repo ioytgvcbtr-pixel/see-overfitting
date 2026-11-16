@@ -71,8 +71,8 @@ export default function ExploreWorld({
     <section className="illustrated-world" aria-label="模型探索地图">
       <header className="world-heading">
         <div>
-          <h1>下一站，模型群岛。</h1>
-          <p>从误差、过拟合到分类边界，选一处场景，亲手看见规律。</p>
+          <h1>下一站，机制星球。</h1>
+          <p>四个探索站，玩懂误差、过拟合、约束与分类边界。</p>
         </div>
         <div className="world-host">
           <Image

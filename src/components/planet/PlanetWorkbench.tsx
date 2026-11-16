@@ -1,6 +1,7 @@
 "use client";
-import {useEffect,useState} from 'react';
-import {ArrowRight,Check,FlaskConical,LoaderCircle} from 'lucide-react';
+import {useEffect,useState,useId} from 'react';
+import {ArrowRight,Check,FlaskConical,LoaderCircle,Sprout,Database,BrushCleaning,Split,SlidersHorizontal,GitCompareArrows,Flag} from 'lucide-react';
+import DatasetScene from './DatasetScene';
 import {api} from '@/lib/experiment';
 import {buildSpec,example,type Catalog,type Dataset,type Draft,type Job,type Preview,type Field,type Value} from '@/lib/planet';
 import {ModelGlyph,SmallGuide} from './PlanetArt';
@@ -10,7 +11,7 @@ import PlanetResults from './PlanetResults';
 export const stages=['认识任务','数据体检','清洗方案','划分数据','模型参数','训练验证','对照解释','测试迁移'];
 const parameterHints:Record<string,string>={C:'C增大通常减弱约束、加强对训练误差的惩罚。效果要在同一批验证样本上比较。',gamma:'γ控制RBF核对距离的敏感程度，增大后影响范围更局部，也更依赖输入尺度。',alpha:'α控制正则化强度，增大通常加强收缩；是否改善验证表现取决于数据与模型。',max_iter:'优化器最多迭代的次数。它是计算上限，不保证充分收敛，也不是所有模型都有训练轮数。',max_depth:'树可以分裂的最大深度。更深能表达更细的规则，也可能拟合噪声。',min_samples_leaf:'每个叶节点至少保留多少训练样本。增大可限制过细切分。',n_estimators:'实际拟合的树或提升阶段数量。增加会改变预测与计算成本，不保证更好。',n_neighbors:'K决定采用多少个真实训练邻居，不能超过实际训练样本数。',weights:'均匀权重让每个邻居贡献相同；距离权重让近邻贡献更大。',fit_intercept:'是否学习截距。关闭后，处理空间中的预测关系受到过原点的约束。',var_smoothing:'为数值稳定加入的方差平滑，影响各类密度估计。',epsilon:'目标单位中的不敏感带宽，控制SVR忽略多小的训练偏差。',l1_ratio:'L1惩罚占比；0侧重收缩，1侧重稀疏。',learning_rate:'每个提升阶段的贡献大小，应与阶段数量一起理解。'};
 export function FormField({label,value,onChange,options,hint,range}:{label:string;value:Value|undefined;onChange:(v:string)=>void;options?:{value:string;label:string}[];hint?:string;range?:string}){
- return <label className="pp-field"><span>{label}{hint&&<HelpHint title={`${label}的含义`}><p>{hint}</p></HelpHint>}</span>{options?<select value={String(value??'')} onChange={e=>onChange(e.target.value)}><option value="">请选择</option>{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select>:<input value={String(value??'')} onChange={e=>onChange(e.target.value)} inputMode="decimal" placeholder="填写数值" autoComplete="off"/>}{range&&<small>{range}</small>}</label>;
+ const id=useId();return <div className="pp-field"><div className="pp-field-label"><label htmlFor={id}>{label}</label>{hint&&<HelpHint title={`${label}的含义`}><p>{hint}</p></HelpHint>}</div>{options?<select id={id} aria-describedby={range?id+'-range':undefined} value={String(value??'')} onChange={e=>onChange(e.target.value)}><option value="">请选择</option>{options.map(o=><option key={o.value} value={o.value}>{o.label}</option>)}</select>:<input id={id} aria-describedby={range?id+'-range':undefined} value={String(value??'')} onChange={e=>onChange(e.target.value)} inputMode="decimal" placeholder="填写数值" autoComplete="off"/>}{range&&<small id={id+'-range'}>{range}</small>}</div>;
 }
 
 export default function PlanetWorkbench({catalog,draft,setDraft,step,setStep,run,job,busy,error,onTrain,onCancel,onRun,onError,pinned,onPin}:{catalog:Catalog;draft:Draft;setDraft:(v:Draft)=>void;step:number;setStep:(v:number)=>void;run:Job|null;job:Job|null;busy:boolean;error:string;onTrain:()=>Promise<void>;onCancel:()=>void;onRun:(r:Job,adopt?:boolean)=>void;onError:(s:string)=>void;pinned:string|null;onPin:(id:string)=>void}){
@@ -24,6 +25,7 @@ export default function PlanetWorkbench({catalog,draft,setDraft,step,setStep,run
  const hasCategory=d.features.some(f=>draft.features.includes(f.id)&&(draft.featureTypes[f.id]||f.kind)==='categorical');
  const binary=draft.task==='classification'&&draft.targets.length===1&&d.targets.find(t=>t.id===draft.targets[0])?.classes?.length===2;
  const targetMeta=d.targets.filter(t=>draft.targets.includes(t.id));
+ const StageIcon=[Sprout,Database,BrushCleaning,Split,SlidersHorizontal,FlaskConical,GitCompareArrows,Flag][step];
  function chooseModel(id:string){const m=catalog.models.find(m=>m.id===id)!;put('model',id);setDraft({...draft,model:id,parameters:Object.fromEntries(m.parameters.map(f=>[f.key,'']))});}
  function next(){
   try{
@@ -44,10 +46,10 @@ export default function PlanetWorkbench({catalog,draft,setDraft,step,setStep,run
    {run?.state==='completed'&&run.spec.model===draft.model&&f.kind!=='choice'&&String(draft.parameters[f.key]??'').trim()!==''&&Number.isFinite(Number(draft.parameters[f.key]))&&<input className="pp-linked-slider" type="range" aria-label={`${f.label}训练后调节`} min={f.min} max={max} step={f.kind==='integer'?1:(max!-f.min!)/1000} value={Number(draft.parameters[f.key])} onChange={e=>put('parameters',{...draft.parameters,[f.key]:e.target.value})}/>}
   </div>;
  }
- return <div className="pp-workbench"><header className="pp-task-header"><div><span className="pp-breadcrumb">{draft.task==='classification'?'分类港':'回归谷'} / {d.kind}</span><h1>{d.title}</h1><p>把你的选择填进去，再看模型怎样回答。</p></div><HelpHint title="怎样完成这次实验"><p>按步骤决定数据、处理、划分和参数。核心数字留给你填写；问号提供范围与含义。已有结果保留为快照，改配置后需要重新训练。</p></HelpHint></header>
+ return <div className="pp-workbench"><header className="pp-task-header"><div><span className="pp-breadcrumb">{draft.task==='classification'?'分类港':'回归谷'} / {d.kind}</span><h1>{d.title}</h1><p>把你的选择填进去，再看模型怎样回答。</p></div><div className="pp-task-heading-art"><DatasetScene id={d.id}/></div><HelpHint title="怎样完成这次实验"><p>按步骤决定数据、处理、划分和参数。核心数字留给你填写；问号提供范围与含义。已有结果保留为快照，改配置后需要重新训练。</p></HelpHint></header>
  <nav className="pp-stages" aria-label="实验步骤">{stages.map((s,i)=><button key={s} aria-current={step===i?'step':undefined} onClick={()=>{onError('');setStep(i);}}><span>{i+1}</span>{s}</button>)}</nav>
  {error&&<p className="pp-error" role="alert">{error}</p>}
- <div className="pp-step-heading"><span className="pp-step-number">{step+1}</span><h2>{stages[step]}</h2><span className="pp-spacer"/>{draft.assisted&&<HelpHint title="本次使用过示例或AI"><p>这些辅助不会改写原始判断，实验档案保留辅助来源。</p></HelpHint>}</div>
+ <div className="pp-step-heading"><span className="pp-step-number"><StageIcon size={22} aria-hidden="true"/></span><h2>{stages[step]}</h2><span className="pp-spacer"/>{draft.assisted&&<HelpHint title="本次使用过示例或AI"><p>这些辅助不会改写原始判断，实验档案保留辅助来源。</p></HelpHint>}</div>
  {step===0&&<div className="pp-intro-layout"><div><h3>{draft.task==='classification'?'为新样本预测类别':'为新样本预测数值'}</h3><p>目标：{targetMeta.map(t=>t.label).join('、')}{draft.task==='regression'?`（${targetMeta.map(t=>t.unit).join('、')}）`:''}。</p><p>{draft.task==='classification'?'类别编码写成数字，目标也可能是分类。多个标签同时成立，则是多标签任务。':'回归回答“多少”。多个数值目标可以同时预测，但需要分别核对单位和误差。'}</p><fieldset><legend>这个课例属于哪一类任务？</legend><div className="pp-choice-row"><button aria-pressed={quiz==='classification'} onClick={()=>setQuiz('classification')}>分类 · 找类别</button><button aria-pressed={quiz==='regression'} onClick={()=>setQuiz('regression')}>回归 · 预测数</button></div></fieldset></div><SmallGuide>你做的每个决定都进入这次实验。先写下选择，再让真实计算回答。</SmallGuide></div>}
  {step===1&&<><div className="pp-data-summary"><span><b>{d.rows}</b>源样本</span><span><b>{d.features.length}</b>输入列</span><span><b>{quality?.missing_targets??'—'}</b>目标缺失行</span><span><b>{d.duplicate_rows}</b>重复输入行</span></div>
   <div className="pp-two-col"><section><h3>哪些信息交给模型？</h3><div className="pp-column-list">{d.features.map(f=><div className="pp-column" key={f.id}><label><input type="checkbox" checked={draft.features.includes(f.id)} onChange={e=>put('features',e.target.checked?[...draft.features,f.id]:draft.features.filter(v=>v!==f.id))}/><span>{f.label}</span></label><select aria-label={`${f.label}输入类型`} value={draft.featureTypes[f.id]||f.kind} onChange={e=>put('featureTypes',{...draft.featureTypes,[f.id]:e.target.value as 'numeric'|'categorical'})}><option value="numeric">数值</option><option value="categorical">类别</option></select><small>{f.missing?<span className="pp-missing-count">◌ 缺失{f.missing}</span>:'完整'} · {f.unique}个值{f.unique<=1?' · 常量列':''}</small></div>)}</div></section>

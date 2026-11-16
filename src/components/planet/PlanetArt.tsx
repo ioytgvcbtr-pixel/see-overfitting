@@ -14,8 +14,8 @@ export function ModelGlyph({kind,size=46}:{kind:string;size?:number}){
 
 export function PlanetMap({onSelect}:{onSelect:(task:'classification'|'regression')=>void}){
  return <div className="pp-world" aria-label="两条机器学习探索航线"><svg className="pp-world-orbit" viewBox="0 0 640 380" aria-hidden="true"><ellipse cx="320" cy="210" rx="270" ry="122" fill="#eef4f2"/><path d="M83 266C192 42 423 365 561 116" stroke="#d6c5e8" strokeWidth="3" fill="none" strokeDasharray="6 9"/>{[[73,81],[579,311],[431,44],[310,327]].map(([x,y],i)=><path key={i} d={`M${x-5} ${y}h10M${x} ${y-5}v10`} stroke="#c2b3dc" strokeWidth="2"/>)}<path d="M290 220q30 -50 60 0q-30 18 -60 0" fill="#ddd2eb"/></svg>
- <button className="pp-island pp-classify" onClick={()=>onSelect('classification')}><Image src="/illustrations/world-v09/island-classification-v1.png" alt="边界森林与分类港" width={240} height={180} priority/><strong>分类港</strong><span>给样本找类别</span></button>
- <button className="pp-island pp-regress" onClick={()=>onSelect('regression')}><Image src="/illustrations/world-v09/island-regularization-v1.png" alt="系数花园与回归谷" width={240} height={180} priority/><strong>回归谷</strong><span>预测一个数</span></button>
+ <button className="pp-island pp-classify" onClick={()=>onSelect('classification')}><Image src="/illustrations/planet-v11/classification-v1.png" alt="小模宇航员探索分类星球" width={256} height={256} priority/><strong>分类港</strong><span>给样本找类别</span></button>
+ <button className="pp-island pp-regress" onClick={()=>onSelect('regression')}><Image src="/illustrations/planet-v11/regression-v1.png" alt="小模宇航员探索回归星球" width={256} height={256} priority/><strong>回归谷</strong><span>预测一个数</span></button>
  <span className="pp-map-note">从一个决定，走到一次真实训练。</span></div>;
 }
 

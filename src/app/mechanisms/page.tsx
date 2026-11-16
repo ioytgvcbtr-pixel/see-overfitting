@@ -1,2 +1,2 @@
-import LegacyLab from '@/components/LegacyLab';
-export default function Mechanisms(){return <LegacyLab/>;}
+import PlanetApp from '@/components/planet/PlanetApp';
+export default function Mechanisms(){return <PlanetApp initialMechanism/>;}

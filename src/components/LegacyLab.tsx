@@ -82,8 +82,9 @@ type Modal = "guide" | "save" | "report" | "final" | "sources" | null;
 const alphaLabel = (a: number) =>
   a < 0.001 ? a.toExponential(0).replace("e-", " × 10⁻") : String(a);
 
-export default function Home() {
-  const [view, setViewState] = useState<View>("explore");
+export default function Home({embedded=false,section="explore",onSectionChange}:{embedded?:boolean;section?:AppView;onSectionChange?:(view:AppView)=>void}) {
+  const ContentTag=embedded?"div":"main";
+  const [view, setViewState] = useState<View>(section);
   const [navigationReady, setNavigationReady] = useState(false);
   const [classLaunch, setClassLaunch] = useState<ClassRecipeId | null>(null);
   const [conceptLaunch, setConceptLaunch] = useState<ConceptPanel | null>(null);
@@ -165,11 +166,12 @@ export default function Home() {
         : `α ${alphaLabel(params.alpha)}`;
   function setView(next: View) {
     setViewState(next);
-    if (window.location.hash !== hashForView(next))
+    if(embedded)onSectionChange?.(next);
+    else if (window.location.hash !== hashForView(next))
       window.history.pushState(null, "", hashForView(next));
     window.scrollTo({ top: 0, behavior: "instant" });
     requestAnimationFrame(() =>
-      document.getElementById("main-content")?.focus({ preventScroll: true }),
+      document.getElementById(embedded?"mechanism-content":"main-content")?.focus({ preventScroll: true }),
     );
   }
   function launchIsland(attempt:IslandAttempt){
@@ -199,7 +201,9 @@ export default function Home() {
     if (previous) setParams({ ...previous.defaults });
     setSceneReady(true);
   }, []);
+  useEffect(()=>{if(embedded){setViewState(section);setNavigationReady(true);}},[embedded,section]);
   useEffect(() => {
+    if(embedded)return;
     const apply = () => {
       setViewState(viewFromHash(window.location.hash));
       setNavigationReady(true);
@@ -428,13 +432,13 @@ export default function Home() {
   }
 
   return (
-    <div className="app-shell" data-scene={params.scene}>
-      <a
+    <div className={embedded?"pp-mechanism-host":"app-shell"} data-scene={params.scene}>
+      {!embedded&&<><a
         href="#main-content"
         className="skip-link"
         onClick={(event) => {
           event.preventDefault();
-          document.getElementById("main-content")?.focus();
+          document.getElementById(embedded?"mechanism-content":"main-content")?.focus();
         }}
       >
         跳到实验内容
@@ -593,10 +597,10 @@ export default function Home() {
           方法与数据来源
           <ArrowUpRight size={14} />
         </button>
-      </aside>
+      </aside></>}
 
-      <div className="main-shell">
-        <header className="topbar">
+      <div className={embedded?"pp-embedded-shell":"main-shell"}>
+        {!embedded&&<header className="topbar">
           <div className="breadcrumb">
             <button
               className="mobile-toggle"
@@ -635,9 +639,9 @@ export default function Home() {
             </button>
             <button className="text-button workspace-settings-trigger" aria-label="设置与数据" onClick={()=>setView("settings")}><Settings2 size={20}/><span>设置</span></button>
           </div>
-        </header>
+        </header>}
 
-        <main className="content" id="main-content" tabIndex={-1}>
+        <ContentTag className={embedded?"pp-embedded-content":"content"} id={embedded?"mechanism-content":"main-content"} tabIndex={-1}>
           {serviceError&&<div className="workspace-service-error" role="alert"><p>{serviceError}</p><button className="text-button" onClick={()=>setWorkspaceRevision(n=>n+1)}>重新连接</button><button className="text-button" onClick={()=>setView("settings")}>检查设置</button></div>}
           {!navigationReady && (
             <div className="navigation-loading" role="status">
@@ -1398,7 +1402,7 @@ export default function Home() {
               </div>
             </>
           )}
-        </main>
+        </ContentTag>
       </div>
 
       {toast && (

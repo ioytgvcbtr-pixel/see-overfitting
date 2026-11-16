@@ -27,3 +27,20 @@ test('mobile classroom keeps blank split fields, working model choices and no ov
  await page.getByRole('button',{name:'5 模型参数',exact:true}).click();await page.locator('.pp-mobile-model select').selectOption('knn_c');await expect(page.locator('.pp-parameter-form input').first()).toHaveValue('');
  await page.screenshot({path:'artifacts/local/playwright-results/planet-mobile.png',fullPage:true,animations:'disabled'});
 });
+
+test('unified workshop preserves a student draft and context colors without a document reload',async({page})=>{
+ await page.goto('/');await page.getByRole('button',{name:'分类任务',exact:true}).click();
+ await expect(page.locator('.planet-app')).toHaveAttribute('data-palette','lagoon');
+ await page.getByRole('button',{name:/企鹅物种识别/}).click();await page.getByRole('button',{name:'4 划分数据',exact:true}).click();
+ await page.getByLabel('训练比例 %',{exact:true}).fill('61');
+ const origin=await page.evaluate(()=>performance.timeOrigin);
+ await page.getByRole('button',{name:'模型机制工坊',exact:true}).click();await page.getByRole('button',{name:'概念工坊',exact:true}).click();await page.getByRole('button',{name:'约束的形状',exact:true}).click();
+ await expect(page.getByRole('slider',{name:'工坊正则化强度α',exact:true})).toBeVisible();
+ await expect(page.locator('main')).toHaveCount(1);await expect(page.locator('.sidebar')).toHaveCount(0);await expect(page.locator('iframe')).toHaveCount(0);
+ await page.getByRole('button',{name:'开始学习',exact:true}).click();await page.getByRole('button',{name:/继续 企鹅/}).click();
+ await expect(page.getByLabel('训练比例 %',{exact:true})).toHaveValue('61');expect(await page.evaluate(()=>performance.timeOrigin)).toBe(origin);
+ await page.getByLabel('训练比例 %',{exact:true}).fill('60');
+ const alignment=await page.locator('.pp-form-grid').first().evaluate(e=>{const inputs=[...e.querySelectorAll('.pp-field')].slice(0,2).map(v=>v.querySelector('input,select').getBoundingClientRect());return Math.abs(inputs[0].top-inputs[1].top);});expect(alignment).toBeLessThan(1);
+ await page.getByText('外观',{exact:true}).click();await page.getByRole('button',{name:'晴空蓝',exact:true}).click();await expect(page.locator('.planet-app')).toHaveAttribute('data-palette','sky');
+ await page.reload();await expect(page.locator('.planet-app')).toHaveAttribute('data-palette','sky');await expect(page.getByLabel('训练比例 %',{exact:true})).toHaveValue('60');
+});
