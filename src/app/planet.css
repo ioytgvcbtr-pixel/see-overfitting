@@ -242,3 +242,20 @@
 .pp-lesson-bridge>.pp-btn {flex-shrink:0;}
 @media(max-width:900px){.pp-model-actions {grid-column:2;}.pp-palette-menu>div {right:-50px;}}
 @media(max-width:650px){.pp-task-heading-art {display:none;}.pp-palette-menu>summary>span {display:none;}.pp-palette-menu>div {right:-50px;width:min(300px,calc(100vw - 32px));}.pp-lesson-bridge {align-items:flex-start;flex-direction:column;gap:18px;}.pp-mechanism-host .world-heading {padding-top:0;}.pp-workshop-tabs {gap:3px;padding-bottom:12px;}.pp-workshop-tabs button {font-size:13px;padding:10px 12px;}.pp-content .pp-field-label {min-height:44px;}.pp-task-art {height:160px;}}
+
+.pp-world {height:440px;}
+.pp-island {top:0;}
+.pp-island img {height:240px;filter:drop-shadow(0 10px 14px #3143440b);}
+.pp-world .pp-regress {top:88px;}
+.pp-mechanism-satellite {position:absolute;bottom:0;left:10%;display:flex;align-items:center;gap:12px;min-height:90px;padding:0;border:0;background:transparent;text-align:left;color:var(--pp-ink);}
+.pp-mechanism-satellite img {width:90px;height:90px;object-fit:contain;transition:transform .2s;}
+.pp-mechanism-satellite:hover img {transform:translateY(-4px);}
+.pp-mechanism-satellite strong {font-size:17px;}
+.pp-mechanism-satellite small {display:block;color:var(--pp-muted);font-size:12px;margin-top:4px;}
+.pp-shelf-heading {display:flex;justify-content:space-between;align-items:center;gap:32px;max-width:none;margin-top:0;}
+.pp-shelf-heading>div {max-width:700px;}
+.pp-shelf-planet {width:160px;height:160px;object-fit:contain;flex-shrink:0;}
+.pp-mechanism-host .world-host {width:120px;height:120px;}
+@media(max-width:1200px){.pp-world {height:400px;}.pp-island img {height:200px;}}
+@media(max-width:650px){.pp-world {height:390px;}.pp-island img {height:165px;}.pp-world .pp-regress {top:78px;}.pp-mechanism-satellite {left:10%;bottom:0;}.pp-mechanism-satellite img {width:80px;height:80px;}.pp-shelf-heading {gap:16px;}.pp-shelf-planet {width:86px;height:86px;}.pp-shelf-heading h1 {font-size:26px;}.pp-shelf-heading p {font-size:14px;}.pp-mechanism-host .world-host {width:80px;height:80px;}.pp-mechanism-host .world-host img {width:80px;height:80px;}}
+@media(prefers-reduced-motion:reduce){.pp-mechanism-satellite:hover img,.pp-island:hover img {transform:none;}}

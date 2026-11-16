@@ -76,11 +76,11 @@ export default function ExploreWorld({
         </div>
         <div className="world-host">
           <Image
-            src="/illustrations/fitlab-guide-v1.png"
+            src="/illustrations/planet-v11/mechanisms-v1.png"
             alt=""
-            width={82}
-            height={75}
-            sizes="82px"
+            width={120}
+            height={120}
+            sizes="120px"
           />
         </div>
       </header>
