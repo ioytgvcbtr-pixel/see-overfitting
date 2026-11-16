@@ -17,7 +17,7 @@ test('Model Planet blank fields, real pipeline and paired AI transfer',async({pa
  await page.getByRole('button',{name:'7 对照解释',exact:true}).click();await page.getByRole('button',{name:'生成可执行建议',exact:true}).click();await expect(page.getByRole('button',{name:'采用并训练这项建议',exact:true})).toBeVisible();await page.getByRole('button',{name:'采用并训练这项建议',exact:true}).click();
  await expect(page.getByRole('button',{name:'带着这个结果再验证',exact:true})).toBeEnabled({timeout:45000});await page.getByRole('button',{name:'带着这个结果再验证',exact:true}).click();
  const quiz=page.getByRole('region',{name:'新情境迁移验证'});await expect(quiz).toBeVisible({timeout:45000});await expect(quiz.getByText('选择依据',{exact:true})).toHaveCount(0);await quiz.locator('fieldset button').first().click();await quiz.getByRole('button',{name:'锁定判断，选择依据',exact:true}).click();await expect(quiz.getByText('选择依据',{exact:true})).toBeVisible();
- await page.reload();await page.getByRole('button',{name:/继续 混凝土/}).click();await expect(page.getByText('已锁定：',{exact:false})).toBeVisible();
+ await page.reload();await expect(page.getByRole('heading',{name:'对照解释',exact:true})).toBeVisible();await expect(page.getByText('已锁定：',{exact:false})).toBeVisible();
  await page.screenshot({path:'artifacts/local/playwright-results/planet-desktop.png',fullPage:true,animations:'disabled'});
 });
 test('mobile classroom keeps blank split fields, working model choices and no overflow',async({page})=>{
@@ -43,4 +43,14 @@ test('unified workshop preserves a student draft and context colors without a do
  const alignment=await page.locator('.pp-form-grid').first().evaluate(e=>{const inputs=[...e.querySelectorAll('.pp-field')].slice(0,2).map(v=>v.querySelector('input,select').getBoundingClientRect());return Math.abs(inputs[0].top-inputs[1].top);});expect(alignment).toBeLessThan(1);
  await page.getByText('外观',{exact:true}).click();await page.getByRole('button',{name:'晴空蓝',exact:true}).click();await expect(page.locator('.planet-app')).toHaveAttribute('data-palette','sky');
  await page.reload();await expect(page.locator('.planet-app')).toHaveAttribute('data-palette','sky');await expect(page.getByLabel('训练比例 %',{exact:true})).toHaveValue('60');
+});
+
+
+test('task cards align actions and six palettes leave the main page within the viewport',async({page})=>{
+ await page.goto('/#classroom/classification');await expect(page.locator('.pp-task-card')).toHaveCount(5);
+ const rows=await page.locator('.pp-task-card').evaluateAll(cards=>cards.map(e=>({top:e.getBoundingClientRect().top,action:e.querySelector('.pp-card-action').getBoundingClientRect().top})));
+ for(const card of rows)for(const peer of rows.filter(v=>Math.abs(v.top-card.top)<1))expect(Math.abs(card.action-peer.action)).toBeLessThan(1);
+ await page.getByText('外观',{exact:true}).click();
+ for(const name of ['鸢尾紫','海湾青','杏子橙','晴空蓝','森林绿','星空靛']){await page.getByRole('button',{name,exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);}
+ await page.getByRole('button',{name:'跟随学习场景',exact:true}).click();await expect(page.locator('.planet-app')).toHaveAttribute('data-palette','lagoon');
 });
