@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import PetAvatar from "./planet/PetAvatar";
 import { ArrowRight, Play, FlaskConical } from "lucide-react";
 import type { ConceptPanel } from "@/lib/concepts";
 import type { ClassRecipeId } from "@/lib/exploration";
@@ -166,13 +167,7 @@ export default function ExploreWorld({
         </div>
         <button className="world-mission" onClick={() => onRecipe("detective")}>
           <div className="world-mission-art mascot">
-            <Image
-              src="/illustrations/fitlab-guide-v1.png"
-              alt=""
-              fill
-              sizes="100px"
-              style={{ objectFit: "contain" }}
-            />
+            <PetAvatar motion={false} />
           </div>
           <span>
             <strong>错分侦探</strong>

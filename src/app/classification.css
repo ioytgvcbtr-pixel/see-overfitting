@@ -266,7 +266,7 @@
   border-radius: 16px;
   min-width: 0;
 }
-.lab-guide img {
+.lab-guide > .pp-learning-planet {
   object-fit: contain;
   flex-shrink: 0;
   width: 70px;
@@ -286,7 +286,7 @@
   display: block;
   margin-top: 18px;
 }
-.class-controls .lab-guide img {
+.class-controls .lab-guide > .pp-learning-planet {
   float: right;
   width: 65px;
   margin: -6px -2px 3px 5px;
@@ -521,7 +521,7 @@
   .class-controls {
     padding-left: 20px;
   }
-  .class-controls .lab-guide img {
+  .class-controls .lab-guide > .pp-learning-planet {
     width: 54px;
   }
   .class-review-grid {
@@ -556,7 +556,7 @@
   .class-controls .lab-guide {
     display: flex;
   }
-  .class-controls .lab-guide img {
+  .class-controls .lab-guide > .pp-learning-planet {
     float: none;
     width: 65px;
     margin: 0;
@@ -655,7 +655,7 @@
   .class-seed select {
     width: 100%;
   }
-  .class-controls .lab-guide img {
+  .class-controls .lab-guide > .pp-learning-planet {
     width: 54px;
   }
   .class-metrics {

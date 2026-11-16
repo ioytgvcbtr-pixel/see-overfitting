@@ -1,6 +1,6 @@
 "use client";
 import { useLayoutEffect, useState } from "react";
-import Image from "next/image";
+import PetAvatar from "./planet/PetAvatar";
 import { ArrowRight, BookmarkCheck } from "lucide-react";
 import {
   latestProgress,
@@ -28,14 +28,7 @@ export default function ContinueChallenge({
   return (
     <section className="continue-challenge" aria-label="继续上次挑战">
       <div className="continue-guide">
-        <Image
-          src="/illustrations/fitlab-guide-v1.png"
-          loading="eager"
-          alt=""
-          fill
-          sizes="96px"
-          style={{ objectFit: "contain" }}
-        />
+        <PetAvatar motion={false} />
       </div>
       <div className="continue-challenge-copy">
         <h2>{entry?.stage==="complete"?"回看最近的发现":"继续学习"}</h2>

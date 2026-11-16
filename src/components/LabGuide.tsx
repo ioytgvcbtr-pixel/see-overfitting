@@ -1,4 +1,4 @@
-import Image from "next/image";
+import PetAvatar from "./planet/PetAvatar";
 import type { ReactNode } from "react";
 
 export default function LabGuide({
@@ -10,13 +10,7 @@ export default function LabGuide({
 }) {
   return (
     <aside className="lab-guide" aria-label={title}>
-      <Image
-        src="/illustrations/fitlab-guide-v1.png"
-        alt=""
-        width={82}
-        height={75}
-        sizes="82px"
-      />
+      <PetAvatar motion={false} />
       <div>
         <strong>{title}</strong>
         <p>{children}</p>

@@ -146,8 +146,9 @@ summary > svg,
 .mood-thinking .companion-portrait::before {
   background: #f5efdf;
 }
-.companion-portrait img {
-  object-fit: contain;
+.companion-portrait > .pp-learning-planet {
+  width: 100%;
+  height: 100%;
   user-select: none;
   pointer-events: none;
 }
@@ -198,12 +199,6 @@ summary > svg,
 }
 .mood-celebrate .companion-badge {
   color: #087e75;
-}
-.companion-portrait.responding {
-  animation: companion-reply 520ms ease-out;
-}
-.mood-thinking .companion-portrait.responding {
-  animation: companion-think 520ms ease-out;
 }
 .quest-milestones {
   display: flex;
@@ -316,6 +311,10 @@ summary > svg,
   position: relative;
   border-radius: 16px;
   background: #f3eef8;
+}
+.continue-guide > .pp-learning-planet {
+  width: 100%;
+  height: 100%;
 }
 .continue-challenge-copy {
   min-width: 0;

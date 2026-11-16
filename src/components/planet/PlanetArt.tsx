@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import PetAvatar from './PetAvatar';
 
 export function PlanetLogo(){return <svg viewBox="0 0 64 64" role="img" aria-label="模力星球标识"><circle cx="32" cy="32" r="23" fill="#ede3fb"/><ellipse cx="32" cy="33" rx="30" ry="10" transform="rotate(-28 32 33)" fill="none" stroke="#a28acc" strokeWidth="2"/><path d="M19 41V24L32 36 45 24V41" fill="none" stroke="#7845b5" strokeWidth="5" strokeLinejoin="round" strokeLinecap="round"/><circle cx="9" cy="42" r="4" fill="#eeb16b"/><circle cx="49" cy="15" r="4" fill="#65ad9a"/></svg>;}
 
@@ -14,9 +15,9 @@ export function ModelGlyph({kind,size=46}:{kind:string;size?:number}){
 
 export function PlanetMap({onSelect}:{onSelect:(task:'classification'|'regression'|'mechanisms')=>void}){
  return <div className="pp-world" aria-label="模力星球探索航线"><svg className="pp-world-orbit" viewBox="0 0 640 380" aria-hidden="true"><ellipse cx="320" cy="210" rx="270" ry="122" fill="#eef4f2"/><path d="M83 266C192 42 423 365 561 116" stroke="#d6c5e8" strokeWidth="3" fill="none" strokeDasharray="6 9"/>{[[73,81],[579,311],[431,44],[310,327]].map(([x,y],i)=><path key={i} d={`M${x-5} ${y}h10M${x} ${y-5}v10`} stroke="#c2b3dc" strokeWidth="2"/>)}<path d="M290 220q30 -50 60 0q-30 18 -60 0" fill="#ddd2eb"/></svg>
- <button className="pp-island pp-classify" onClick={()=>onSelect('classification')}><Image src="/illustrations/planet-v11/classification-v1.png" alt="小模宇航员探索分类星球" width={256} height={256} priority/><strong>分类港</strong><span>给样本找类别</span></button>
- <button className="pp-island pp-regress" onClick={()=>onSelect('regression')}><Image src="/illustrations/planet-v11/regression-v1.png" alt="小模宇航员探索回归星球" width={256} height={256} priority/><strong>回归谷</strong><span>预测一个数</span></button>
+ <button className="pp-island pp-classify" onClick={()=>onSelect('classification')}><Image src="/illustrations/planet-v11/classification-v1.png" alt="分类星球上的探索场景" width={256} height={256} priority/><strong>分类港</strong><span>给样本找类别</span></button>
+ <button className="pp-island pp-regress" onClick={()=>onSelect('regression')}><Image src="/illustrations/planet-v11/regression-v1.png" alt="回归星球上的探索场景" width={256} height={256} priority/><strong>回归谷</strong><span>预测一个数</span></button>
  <button className="pp-mechanism-satellite" onClick={()=>onSelect('mechanisms')}><Image src="/illustrations/planet-v11/mechanisms-v1.png" alt="机制星球的四个探索站" width={96} height={96}/><span><strong>机制星球</strong><small>先玩懂，再实战</small></span></button></div>;
 }
 
-export function SmallGuide({children}:{children:React.ReactNode}){return <div className="pp-guide"><Image src="/illustrations/companion-v12/guide-thinking-v1.png" alt="小模学习向导" width={68} height={68}/><p>{children}</p></div>;}
+export function SmallGuide({children}:{children:React.ReactNode}){return <div className="pp-guide"><PetAvatar motion={false}/><p>{children}</p></div>;}

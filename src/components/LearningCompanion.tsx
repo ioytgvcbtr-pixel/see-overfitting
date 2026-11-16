@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import PetAvatar from "./planet/PetAvatar";
 import { Pause, Play, BadgeCheck, Compass, BookmarkCheck } from "lucide-react";
 
 export type CompanionMood = "welcome" | "thinking" | "celebrate" | "resume";
@@ -40,12 +40,7 @@ export default function LearningCompanion({
       window.dispatchEvent(new Event("fitlab-companion-preference"));
     } catch {}
   }
-  const source =
-    mood === "celebrate"
-      ? "/illustrations/companion-v12/guide-celebrate-v1.png"
-      : mood === "thinking"
-        ? "/illustrations/companion-v12/guide-thinking-v1.png"
-        : "/illustrations/fitlab-guide-v1.png";
+  const planetMood = mood === "celebrate" ? "happy" : mood === "thinking" ? "thinking" : "idle";
   return (
     <aside
       className={`learning-companion mood-${mood}`}
@@ -53,16 +48,9 @@ export default function LearningCompanion({
     >
       <div
         key={`${mood}:${event}`}
-        className={`companion-portrait ${motion && event > 0 && (mood === "celebrate" || mood === "thinking") ? "responding" : ""}`}
+        className="companion-portrait"
       >
-        <Image
-          src={source}
-          loading="eager"
-          alt=""
-          fill
-          sizes="(max-width:600px) 80px, 96px"
-          style={{ objectFit: "contain" }}
-        />
+        <PetAvatar mood={planetMood} motion={motion} />
         {mood !== "welcome" && (
           <span className="companion-badge" aria-hidden="true">
             {mood === "celebrate" ? (
