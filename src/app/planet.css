@@ -511,3 +511,6 @@
 
 .pp-pet-context-choice {min-height:44px;}
 .pp-pet-compose textarea:focus-visible {outline:2px solid var(--pp-brand);outline-offset:2px;}
+
+.planet-app[data-pet-open=true] .pp-settings-columns {grid-template-columns:minmax(0,1fr);}
+.planet-app[data-pet-open=true] .pp-pet-preview {display:none;}
