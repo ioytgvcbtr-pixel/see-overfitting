@@ -4,12 +4,13 @@ import json
 import os
 from pathlib import Path
 from urllib.parse import urlsplit
+from typing import Literal
 
 import httpx
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from backend import coach, islands, learning
+from backend import coach, islands, learning, deepseek
 
 ROOT = Path(__file__).resolve().parents[1]
 ENV_PATH = Path(os.environ.get('FITLAB_ENV_FILE', str(ROOT / 'backend' / '.env')))
@@ -19,12 +20,14 @@ STAGES = {'predict': '待预测', 'experiment': '实验中', 'review': '待迁�
 
 
 def fingerprint():
-    return hashlib.sha256(json.dumps([os.environ.get(k, '') for k in ('AI_BASE_URL', 'AI_MODEL', 'AI_API_KEY', 'AI_ENABLED')]).encode()).hexdigest()
+    return hashlib.sha256(json.dumps([os.environ.get(k, '') for k in ('AI_BASE_URL','AI_MODEL','AI_API_KEY','AI_ENABLED','AI_REASONING_EFFORT','AI_TIMEOUT','AI_MAX_TOKENS')]).encode()).hexdigest()
 
 
 def connection_status():
     if os.environ.get('AI_ENABLED', '1') == '0':
         return {'state': 'disabled', 'checked_at': None, 'notice': '当前使用规则讲解，模型配置已保留。'}
+    if not deepseek.provider_valid():
+        return {'state':'unconfigured','checked_at':None,'notice':'请在设置中使用DeepSeek官方连接与支持的模型。'}
     if not os.environ.get('AI_API_KEY'):
         return {'state': 'unconfigured', 'checked_at': None, 'notice': '实验与学习可直接使用，AI连接可稍后设置。'}
     if CONNECTION['fingerprint'] != fingerprint():
@@ -34,22 +37,20 @@ def connection_status():
 
 class Settings(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    base_url: str = Field(min_length=8, max_length=300)
-    model: str = Field(min_length=1, max_length=100, pattern=r'^[a-zA-Z0-9._:/-]+$')
+    base_url: str = Field(default=deepseek.BASE_URL,min_length=8,max_length=300)
+    model: Literal['deepseek-flash','deepseek-v4-pro']='deepseek-flash'
     enabled: bool = True
     api_key: str | None = Field(default=None, max_length=512)
+    remove_key:bool=False
+    reasoning_effort:Literal['none','low','high','max','xhigh']='xhigh'
     timeout: int = Field(default=90, ge=10, le=120)
     max_tokens: int = Field(default=8192, ge=1024, le=32768)
 
     @field_validator('base_url')
     @classmethod
     def url(cls, value):
-        p = urlsplit(value.strip())
-        if p.username or p.password or p.query or p.fragment or not p.hostname:
-            raise ValueError('请填写不含凭据或查询参数的服务地址。')
-        if p.scheme != 'https' and not (p.scheme == 'http' and p.hostname in ('127.0.0.1', 'localhost')):
-            raise ValueError('远程模型服务请使用HTTPS。')
-        return value.strip().rstrip('/')
+        if not deepseek.valid_base(value.strip()):raise ValueError('仅支持DeepSeek官方HTTPS服务。')
+        return deepseek.BASE_URL
 
     @field_validator('api_key')
     @classmethod
@@ -59,24 +60,30 @@ class Settings(BaseModel):
             raise ValueError('密钥格式不完整。')
         return value
 
+    @model_validator(mode='after')
+    def key_operation(self):
+        if self.remove_key and self.api_key:raise ValueError('移除与替换密钥请选择一种。')
+        return self
+
 
 def settings_public():
     return {'base_url': os.environ.get('AI_BASE_URL', 'https://api.deepseek.com/v1'),
             'model': os.environ.get('AI_MODEL', 'deepseek-flash'),
             'enabled': os.environ.get('AI_ENABLED', '1') != '0', 'key_configured': bool(os.environ.get('AI_API_KEY')),
             'timeout': int(os.environ.get('AI_TIMEOUT', '90')), 'max_tokens': int(os.environ.get('AI_MAX_TOKENS', '8192')),
-            'reasoning_effort': 'xhigh', 'connection': connection_status()}
+            'reasoning_effort': deepseek.requested_effort(),'provider_effort':coach.ai_status()['provider_effort'],'provider':'deepseek','provider_supported':deepseek.provider_valid(),'connection': connection_status()}
 
 
 def save_settings(request):
     values = {'AI_BASE_URL': request.base_url, 'AI_MODEL': request.model, 'AI_ENABLED': '1' if request.enabled else '0',
-              'AI_TIMEOUT': str(request.timeout), 'AI_MAX_TOKENS': str(request.max_tokens), 'AI_REASONING_EFFORT': 'xhigh'}
+              'AI_TIMEOUT': str(request.timeout), 'AI_MAX_TOKENS': str(request.max_tokens), 'AI_REASONING_EFFORT': request.reasoning_effort}
     if request.api_key: values['AI_API_KEY'] = request.api_key
     lines = ENV_PATH.read_text(encoding='utf-8').splitlines() if ENV_PATH.exists() else []
     output = []
     remaining = values.copy()
     for line in lines:
         key = line.split('=', 1)[0].strip() if '=' in line and not line.lstrip().startswith('#') else ''
+        if request.remove_key and key=='AI_API_KEY':continue
         if key in values:
             if key in remaining: output.append(key + '=' + remaining.pop(key))
         else: output.append(line)
@@ -86,6 +93,7 @@ def save_settings(request):
     temporary.write_text('\n'.join(output).rstrip()+'\n', encoding='utf-8')
     temporary.replace(ENV_PATH)
     os.environ.update(values)
+    if request.remove_key:os.environ.pop('AI_API_KEY',None)
     CONNECTION.update(state='untested', checked_at=None, notice='', fingerprint='')
     return settings_public()
 
@@ -95,10 +103,10 @@ async def test_connection():
     if status['state'] in ('disabled', 'unconfigured'): return status
     payload = {'model': os.environ.get('AI_MODEL', 'deepseek-flash'),
                'messages': [{'role': 'user', 'content': '这是连接测试，请只回复OK。'}],
-               'max_tokens': 1024, 'reasoning_effort': 'xhigh', 'thinking': {'type': 'enabled'}, 'stream': False}
+               'max_tokens': 1024, **deepseek.thinking_options(), 'stream': False}
     try:
         async with httpx.AsyncClient(timeout=min(30, int(os.environ.get('AI_TIMEOUT', '90')))) as client:
-            response = await client.post(os.environ.get('AI_BASE_URL', 'https://api.deepseek.com/v1').rstrip('/')+'/chat/completions',
+            response = await client.post(deepseek.BASE_URL+'/chat/completions',
                                          headers={'Authorization': 'Bearer '+os.environ['AI_API_KEY']}, json=payload)
         if response.is_success and isinstance(response.json().get('choices'), list) and response.json()['choices']:
             state, notice = 'ok', '模型接口已响应，连接测试通过。'

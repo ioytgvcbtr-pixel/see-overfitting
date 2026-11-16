@@ -9,7 +9,7 @@
 - Use deterministic seeds and preserve train/validation/test identity across parameter changes.
 - AI explanations receive numerical evidence, not invented metrics. On API failure expose the actual fallback mode.
 - Real-data holdouts group identical feature rows; fit scaling/encoding on training only. Compare RMSE within the same dataset/unit. Preserve paired seeds and label standard deviations as descriptive, not confidence intervals.
-- DeepSeek Flash requests use reasoning_effort=xhigh with thinking enabled. Its documented compatibility mapping is native high. Show final explanations and usage, never reasoning text.
+- DeepSeek official API only. Reasoning depth is user-selectable (none/low/high/max and existing xhigh compatibility mapped to high); preserve xhigh as the current default until changed by the user. Settings tests and every AI request must use the saved choice. Show final answers/usage, never reasoning content.
 - Keep Chinese product copy concrete. Responsive, keyboard-accessible UI; reduced-motion support.
 - Use conventional commits on the current feature branch. Local author `Codex <codex@local.invalid>` identifies AI-created commits, not the entrant's personal identity.
 - Product scope: curated built-in ML tasks; student CSV creation is removed. Knowledge progress (18 lessons), mechanism progress (4 stations), and legacy foundation records are distinct. Preserve existing first answers and history.

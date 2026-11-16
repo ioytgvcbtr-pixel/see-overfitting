@@ -9,7 +9,8 @@ from typing import Literal
 
 import httpx
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
+from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, Field
 
 from backend.experiments import Parameters, final_evaluation, run, sweep
@@ -25,6 +26,7 @@ from backend.workspace import make_router as workspace_router, connection_status
 from backend.backup import make_router as backup_router
 from backend.planet_api import make_router as planet_router
 from backend.study_api import make_router as study_router
+from backend.pet_api import make_router as pet_router
 
 ROOT = Path(__file__).resolve().parents[1]
 ENV_PATH = Path(os.environ.get('FITLAB_ENV_FILE', str(ROOT / 'backend' / '.env')))
@@ -34,7 +36,11 @@ for line in ENV_PATH.read_text(encoding='utf-8').splitlines() if ENV_PATH.exists
         os.environ.setdefault(key.strip(), value.strip())
 
 DB_PATH = Path(os.environ.get('FITLAB_DB', str(ROOT / 'data' / 'fitlab.sqlite')))
-app = FastAPI(title='模力星球 · 机器学习实验课堂', version='1.2.0')
+app = FastAPI(title='模力星球 · 机器学习实验课堂', version='1.3.0')
+@app.exception_handler(RequestValidationError)
+async def private_validation_error(request,exc):
+    return JSONResponse(status_code=422,content={'detail':[{'loc':list(e['loc']),'msg':e['msg'],'type':e['type']} for e in exc.errors()]})
+
 app.include_router(bench_router)
 app.include_router(concepts_router)
 app.include_router(classification_router)
@@ -60,11 +66,12 @@ app.include_router(workspace_router(connect))
 app.include_router(backup_router(connect))
 app.include_router(planet_router(connect))
 app.include_router(study_router(connect))
+app.include_router(pet_router(connect))
 
 
 @app.get('/health')
 def health():
-    return {'app': 'fitlab', 'status': 'ok', 'version': '1.2.0', **ai_status(), 'connection': connection_status()}
+    return {'app': 'fitlab', 'status': 'ok', 'version': '1.3.0', **ai_status(), 'connection': connection_status()}
 
 
 @app.post('/experiments/run')

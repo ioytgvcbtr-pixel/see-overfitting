@@ -3,12 +3,13 @@ import json
 import os
 
 import httpx
+from backend import deepseek
 
 
 def ai_status():
-    requested = os.environ.get('AI_REASONING_EFFORT', 'xhigh')
+    requested = deepseek.requested_effort()
     effective = {'xhigh': 'high', 'medium': 'high', 'minimal': 'low'}.get(requested, requested)
-    return {'ai_configured': bool(os.environ.get('AI_API_KEY')) and os.environ.get('AI_ENABLED', '1') != '0',
+    return {'ai_configured': bool(os.environ.get('AI_API_KEY')) and os.environ.get('AI_ENABLED', '1') != '0' and deepseek.provider_valid(),
             'ai_model': os.environ.get('AI_MODEL', 'deepseek-flash'),
             'reasoning_effort': requested, 'provider_effort': effective,
             'thinking_enabled': requested != 'none'}
@@ -34,7 +35,7 @@ async def explain(evidence: dict, question: str, fallback: str):
                'thinking': {'type': 'enabled' if status['thinking_enabled'] else 'disabled'}, 'stream': False}
     try:
         async with httpx.AsyncClient(timeout=float(os.environ.get('AI_TIMEOUT', '90'))) as client:
-            response = await client.post(os.environ.get('AI_BASE_URL', 'https://api.deepseek.com/v1').rstrip('/') + '/chat/completions',
+            response = await client.post(deepseek.BASE_URL + '/chat/completions',
                                          headers={'Authorization': 'Bearer ' + os.environ['AI_API_KEY']}, json=payload)
         if not response.is_success:
             return {**base, 'mode': 'rules', 'model': None, 'content': fallback,
@@ -71,7 +72,7 @@ async def suggest(evidence, candidates):
                'thinking': {'type': 'enabled' if status['thinking_enabled'] else 'disabled'}, 'stream': False}
     try:
         async with httpx.AsyncClient(timeout=float(os.environ.get('AI_TIMEOUT', '90'))) as client:
-            response = await client.post(os.environ.get('AI_BASE_URL', 'https://api.deepseek.com/v1').rstrip('/') + '/chat/completions',
+            response = await client.post(deepseek.BASE_URL + '/chat/completions',
                 headers={'Authorization': 'Bearer ' + os.environ['AI_API_KEY']}, json=payload)
         if not response.is_success:
             return {**fallback, 'notice': f'建议接口返回HTTP {response.status_code}，使用规则方案。'}

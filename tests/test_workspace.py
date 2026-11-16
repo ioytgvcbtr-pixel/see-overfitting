@@ -65,7 +65,7 @@ def test_overview_and_targeted_practice_keep_original_history(client):
 def test_settings_are_write_only_keep_existing_key_and_apply_without_restart(client):
     cfg=client.get('/workspace/settings').json()
     assert cfg['key_configured'] and 'api_key' not in cfg
-    response=client.post('/workspace/settings',json={'base_url':'https://api.example.org/v1','model':'example-model','enabled':False,'api_key':''})
+    response=client.post('/workspace/settings',json={'base_url':'https://api.deepseek.com/v1','model':'deepseek-flash','enabled':False,'api_key':''})
     assert response.status_code==200 and response.json()['connection']['state']=='disabled'
     assert 'unit-test-token' not in response.text
     assert client.get('/health').json()['ai_configured'] is False
