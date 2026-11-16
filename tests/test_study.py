@@ -45,6 +45,12 @@ def test_journal_is_idempotent_and_cannot_award_progress(client):
     rows=c.get('/study/records?kind=experiments').json();assert rows['total']==1 and rows['items'][0]['changes']==e['changes']
     assert c.post('/study/events',json={**e,'completed':True}).status_code==422
     assert c.get('/study/overview').json()['completed']==0
+    with main.connect() as db:
+        db.execute('INSERT INTO learning_attempts(id,content) VALUES(?,?)',('legacy-course',json.dumps({'id':'legacy-course','parameters':{'scene':'complexity'},'stage':'complete','created_at':'2026-11-16T01:00:00+00:00'})))
+        db.execute('INSERT INTO records(title,created_at) VALUES(?,?)',('原有实验','2026-11-16T01:00:00+00:00'))
+    assert any(r.get('entry',{}).get('kind')=='course' for r in c.get('/study/records?kind=mechanisms').json()['items'])
+    assert any(r.get('entry',{}).get('kind')=='saved' for r in c.get('/study/records?kind=experiments').json()['items'])
+    assert c.get('/study/overview').json()['completed']==0
 
 def test_backups_recompute_choices_and_merge_without_overwriting_first_answer(client,tmp_path,monkeypatch):
     c=client;l=curriculum.LESSONS[0];c.post('/study/lessons/'+l['id']+'/open');c.post('/study/lessons/'+l['id']+'/read');first=answer(c,l,False)

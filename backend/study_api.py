@@ -80,6 +80,7 @@ def make_router(connect):
             total_events=c.execute('SELECT count(*) FROM study_events').fetchone()[0]
             has_runs=c.execute("SELECT 1 FROM sqlite_master WHERE name='planet_runs'").fetchone()
             runs=c.execute("SELECT count(*) FROM planet_runs WHERE json_extract(content,'$.operation') IN ('train','decision')").fetchone()[0] if has_runs else 0
+            runs+=c.execute('SELECT count(*) FROM records').fetchone()[0]
         done=sum(p['completed'] for p in progress.values());next_id=next((l['id'] for l in LESSONS if not progress.get(l['id'],{}).get('completed')),None)
         return {'chapters':CHAPTERS,'lessons':[{'id':l['id'],'title':l['title'],'chapter':l['chapter'],'goal':l['goal'],'visual':l['visual'],'version':l['version']} for l in LESSONS],
             'progress':progress,'mechanisms':islands,'completed':done,'total':len(LESSONS),'all_complete':done==len(LESSONS),'next_id':next_id,
@@ -144,6 +145,15 @@ def make_router(connect):
                 v=json.loads(s['content']);panel=v.get('panel')
                 if panel in PANELS:items.append({'id':v['id'],'created_at':v.get('updated_at') or v['created_at'],'kind':'mechanism','category':'mechanisms','title':PANELS[panel],
                     'state':v['stage'],'entry':{'id':v['id'],'kind':'island','panel':panel,'title':PANELS[panel],'stage':v['stage'],'status':'继续探索','updated_at':v.get('updated_at') or v['created_at'],'needs_review':False}})
+            names={'complexity':'模型复杂度','samples':'训练样本量','regularization':'正则化'}
+            for row in c.execute('SELECT content FROM learning_attempts'):
+                v=json.loads(row['content']);scene=v.get('parameters',{}).get('scene')
+                if scene in names:
+                    stamp=v.get('completed_at') or v.get('created_at');entry={'id':v['id'],'kind':'course','scene':scene,'title':names[scene],'stage':v['stage'],'status':'基础实验','updated_at':stamp,'needs_review':False}
+                    items.append({'id':'course-'+v['id'],'created_at':stamp,'kind':'foundation','category':'mechanisms','title':'基础实验 · '+names[scene],'state':v['stage'],'entry':entry})
+            for row in c.execute('SELECT id,title,created_at FROM records'):
+                items.append({'id':'saved-'+str(row['id']),'created_at':row['created_at'],'kind':'saved','category':'experiments','title':row['title'],'state':'saved',
+                    'entry':{'id':str(row['id']),'kind':'saved','title':row['title'],'stage':'complete','status':'已保存实验','updated_at':row['created_at'],'needs_review':False}})
         if kind!='all':items=[i for i in items if i['category']==kind]
         items.sort(key=lambda x:x['created_at'],reverse=True)
         return {'items':items[offset:offset+limit],'total':len(items),'offset':offset,'limit':limit}

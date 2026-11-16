@@ -183,6 +183,7 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
   async function openWorkspaceEntry(entry:WorkspaceEntry,practice=false){
     if(entry.kind==="course"){if(await journey.resume(entry.id,practice))setView("studio");}
     else if(entry.kind==="island")launchIsland(await api<IslandAttempt>(`/islands/attempts/${entry.id}${practice?"/practice":""}`,practice?{}:undefined));
+    else if(entry.kind==="saved"){const archive=await api<SavedRecord[]>("/records");const saved=archive.find(r=>String(r.id)===entry.id);if(saved){journey.reset(saved.result.parameters.scene);setParams({...saved.result.parameters});setView("studio");setChartTab("fit");setToast("已载入历史实验条件，原记录保持。");}}
   }
   async function openNextLesson(panel:IslandId|"history"){
     if(panel==="history"){setView("history");return;}
