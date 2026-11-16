@@ -30,16 +30,6 @@ class RunRequest(engine.Strict):
     source_id:str|None=Field(default=None,pattern=r'^[0-9a-f]{32}$')
 
 
-class ImportRequest(engine.Strict):
-    name:str=Field(min_length=1,max_length=80)
-    csv:str=Field(max_length=5*1024*1024)
-    targets:list[str]
-    task:str
-    unit:str='原始单位'
-    id_columns:list[str]=Field(default_factory=list)
-    time_column:str|None=None
-
-
 def make_router(connect):
     router=APIRouter(prefix='/lab')
     @contextmanager
@@ -168,29 +158,8 @@ def make_router(connect):
     @router.get('/catalog')
     def catalog():
         datasets=[data.public(data.builtin(k)) for k in data.BUILTINS]
-        with db() as c:datasets.extend(data.public(json.loads(r['content'])) for r in c.execute('SELECT content FROM planet_imports'))
+
         return {'brand':'模力星球','models':models.catalog(),'datasets':datasets,'limits':{'rows':5000,'features':50,'expanded_features':500,'seconds':30}}
-
-    @router.post('/import')
-    def import_data(request:ImportRequest):
-        try:d=data.import_csv(request.name,request.csv,request.targets,request.task,request.unit,request.id_columns,request.time_column)
-        except (ValueError,TypeError) as e:raise HTTPException(422,str(e))
-        d['_import']=request.model_dump()
-        with db() as c:save(c,'planet_imports',d)
-        return data.public(d)
-
-    @router.post('/import/inspect')
-    def import_inspect(request:dict):
-        text=request.get('csv','')
-        if not isinstance(text,str) or len(text.encode())>5*1024*1024:raise HTTPException(413,'CSV限5MB。')
-        import csv,io
-        try:
-            try:dialect=csv.Sniffer().sniff(text[:8192],delimiters=',;\t')
-            except csv.Error:dialect=csv.excel
-            rows=list(csv.reader(io.StringIO(text),dialect));headers=[h.strip().lstrip('\ufeff') for h in rows[0]]
-            if not headers or len(headers)>55 or len(rows)>5001 or len(headers)!=len(set(headers)) or any(not h for h in headers) or any(len(r)!=len(headers) for r in rows):raise ValueError()
-        except (ValueError,IndexError,csv.Error):raise HTTPException(422,'CSV表头/行列格式不正确。')
-        return {'headers':headers,'rows':len(rows)-1}
 
     @router.get('/datasets/{key}')
     def inspect_data(key:str):return data.inspect(dataset(key))
@@ -220,7 +189,9 @@ def make_router(connect):
 
     @router.post('/runs')
     def train(request:RunRequest):
-        s=request.spec;d=dataset(s.dataset)
+        s=request.spec
+        if s.dataset.startswith('upload_'):raise HTTPException(422,'请选择内置课例，学生上传数据功能已移除。')
+        d=dataset(s.dataset)
         try:
             sp=split(s,d,True);engine.prepare(d,s,sp)
         except (ValueError,TypeError,IndexError) as e:raise HTTPException(422,str(e))

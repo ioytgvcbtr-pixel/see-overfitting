@@ -92,16 +92,14 @@ def test_ai_experiment_and_two_step_new_challenge(client,tmp_path,monkeypatch):
     assert restored['observations']==q['observations']
 
 
-def test_csv_import_and_cancel(client):
-    c=client;csv='x,colour,target\n'+'\n'.join(f'{"?" if i%5==0 else i},'+('blue' if i%2 else 'red')+f',{i*2}' for i in range(40))
-    d=post(c,'/lab/import',{'name':'课堂CSV','csv':csv,'targets':['target'],'task':'regression','unit':'分'})
-    assert d['rows']==40 and '_import' not in d and any(f['missing'] for f in d['features'])
-    s=spec_for('concrete','ridge','regression').model_dump();s.update(dataset=d['id'],features=['x','colour'],targets=['target'])
-    job=post(c,'/lab/runs',{'spec':s});post(c,'/lab/runs/'+job['id']+'/cancel')
+def test_builtin_cancel_and_student_upload_removed(client):
+    c=client
+    assert c.post('/lab/import',json={'csv':'x,y\n1,2'}).status_code==404
+    assert c.post('/lab/import/inspect',json={'csv':'x,y\n1,2'}).status_code==404
+    assert not any(d['id'].startswith('upload_') for d in c.get('/lab/catalog').json()['datasets'])
+    job=post(c,'/lab/runs',{'spec':spec_for().model_dump()});post(c,'/lab/runs/'+job['id']+'/cancel')
     for _ in range(80):
         r=c.get('/lab/runs/'+job['id']).json()
         if r['state']=='cancelled':break
         time.sleep(.1)
     assert r['state']=='cancelled'
-    assert not c.get('/lab/backup').json()['imports']
-    assert c.get('/lab/backup?include_uploads=true').json()['imports'][0]['csv']==csv
