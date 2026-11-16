@@ -4,7 +4,7 @@ import {readClassroomLocation,classroomHash,palettes,readPalette,contextPalette}
 test('old mechanism links and new task links remain distinguishable and roundtrip',()=>{
  assert.deepEqual(readClassroomLocation('#classification'),{view:'mechanisms',section:'classification'});
  assert.deepEqual(readClassroomLocation('#classroom/classification'),{view:'classification',section:'explore'});
- for(const section of ['explore','concepts','classification','studio','datasets','path','history','settings'])assert.deepEqual(readClassroomLocation(classroomHash('mechanisms',section)),{view:'mechanisms',section});
+ for(const section of ['explore','concepts','classification','studio','datasets','path','history'])assert.deepEqual(readClassroomLocation(classroomHash('mechanisms',section)),{view:'mechanisms',section});
  assert.equal(readClassroomLocation('',true).view,'mechanisms');assert.equal(readClassroomLocation('#mechanisms/bogus').section,'explore');
 });
 test('classroom palette follows the learning context without changing a stored fixed preference',()=>{
@@ -23,4 +23,19 @@ test('knowledge and mechanism deep links keep a specific lesson or station',()=>
  assert.deepEqual(readClassroomLocation('#classroom/learning/ml-intro'),{view:'learning',section:'explore',lesson:'ml-intro'});
  assert.equal(classroomHash('learning','explore','ml-intro'),'#classroom/learning/ml-intro');
  assert.deepEqual(readClassroomLocation('#mechanisms/concepts/regularization'),{view:'mechanisms',section:'concepts',panel:'regularization'});
+});
+
+
+test('settings has an independent route and compatible old bookmarks',()=>{
+ for(const hash of ['#settings','#mechanisms/settings','#classroom/settings'])assert.deepEqual(readClassroomLocation(hash),{view:'settings',section:'explore'});
+ assert.equal(classroomHash('settings'),'#classroom/settings');
+});
+
+import {companionPreferences,defaultCompanion} from '../src/lib/companion.ts';
+test('companion preferences preserve typed choices and ignore unknown input',()=>{
+ assert.deepEqual(companionPreferences(null),defaultCompanion);
+ assert.deepEqual(companionPreferences('{bad'),defaultCompanion);
+ const p=companionPreferences(JSON.stringify({enabled:false,motion:false,quiet:true,share_context:false,save_history:false,answer_style:'detailed',reader_size:'large',secret:'do not retain'}));
+ assert.equal(p.enabled,false);assert.equal(p.answer_style,'detailed');assert.equal(p.reader_size,'large');assert.ok(!('secret' in p));
+ assert.equal(companionPreferences('{"motion":"yes","reader_size":"tiny"}').motion,true);
 });

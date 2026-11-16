@@ -77,3 +77,27 @@ test('all completed lessons fill every progress segment green',async({page,reque
  await page.goto('/#classroom/learning');const meter=page.getByRole('progressbar',{name:'知识航线',exact:true});await expect(meter).toHaveAttribute('aria-valuenow','18');await expect(page.locator('.pp-learning-progress.is-complete')).toBeVisible();await expect(page.locator('.pp-segment-meter>span[data-state=done]')).toHaveCount(18);
  await expect(page.locator('.pp-segment-meter>span').last()).toHaveCSS('background-color','rgb(45, 113, 79)');
 });
+
+test('settings is independent and DeepSeek depth/key preferences save without echo',async({page})=>{
+ await page.goto('/#settings');await expect(page.getByRole('heading',{name:'让学习，按你的节奏。',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'设置',exact:true})).toHaveAttribute('aria-current','page');await expect(page.locator('.pp-workshop:visible')).toHaveCount(0);
+ await expect(page.getByLabel('DeepSeek模型',{exact:true})).toBeVisible();await expect(page.getByLabel('服务地址',{exact:true})).toHaveCount(0);
+ await page.getByLabel('思考深度',{exact:true}).selectOption('low');await page.locator('#deepseek-new-key').fill('browser-fixture-key-not-real');await page.getByRole('button',{name:'保存AI设置',exact:true}).click();
+ await expect(page.getByText('已保存，下一次AI请求会使用这份配置。',{exact:true})).toBeVisible();await expect(page.locator('#deepseek-new-key')).toHaveValue('');await expect(page.locator('body')).not.toContainText('browser-fixture-key-not-real');
+ await page.reload();await expect(page.getByLabel('思考深度',{exact:true})).toHaveValue('low');
+ await page.getByRole('button',{name:'返回学习',exact:true}).click();await expect(page).not.toHaveURL(/settings/);
+});
+
+test('space pet supports interaction, local answers, history and mobile placement',async({page,request})=>{
+ await page.goto('/#classroom/start');const before=(await (await request.get('http://127.0.0.1:3002/api/study/overview')).json()).completed;
+ await page.getByRole('button',{name:'和小模聊聊',exact:true}).click();const panel=page.getByRole('dialog',{name:'小模学习助手',exact:true});await expect(panel).toBeVisible();
+ await panel.getByRole('button',{name:'喂星星',exact:true}).click();await expect(panel.getByRole('status').filter({hasText:'收到一颗星星'})).toBeVisible();
+ await panel.getByRole('textbox',{name:'向小模提问',exact:true}).fill('什么是过拟合？');await panel.getByRole('button',{name:'发送给小模',exact:true}).click();await expect(panel.locator('.pp-pet-answer-text')).toContainText('过拟合');await expect(panel.getByText('本地提示',{exact:true})).toBeVisible();
+ expect((await (await request.get('http://127.0.0.1:3002/api/study/overview')).json()).completed).toBe(before);
+ await panel.getByRole('button',{name:'关闭小模问答',exact:true}).click();await page.reload();await page.getByRole('button',{name:'和小模聊聊',exact:true}).click();await expect(panel.locator('.pp-pet-answer-text')).toContainText('过拟合');
+ await panel.getByRole('button',{name:'关闭小模问答',exact:true}).click();await page.setViewportSize({width:390,height:844});await expect(page.getByRole('button',{name:'和小模聊聊',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);
+ const target=await page.getByRole('button',{name:'和小模聊聊',exact:true}).boundingBox();expect(target.width).toBeGreaterThanOrEqual(44);expect(target.y).toBeLessThan(65);
+ await page.getByRole('button',{name:'和小模聊聊',exact:true}).click();await expect(panel).toBeVisible();await expect(panel.getByRole('textbox',{name:'向小模提问',exact:true})).toBeVisible();
+ await page.screenshot({path:'artifacts/local/playwright-results/pet-mobile.png',fullPage:true,animations:'disabled'});
+});

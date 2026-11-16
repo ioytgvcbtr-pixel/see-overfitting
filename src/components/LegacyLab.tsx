@@ -165,7 +165,7 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
         ? `${params.samples}个样本`
         : `α ${alphaLabel(params.alpha)}`;
   function setView(next: View) {
-    if(embedded&&next==="history"){onSectionChange?.(next);return;}
+    if(embedded&&(next==="history"||next==="settings")){onSectionChange?.(next);return;}
     setViewState(next);
     if(embedded)onSectionChange?.(next);
     else if (window.location.hash !== hashForView(next))
