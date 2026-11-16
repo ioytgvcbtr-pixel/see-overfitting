@@ -12,6 +12,7 @@
 - DeepSeek Flash requests use reasoning_effort=xhigh with thinking enabled. Its documented compatibility mapping is native high. Show final explanations and usage, never reasoning text.
 - Keep Chinese product copy concrete. Responsive, keyboard-accessible UI; reduced-motion support.
 - Use conventional commits on the current feature branch. Local author `Codex <codex@local.invalid>` identifies AI-created commits, not the entrant's personal identity.
+- Product scope: curated built-in ML tasks; student CSV creation is removed. Knowledge progress (18 lessons), mechanism progress (4 stations), and legacy foundation records are distinct. Preserve existing first answers and history.
 - Current user priority: improve project features and interactions. Continue real development records, but defer competition videos, submission PDFs and other submission-material preparation until requested.
 - Score against the official rubric and product evidence. Do not treat student trials as a required deliverable or deduct points for their absence.
 
