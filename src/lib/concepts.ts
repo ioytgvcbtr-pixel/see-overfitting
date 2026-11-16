@@ -83,6 +83,7 @@ export type ConceptResult = {
   regularization?: {
     weak: ConceptModel;
     current: ConceptModel;
+    observation?:{kind:string;text:string};
     basis: string;
     objective_definition: string;
     path: {

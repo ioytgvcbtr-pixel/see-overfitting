@@ -5,7 +5,7 @@ import {conceptNumber} from '@/lib/concepts';
 import {SceneHandle} from './IslandControls';
 import HelpHint from './HelpHint';
 
-export default function GardenCausalPlot({result,term,pending}:{result:ConceptResult;term:number|null;pending:boolean}){
+export default function GardenCausalPlot({result,term,pending,explainResult}:{result:ConceptResult;term:number|null;pending:boolean;explainResult:boolean}){
   const [probe,setProbe]=useState(0);
   const clip=useId().replace(/:/g,'');
   const model=result.regularization!.current,explain=model.explanation;
@@ -41,7 +41,8 @@ export default function GardenCausalPlot({result,term,pending}:{result:ConceptRe
     </svg>
     <div className="garden-curve-key"><span>━ 当前预测</span><span>┄ 弱约束参照</span>{part&&<span>┄ 所选项贡献</span>}</div>
     <label className="garden-probe-selector">验证点<select aria-label="选择验证探针" value={probe} onChange={ev=>setProbe(Number(ev.target.value))}>{order.map((p,i)=><option value={i} key={p.i}>{i+1} · x={p.x.toFixed(3)}</option>)}</select></label>
-    <div className="garden-probe-readout" data-pending={pending}><span>观测 y<b>{pending?'—':conceptNumber(e.observed)}</b></span><span>预测 ŷ<b>{pending?'—':conceptNumber(e.predicted)}</b></span><span>残差平方<b>{pending?'—':conceptNumber(e.squared)}</b></span></div>
+    <div className="garden-probe-readout" data-pending={pending}><span>观测 y<b>{pending?'—':conceptNumber(e.observed)}</b></span><span>预测 ŷ<b>{pending?'—':conceptNumber(e.predicted)}</b></span><span>该点 e²<b>{pending?'—':conceptNumber(e.squared)}</b></span></div>
     {part&&<p className="garden-contribution-value">第{part.power}项在该点贡献 {pending?'—':conceptNumber(part.validation[item.i])}</p>}
+    {explainResult&&!pending&&result.regularization?.observation&&<p className="garden-observation">{result.regularization.observation.text}</p>}
   </section>;
 }

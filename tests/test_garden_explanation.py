@@ -21,3 +21,10 @@ def test_contributions_keep_training_only_basis_and_no_test_observations():
     assert a['validation_fingerprint']==b['validation_fingerprint']
     assert a['split']['test_sealed'] and b['split']['test_sealed']
     assert 'explanation' not in a['regularization']['weak']
+
+
+def test_strong_and_weak_constraints_explain_different_observed_patterns():
+    weak=concepts.run(concepts.ConceptRequest(panel='regularization',alpha=1e-8))['regularization']
+    strong=concepts.run(concepts.ConceptRequest(panel='regularization',alpha=100))['regularization']
+    assert weak['observation']['kind']=='generalization_gap'
+    assert strong['observation']['kind']=='strong_constraint'

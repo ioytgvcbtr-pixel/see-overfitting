@@ -188,6 +188,7 @@ export default function ConceptIsland({
             <SceneRange label="工坊正则化强度α" value={conceptAlphas.indexOf(input.alpha)} display={`α=${alphaText(input.alpha)}`} min={0} max={7} onChange={n=>set('alpha',conceptAlphas[n])}/>
             <div className="garden-primary-readouts" aria-label="花园关键实算读数" data-pending={pending}>
               <span data-evidence="norm" tabIndex={-1}>系数范数<b>{pending?'—':conceptNumber(plant.current.weight_norm)}</b></span>
+              <span data-evidence="training" tabIndex={-1}>训练MSE<b>{pending?'—':conceptNumber(plant.current.train_mse)}</b></span>
               <span data-evidence="validation" tabIndex={-1}>验证MSE<b>{pending?'—':conceptNumber(plant.current.validation_mse)}</b></span>
             </div>
           </div>}
@@ -683,7 +684,7 @@ export default function ConceptIsland({
               )}
             </svg>
           </div>
-          {plant&&<GardenCausalPlot result={result} term={focusedTerm} pending={pending}/>}
+          {plant&&<GardenCausalPlot result={result} term={focusedTerm} pending={pending} explainResult={!evidenceTask}/>}
           {plant && (
             <div className="garden-zoom">
               <button

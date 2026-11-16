@@ -142,7 +142,15 @@ def _run(serialized):
         weak = polynomial(x, y, validation, params.degree, ALPHAS[0])
         current = polynomial(x, y, validation, params.degree, params.alpha, explain=True)
         path = [polynomial(x, y, validation, params.degree, alpha) for alpha in ALPHAS]
+        best=min(path,key=lambda p:p['validation_mse'])
+        if current['train_mse']>best['train_mse']*1.5 and current['validation_mse']>best['validation_mse']*1.5:
+            observation={'kind':'strong_constraint','text':'相较本组更合适的约束，训练与验证误差都升高，查看曲线是否过于简单。'}
+        elif current['train_mse']<best['train_mse'] and current['validation_mse']>best['validation_mse']*1.1:
+            observation={'kind':'generalization_gap','text':'当前训练拟合更紧，但验证误差更高；留意模型是否在追随训练样本的噪声。'}
+        else:
+            observation={'kind':'compare','text':'在这组固定数据上比较验证误差；系数范数用于解释约束程度。'}
         result['regularization'] = {'weak': weak, 'current': current,
+            'observation':observation,
             'path': [{'alpha': item['alpha'], 'norm': item['weight_norm'], 'train_mse': item['train_mse'],
                       'validation_mse': item['validation_mse']} for item in path],
             'basis': '训练X标准化后的多项式特征；截距不进入L2惩罚；不同α使用相同特征基。',

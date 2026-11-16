@@ -1,8 +1,8 @@
 .garden-command-bar { grid-column:1/-1; display:grid; grid-template-columns:minmax(180px,1fr) minmax(220px,1fr); align-items:center; gap:24px; padding:0 0 20px; }
 .garden-command-bar .island-range { margin:0; }
-.garden-primary-readouts { display:grid; grid-template-columns:1fr 1fr; gap:18px; font-size:13px; color:#665c73; }
+.garden-primary-readouts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; font-size:13px; color:#665c73; }
 .garden-primary-readouts span { display:grid; gap:8px; min-width:0; }
-.garden-primary-readouts b { font-size:22px; line-height:1.3; color:#392c4c; font-variant-numeric:tabular-nums; }
+.garden-primary-readouts b { font-size:20px; line-height:1.3; color:#392c4c; font-variant-numeric:tabular-nums; }
 .garden-primary-readouts[data-pending="true"] b { color:#86788e; }
 .island-regularization .island-scene-column { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-content:start; gap:20px; }
 .island-regularization .island-live-scene { align-self:start; }
@@ -28,6 +28,7 @@
 .garden-probe-readout span { display:grid; gap:6px; }
 .garden-probe-readout b { color:#3e304f; font-size:14px; font-variant-numeric:tabular-nums; }
 .garden-contribution-value { font-size:13px; line-height:1.7; color:#237d92; }
+.garden-observation { font-size:13px;line-height:1.8;color:#62536d; margin:18px 0 0; }
 .island-locked-decision { display:flex; align-items:center; gap:12px; padding:16px 0; color:#356d56; }
 .concept-regularization .concept-heading { margin-bottom:16px; }
 .concept-regularization .concept-heading .chapter-scene { width:64px; height:64px; }
