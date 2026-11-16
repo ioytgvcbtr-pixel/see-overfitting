@@ -376,10 +376,10 @@ def make_router(connect):
     def create_quiz(source,plan_id=None):
         d=dataset(source['spec']['dataset']);option=candidates(source)[0]
         for step in range(1,21):
-            before=engine.Spec.model_validate(source['spec']);before.seed=(before.seed+step*9973)%1000000;before.split.keep_test=False
+            before=engine.Spec.model_validate(source['spec']);before.seed=(before.seed+step*9973)%1000000;before.split.keep_test=True
             if before.split.strategy=='time':before.training_fraction=.75
             after=target_spec({'spec':before.model_dump()},option)
-            try:sp=engine.split_rows(d,before);engine.prepare(d,before,sp);engine.prepare(d,after,sp);break
+            try:sp=engine.split_rows(d,before,source['_split']['anchor']);engine.prepare(d,before,sp);engine.prepare(d,after,sp);break
             except ValueError:
                 if step==20:raise HTTPException(422,'当前条件无法形成有效新情境，请调整模型或样本量。')
         reason=int(hashlib.sha256(f'{before.seed}:{before.model}'.encode()).hexdigest()[:8],16)%3
@@ -534,7 +534,8 @@ def make_router(connect):
     def recompute_quiz(key:str):
         with db() as c:q=load(c,'planet_quizzes',key);source=load(c,'planet_runs',q['source_id'])
         before=engine.Spec.model_validate(q['before_spec']);d=dataset(before.dataset)
-        sp=engine.split_rows(d,before)
+        if source['state']!='completed':raise HTTPException(409,'请先从档案复算对应的原始运行。')
+        sp=engine.split_rows(d,before,source['_split']['anchor'])
         return launch(before,d,sp,'challenge',source,{'before':q['before_spec'],'after':q['after_spec'],'_quiz':q})
 
     @router.get('/runs/{key}/report')

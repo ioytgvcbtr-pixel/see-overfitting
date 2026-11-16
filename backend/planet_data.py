@@ -120,5 +120,8 @@ def inspect(d,features=None):
     selected=features or [f['id'] for f in d['features']]
     columns=[f for f in d['features'] if f['id'] in selected]
     eligible=[r for r in d['records'] if all(r['values'][t['id']] is not None for t in d['targets'])]
+    groups={}
+    for r in eligible:groups.setdefault(r['entity'],set()).add(tuple(r['values'][t['id']] for t in d['targets']))
     return {'dataset':public(d),'columns':columns,'eligible':len(eligible),'missing_targets':len(d['records'])-len(eligible),
+        'conflicting_input_groups':sum(len(values)>1 for values in groups.values()),
         'duplicate_rows':d['duplicate_rows'],'note':'原始快照只读；目标缺失行不填造标签，单列为待预测样本。'}

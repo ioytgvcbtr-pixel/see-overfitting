@@ -68,7 +68,7 @@ def test_binary_threshold_does_not_retrain_and_source_is_immutable(client):
     final=done(c,post(c,f"/lab/runs/{b['id']}/final"));assert final['result']['metrics']['positive_class']==changed['decision']['positive_class']
 
 
-def test_ai_experiment_and_two_step_new_challenge(client):
+def test_ai_experiment_and_two_step_new_challenge(client,tmp_path,monkeypatch):
     c=client;a=done(c,post(c,'/lab/runs',{'spec':spec_for().model_dump()}))
     plan=post(c,'/lab/plans',{'run_id':a['id']});assert plan['mode']=='rules'
     b=done(c,post(c,f"/lab/plans/{plan['id']}/execute"))
@@ -82,6 +82,14 @@ def test_ai_experiment_and_two_step_new_challenge(client):
     q=post(c,'/lab/quizzes/'+qid+'/answer',{'reason':reason})
     assert q['answer']['passed']==(q['answer']['correct_choice']==0)
     assert c.get('/lab/runs/'+a['id']).json()['spec']['prediction']==a['spec']['prediction']
+    final=done(c,post(c,f"/lab/runs/{b['id']}/final"))
+    assert final['result']['independent'], 'Transfer must keep the original test population sealed'
+    pack=c.get('/lab/backup').json();monkeypatch.setattr(main,'DB_PATH',tmp_path/'quiz-restored.sqlite')
+    post(c,'/lab/backup/restore',pack);done(c,post(c,f"/lab/runs/{b['id']}/recompute"))
+    done(c,post(c,f"/lab/quizzes/{qid}/recompute"))
+    restored=c.get('/lab/quizzes/'+qid).json()
+    assert restored['decision']==q['decision'] and restored['answer']==q['answer']
+    assert restored['observations']==q['observations']
 
 
 def test_csv_import_and_cancel(client):
