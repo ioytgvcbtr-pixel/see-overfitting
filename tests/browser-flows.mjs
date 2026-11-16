@@ -87,7 +87,7 @@ export async function gardenCausality(tab){
   const before=await p.locator('.garden-probe-readout').innerText();
   const metric=await p.locator('[data-evidence="validation"] b').innerText();
   await p.getByRole('slider',{name:'验证探针位置',exact:true}).press('ArrowRight');
-  assert.equal(await select.getAttribute('value'),'1');
+  assert.equal(await select.evaluate(el=>el.value),'1');
   assert.notEqual(await p.locator('.garden-probe-readout').innerText(),before);
   assert.equal(await p.locator('[data-evidence="validation"] b').innerText(),metric,'probe movement must not retrain or change aggregate MSE');
   await alpha.press('End');
@@ -113,6 +113,7 @@ export async function aiTransfer(tab){
   await learning.locator('.island-reason-options button').nth(0).click();
   await learning.getByRole('button',{name:'提交判断与依据',exact:false}).click();
   await learning.getByRole('button',{name:'返回原学习记录',exact:true}).click();
+  await learning.getByText(original,{exact:true}).waitFor({state:'visible'});
   assert.equal(await learning.getByText('首次迁移：',{exact:false}).innerText(),original);
   return {flow:'ai-result-to-new-marked-transfer',passed:true};
 }
