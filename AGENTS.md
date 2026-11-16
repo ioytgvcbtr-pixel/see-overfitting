@@ -1,4 +1,4 @@
-# 看见过拟合 · Development contract
+# 模力星球 · Development contract
 
 - Work in this repository. Resolve the local Python interpreter from FITLAB_PYTHON or the ignored .env.local configuration.
 - Preserve real chronological Git history. Commit a coherent module after relevant checks pass. Owner-authorized privacy redaction must retain original commit order and timestamps, with an offline backup. Never fabricate development history.
