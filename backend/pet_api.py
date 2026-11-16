@@ -95,7 +95,8 @@ def make_router(connect):
     @router.get('/sessions/{key}')
     def history(key:str):
         if not re.fullmatch(r'[0-9a-f]{32}',key):raise HTTPException(422,'会话标识不合法。')
-        with db() as c:return [public(json.loads(r['content'])) for r in c.execute('SELECT content FROM pet_messages WHERE session_id=? ORDER BY created_at LIMIT 60',(key,))]
+        with db() as c:rows=c.execute('SELECT content FROM pet_messages WHERE session_id=? ORDER BY created_at DESC LIMIT 60',(key,)).fetchall()
+        return [public(json.loads(r['content'])) for r in reversed(rows)]
     @router.post('/ask')
     async def ask(request:Ask):
         request.question=clean(request.question.strip())
