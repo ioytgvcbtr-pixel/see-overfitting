@@ -172,4 +172,5 @@
 .pp-data-hole:before {content:"";width:12px;height:12px;border:1px dashed currentColor;border-radius:50%;}
 .pp-missing-count {color:#9a582f;}
 
-.pp-home-hero h1>span {display:inline-block;}
+.pp-home-hero h1 {display:block;}
+.pp-home-hero h1>span {display:inline-block;white-space:nowrap;}
