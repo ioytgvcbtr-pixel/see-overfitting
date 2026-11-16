@@ -25,3 +25,22 @@ test('AI experiment starts an independent marked transfer',async({page})=>{
   await page.goto('/');
   await aiTransfer({playwright:page,reload:()=>page.reload()});
 });
+
+test('mobile garden keeps primary controls and branch targets readable',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('/#concepts');
+  await page.getByRole('button',{name:'约束的形状',exact:true}).click();
+  const branches=page.getByRole('button',{name:/查看第\d+项对预测的贡献/});
+  await expect(branches).toHaveCount(3);
+  await expect(page.getByRole('button',{name:'展开导航',exact:true})).toBeVisible();
+  const state=await page.evaluate(()=>{
+    const a=document.querySelector('input[aria-label="工坊正则化强度α"]').getBoundingClientRect();
+    const targets=[...document.querySelectorAll('.garden-term')].map(e=>e.getBoundingClientRect());
+    return {overflow:document.documentElement.scrollWidth>innerWidth+1,alphaBottom:a.bottom,
+      small:targets.filter(r=>r.width<43||r.height<43).length};
+  });
+  expect(state.overflow).toBe(false);
+  expect(state.alphaBottom).toBeLessThan(844);
+  expect(state.small).toBe(0);
+  await page.screenshot({path:'artifacts/local/playwright-results/garden-mobile.png',fullPage:true});
+});
