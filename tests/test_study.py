@@ -82,6 +82,11 @@ def test_revised_checks_balance_position_and_remove_length_shortcuts():
         assert curriculum.quiz_revision(l,1) and curriculum.quiz_revision(l,2)
     assert sorted(Counter(positions).values())==[6,6,6]
     assert sorted(Counter(ranks).values())==[6,6,6]
+    # Balance alone permits a perfect 1/2/3 cycle; audit the order independently.
+    for period in range(1,7):
+        guessed=[Counter(positions[offset::period]).most_common(1)[0][0] for offset in range(period)]
+        assert sum(p==guessed[i%period] for i,p in enumerate(positions))<len(positions)
+    assert sum(p==i%3 for i,p in enumerate(positions))<=9
 
 
 def test_original_questions_and_first_answers_survive_new_checks_and_restore(client,tmp_path,monkeypatch):

@@ -131,10 +131,12 @@ BY_ID={x['id']:x for x in LESSONS}
 # Keep the exact old questions available for historical first answers and backups.
 QUIZ_VERSIONS={l['id']:{1:copy.deepcopy({'quiz':l['quiz'],'answer':l['_answer'],'explanation':l['_explanation']})} for l in LESSONS}
 from backend.knowledge_checks import CHECKS
+_layout=sorted(LESSONS,key=lambda item:hashlib.sha256(('modelplanet-layout-v2:'+item['id']).encode()).digest())
+_slots={item['id']:index%3 for index,item in enumerate(_layout)}
 for index,l in enumerate(LESSONS):
     question,answers,correct,explanation=CHECKS[l['id']]
     options=[{'id':f"{l['id']}-v2-{i}",'text':text} for i,text in enumerate(answers)]
-    right=options.pop(correct);options.insert(index%3,right)
+    right=options.pop(correct);options.insert(_slots[l['id']],right)
     l.update(quiz={'question':question,'choices':options},_answer=right['id'],_explanation=explanation,version=2)
     QUIZ_VERSIONS[l['id']][2]=copy.deepcopy({'quiz':l['quiz'],'answer':l['_answer'],'explanation':explanation})
 
