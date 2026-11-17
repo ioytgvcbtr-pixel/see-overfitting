@@ -134,3 +134,6 @@
 .pp-surface-scale>i {flex:1;block-size:.75rem;border-radius:.5rem;background:linear-gradient(to right,rgb(229,237,244),rgb(124,117,194));}
 @container results-area (max-width:32rem) {.pp-metrics span {min-block-size:3.3em;}.pp-evidence-chart svg text {font-size:23px;}.pp-chart-legend {gap:.75rem 1rem;}.pp-result-views>.pp-result-tabs {margin-inline:-.25rem;}}
 @media(forced-colors:active) {.pp-result-views [role=tab][aria-selected=true]:after {border-color:Highlight;}.pp-evidence-chart .pp-chart-grid,.pp-evidence-chart .pp-chart-reference {stroke:CanvasText;}.pp-evidence-chart .pp-series {color:CanvasText!important;}.pp-evidence-chart .pp-chart-selection {stroke:Highlight;}.pp-evidence-chart .pp-scatter-point {fill:Canvas;stroke:CanvasText;}.pp-evidence-chart [data-selected=true] .pp-scatter-point {fill:Highlight;stroke:Canvas;}.pp-chart-data [data-selected=true] {outline:2px solid Highlight;}.pp-chart-legend>span>svg {color:CanvasText!important;}}
+
+.pp-chart-viewport {overflow-x:auto;scrollbar-width:thin;}
+.pp-chart-viewport>svg {display:block;inline-size:100%;min-inline-size:22.5rem;max-block-size:470px;}
