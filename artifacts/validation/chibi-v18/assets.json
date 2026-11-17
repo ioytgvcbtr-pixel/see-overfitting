@@ -1,0 +1,86 @@
+[
+  {
+    "file": "classification.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha_range": [
+      0,
+      255
+    ],
+    "bytes": 1751973,
+    "sha256": "eec6c3c2c2b14627fc376eecfb691fdfbb92ec0785c3a35f9ef86475b8fece06"
+  },
+  {
+    "file": "error.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha_range": [
+      0,
+      255
+    ],
+    "bytes": 1458530,
+    "sha256": "8c6f1638e79a8eaa5f3190177f7b8a11378cb8b0959080734b4a686cd10c0ceb"
+  },
+  {
+    "file": "forest.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha_range": [
+      0,
+      255
+    ],
+    "bytes": 1694979,
+    "sha256": "3b2ed60c2351b18524ab2e49eede1eb8f4ed27451c2bbb95c231694de7e2b3f2"
+  },
+  {
+    "file": "mechanisms.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha_range": [
+      0,
+      255
+    ],
+    "bytes": 1429551,
+    "sha256": "66e7cc34a5e14494dab5b43424457eae65727ff788f43f85c466c75a4ec44941"
+  },
+  {
+    "file": "regression.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha_range": [
+      0,
+      255
+    ],
+    "bytes": 1793803,
+    "sha256": "d108c242f9688117b6e6459f4b48f9ca1866e549e4fae391be8ced60ec600aa8"
+  },
+  {
+    "file": "regularization.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha_range": [
+      0,
+      255
+    ],
+    "bytes": 1855033,
+    "sha256": "f5a776c6cd2857ca4b0ab2a47abac72643df7e85883eef6fb1f8ae029635be7d"
+  },
+  {
+    "file": "sensitivity.png",
+    "width": 1254,
+    "height": 1254,
+    "mode": "RGBA",
+    "alpha_range": [
+      0,
+      255
+    ],
+    "bytes": 1689231,
+    "sha256": "94d9089acfb1f4f0851c5109493f8ef965a05de59eee5c331407ce38566519de"
+  }
+]
