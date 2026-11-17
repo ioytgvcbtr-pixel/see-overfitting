@@ -59,8 +59,8 @@ test('learning route persists understanding and experiment edits without student
  await page.goto('/');await expect(page.getByText(/机制基础课.*3/)).toHaveCount(0);
  await page.getByRole('button',{name:'学习航线',exact:true}).click();await page.getByRole('button',{name:'从什么是机器学习开始',exact:true}).click();
  await expect(page.getByRole('heading',{name:'什么是机器学习？',exact:true})).toBeVisible();
- await page.getByRole('button',{name:'读完了，做个小检查',exact:true}).click();await page.getByRole('button',{name:'输入信息与要预测的目标',exact:true}).click();await page.getByRole('button',{name:'保存判断并核对',exact:true}).click();
- await expect(page.getByText('检查通过，本课增加一格。',{exact:true})).toBeVisible();await page.reload();await expect(page.getByText('本课已完成',{exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'读完了，做个小检查',exact:true}).click();await page.getByRole('button',{name:'用测量特征学习物种，在未参与训练的样本上评估',exact:true}).click();await page.getByRole('button',{name:'保存判断并核对',exact:true}).click();
+ await expect(page.getByText('检查通过，学习进度已保存。',{exact:true})).toBeVisible();await page.reload();await expect(page.getByText('本课已完成',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'我的学习记录',exact:true}).click();await expect(page.getByRole('progressbar',{name:'知识航线',exact:true})).toHaveAttribute('aria-valuenow','1');
  await page.getByRole('button',{name:'分类任务',exact:true}).click();await expect(page.getByRole('button',{name:'导入一份CSV',exact:true})).toHaveCount(0);await expect(page.locator('input[accept*=csv]')).toHaveCount(0);
  await page.getByRole('button',{name:/企鹅物种识别/}).click();await page.getByRole('button',{name:'4 划分数据',exact:true}).click();await page.getByLabel('训练比例 %',{exact:true}).fill('62');await page.getByLabel('验证比例 %',{exact:true}).click();
@@ -71,9 +71,9 @@ test('learning route persists understanding and experiment edits without student
 });
 
 test('all completed lessons fill every progress segment green',async({page,request})=>{
- const answers=[1,2,0,1,0,2,1,2,0,2,1,0,2,0,1,2,1,0];
+ const answers=[1,2,0,1,0,2,1,0,2,1,0,2,1,0,2,1,0,2];
  const response=await request.get('http://127.0.0.1:3002/api/study/overview');const overview=await response.json();
- for(let i=0;i<overview.lessons.length;i++){const id=overview.lessons[i].id;await request.post(`http://127.0.0.1:3002/api/study/lessons/${id}/open`,{data:{}});await request.post(`http://127.0.0.1:3002/api/study/lessons/${id}/read`,{data:{}});const a=await request.post(`http://127.0.0.1:3002/api/study/lessons/${id}/answer`,{data:{id:crypto.randomUUID().replaceAll('-',''),choice:`${id}-${answers[i]}`}});expect(a.ok()).toBe(true);}
+ for(let i=0;i<overview.lessons.length;i++){const id=overview.lessons[i].id;await request.post(`http://127.0.0.1:3002/api/study/lessons/${id}/open`,{data:{}});await request.post(`http://127.0.0.1:3002/api/study/lessons/${id}/read`,{data:{}});const a=await request.post(`http://127.0.0.1:3002/api/study/lessons/${id}/answer`,{data:{id:crypto.randomUUID().replaceAll('-',''),choice:`${id}-v2-${answers[i]}`}});expect(a.ok()).toBe(true);}
  await page.goto('/#classroom/learning');const meter=page.getByRole('progressbar',{name:'知识航线',exact:true});await expect(meter).toHaveAttribute('aria-valuenow','18');await expect(page.locator('.pp-learning-progress.is-complete')).toBeVisible();await expect(page.locator('.pp-segment-meter>span[data-state=done]')).toHaveCount(18);
  await expect(page.locator('.pp-segment-meter>span').last()).toHaveCSS('background-color','rgb(45, 113, 79)');
 });
@@ -123,4 +123,36 @@ test('planet companion respects motion preferences and keeps interactions local'
  await expect(page.locator('.pp-pet-launcher>svg')).toHaveAttribute('data-animating','true');await switcher.uncheck();await expect(page.locator('.pp-pet-launcher>svg')).toHaveAttribute('data-animating','false');
  await page.reload();await expect(switcher).not.toBeChecked();await switcher.check();await page.emulateMedia({reducedMotion:'reduce'});await expect(page.locator('.pp-pet-launcher>svg')).toHaveAttribute('data-animating','false');await page.emulateMedia({reducedMotion:'no-preference'});await expect(page.locator('.pp-pet-launcher>svg')).toHaveAttribute('data-animating','true');await page.getByRole('button',{name:'和小模聊聊',exact:true}).click();const panel=page.getByRole('dialog',{name:'小模学习助手',exact:true});
  const before=(await(await request.get('http://127.0.0.1:3002/api/study/overview')).json()).completed;await panel.getByRole('button',{name:'卫星绕行',exact:true}).click();await expect(panel.locator('.pp-pet-panel-avatar>svg')).toHaveAttribute('data-mood','orbit');expect((await(await request.get('http://127.0.0.1:3002/api/study/overview')).json()).completed).toBe(before);
+});
+
+test('all model entries target their own mechanism and a real kernel run can be revised',async({page,request})=>{
+ test.setTimeout(120000);
+ const {models}=await(await request.get('http://127.0.0.1:3002/api/lab/catalog')).json();
+ await page.goto('/#classroom/models');
+ for(const model of models){
+  const card=page.locator('.pp-atlas>article').filter({has:page.getByRole('heading',{name:model.title,exact:true})});
+  await card.getByRole('button',{name:'先看预测机制',exact:true}).click();
+  await expect(page).toHaveURL(new RegExp('/#classroom/model-mechanism/'+model.id+'$'));
+  await expect(page.getByRole('article',{name:model.title+'机制实验',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'返回模型图鉴',exact:true}).click();
+ }
+ await page.locator('.pp-atlas>article').filter({has:page.getByRole('heading',{name:'RBF SVM',exact:true})}).getByRole('button',{name:'先看预测机制',exact:true}).click();
+ await page.getByRole('button',{name:'训练机制示例',exact:true}).click();await expect(page.locator('.pp-kernel-bars')).toBeVisible({timeout:45000});
+ await page.getByRole('textbox',{name:'核影响范围 γ',exact:true}).fill('0.2');await expect(page.getByRole('status').filter({hasText:'设置已修改'})).toBeVisible();
+ await page.getByRole('button',{name:'按新设置重新训练',exact:true}).click();await expect(page.getByText('当前展示这次真实训练的结果。',{exact:true})).toBeVisible({timeout:45000});
+ await page.reload();await expect(page.locator('.pp-kernel-bars')).toBeVisible();await expect(page.getByRole('textbox',{name:'核影响范围 γ',exact:true})).toHaveValue('0.2');
+});
+
+test('home gives one primary learning action and short screens keep step actions reachable',async({page})=>{
+ await page.goto('/');await expect(page.locator('.pp-home-hero .pp-btn.primary')).toHaveCount(1);await expect(page.getByRole('heading',{name:'自由实验',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'分类任务',exact:true}).click();await page.getByRole('button',{name:/企鹅物种识别/}).click();await page.getByRole('button',{name:'5 模型参数',exact:true}).click();
+ await page.locator('.pp-model-radio').getByRole('button',{name:'逻辑回归',exact:true}).click();await page.getByRole('textbox',{name:'误分/拟合惩罚 C',exact:true}).fill('2');
+ await page.getByRole('button',{name:'看看逻辑回归怎样预测',exact:true}).click();await expect(page.getByRole('heading',{name:'逻辑回归',exact:true})).toBeVisible();await page.getByRole('button',{name:'返回当前实验',exact:true}).click();await expect(page.getByRole('textbox',{name:'误分/拟合惩罚 C',exact:true})).toHaveValue('2');
+ for(const [width,height] of [[1366,768],[1024,768],[390,844]]){
+  await page.setViewportSize({width,height});await page.evaluate(()=>scrollTo(0,0));
+  const actions=page.getByRole('navigation',{name:'实验步骤操作',exact:true});const next=actions.getByRole('button',{name:'去训练',exact:true});await expect(next).toBeVisible();
+  const box=await next.boundingBox();expect(box.y).toBeGreaterThanOrEqual(60);expect(box.y+box.height).toBeLessThan(height);expect(box.width).toBeGreaterThanOrEqual(44);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);
+  await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));await expect(next).toBeInViewport();
+ }
 });

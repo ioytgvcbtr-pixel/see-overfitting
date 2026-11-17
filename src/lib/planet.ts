@@ -19,7 +19,8 @@ export type Result={spec:Spec;dataset:Dataset;model:Model;task_kind:string;class
  cleaning:{training_pool:number;requested_training:number;actual_training:number;dropped:number;numeric_parse_failures:number;polluted_copy:boolean;fit_scope:string;training_rows:string[];processed_features:number;learned:Record<string,unknown>;preview?:{row:string;before:Record<string,Value>;after:Record<string,Value>}[];preview_note?:string};
  training_metrics:Metric;validation_metrics:Metric;validation_error:number|null;training_error:number|null;baseline:{metrics:Metric;error:number|null};training:Point[];validation:Point[];validation_total:number;
  split:Record<string,number>;evaluation_signature:string;warnings:string[];fit_ms:number;elapsed_ms:number;test_sealed:boolean;inspection?:Inspection;decision_note?:string};
-export type Inspection={row:string;actual:number[];prediction:number[];features:{name:string;value:number}[];target:number;
+export type Inspection={row:string;actual:number[];prediction:number[];features:{name:string;value:number}[];target:number;mechanism?:string;
+ kernel?:{gamma:number;total_support:number;points:{row:string;distance:number;similarity:number}[];note:string};
  coefficients?:{name:string;coefficient:number;contribution:number}[];intercept?:number;link?:string;neighbors?:{row:string;distance:number;weight:number;target:number[]}[];
  tree?:{id:number;parent:number|null;depth:number;visited:boolean;samples:number;label:string;threshold:number|null;value:number[][]}[];tree_note?:string;trees?:{tree:number;prediction:number|number[]}[];
  gaussian?:{feature:string;value:number;series:{class:string;mean:number;variance:number;points:number[][]}[]};stages?:{points:{stage:number;value:number}[];metric:string;note:string};probabilities?:number[];decision_score?:number|number[]};

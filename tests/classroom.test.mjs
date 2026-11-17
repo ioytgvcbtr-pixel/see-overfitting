@@ -1,6 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readClassroomLocation,classroomHash,palettes,readPalette,contextPalette} from '../src/lib/classroom.ts';
+import {mechanismControl,mechanismDataset,mechanismQuestion} from '../src/lib/model-mechanism.ts';
+
+test('each model mechanism has a refreshable identity and retains the atlas palette',()=>{
+ for(const id of ['logistic','knn_c','svc','tree_r','poisson'])assert.deepEqual(readClassroomLocation(classroomHash('model-mechanism','explore',null,null,id)),{view:'model-mechanism',section:'explore',model:id});
+ assert.equal(readClassroomLocation('#classroom/model-mechanism/../../settings').view,'start');
+ assert.equal(contextPalette('model-mechanism'),'indigo');
+});
+
+test('mechanism controls and datasets follow the actual model rather than only its task',()=>{
+ const catalog={datasets:[{id:'iris'},{id:'concrete'},{id:'bike'}]};
+ const svc={id:'svc',task:'classification',mechanism:'boundary',parameters:[{key:'C'},{key:'gamma'}]};
+ assert.equal(mechanismControl(svc).key,'gamma');assert.equal(mechanismDataset(catalog,svc).id,'iris');assert.match(mechanismQuestion(svc),/支持向量/);
+ assert.equal(mechanismDataset(catalog,{id:'poisson',task:'regression'}).id,'bike');assert.equal(mechanismDataset(catalog,{id:'ridge',task:'regression'}).id,'concrete');
+});
 test('old mechanism links and new task links remain distinguishable and roundtrip',()=>{
  assert.deepEqual(readClassroomLocation('#classification'),{view:'mechanisms',section:'classification'});
  assert.deepEqual(readClassroomLocation('#classroom/classification'),{view:'classification',section:'explore'});

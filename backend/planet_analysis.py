@@ -24,6 +24,12 @@ def inspect(a,row=None,target=0,feature=0):
           if a['spec']['task']=='classification' else np.asarray(a['model'].predict(T)).reshape(-1).tolist())
     result={'row':rows[int(index)]['id'],'actual':a['y'][index].tolist(),'prediction':pred,'mechanism':a['spec']['model'],
         'features':[{'name':name,'value':float(v)} for name,v in zip(a['feature_names'],T[0])],'target':target}
+    if hasattr(m,'support_vectors_'):
+        distances=np.linalg.norm(m.support_vectors_-T[0],axis=1);similarities=np.exp(-float(m._gamma)*distances**2)
+        nearest=np.argsort(distances)[:10]
+        result['kernel']={'gamma':float(m._gamma),'total_support':len(m.support_),
+            'points':[{'row':rows[int(a['training'][m.support_[i]])]['id'],'distance':float(distances[i]),'similarity':float(similarities[i])} for i in nearest],
+            'note':'真实支持向量在完整处理空间中的RBF相似度；相似度不是类别概率，也不是单个向量对最终输出的完整贡献。'}
     if hasattr(m,'coef_'):
         co=np.asarray(m.coef_);co=co[None,:] if co.ndim==1 else co
         inter=np.asarray(getattr(m,'intercept_',0)).reshape(-1)

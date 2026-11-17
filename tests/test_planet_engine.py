@@ -23,6 +23,14 @@ def test_registered_models_fit_real_numeric_results(model):
     assert not any(k.startswith('test_') for k in result['validation_metrics'])
     assert artifact['preprocessor'].n_features_in_==len(s.features)
     assert result['cleaning']['actual_training']>0
+    from backend.planet_analysis import inspect
+    inspection=inspect(artifact)
+    key={'linear':'coefficients','neighbors':'neighbors','boundary':'kernel','tree':'tree','forest':'trees','gaussian':'gaussian','boosting':'stages'}[m['mechanism']]
+    assert inspection['mechanism']==model and inspection[key]
+    assert inspection['prediction']==pytest.approx(result['validation'][0]['prediction'])
+    if key=='kernel':
+        assert inspection['kernel']['total_support']==len(artifact['model'].support_)
+        assert all(p['similarity']==pytest.approx(np.exp(-inspection['kernel']['gamma']*p['distance']**2)) for p in inspection['kernel']['points'])
 
 
 @pytest.mark.parametrize('dataset,model,task',[('energy','ridge','regression'),('labels','logistic','classification'),('penguins','forest_c','classification'),('auto_raw','ridge','regression')])
