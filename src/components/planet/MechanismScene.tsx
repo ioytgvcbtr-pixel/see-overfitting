@@ -15,7 +15,7 @@ function useSceneFocus(key:string,values:string[]){
 }
 function focusScope(result:Result,kind:string){return `modelplanet-scene-${kind}-${result.spec.dataset}-${result.spec.model}-${result.spec.session_id}`;}
 function includeSelected<T extends {row:string}>(values:T[],row:string){const shown=values.slice(0,12),found=values.find(v=>v.row===row);if(found&&!shown.includes(found))shown[shown.length-1]=found;return shown;}
-function orbitAngle(row:string){let hash=2166136261;for(const c of row)hash=Math.imul(hash^c.charCodeAt(0),16777619);return (hash>>>0)/4294967296*Math.PI*2;}
+function orbitAngle(row:string){let hash=2166136261;for(const c of row)hash=Math.imul(hash^c.charCodeAt(0),16777619);hash=Math.imul(hash^(hash>>>16),0x7feb352d);hash=Math.imul(hash^(hash>>>15),0x846ca68b);return ((hash^(hash>>>16))>>>0)/4294967296*Math.PI*2;}
 
 export function NeighborScene({inspection,before,result}:{inspection:Inspection;before:Inspection|null;result:Result}){
  const all=inspection.neighbors||[],focus=useSceneFocus(focusScope(result,'neighbor'),all.map(n=>n.row)),selected=focus.selected;

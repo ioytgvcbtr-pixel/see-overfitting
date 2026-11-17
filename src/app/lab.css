@@ -54,11 +54,12 @@
  .pp-lab-command>.pp-lab-choices {grid-column:auto;grid-row:auto;}
 }
 @container model-lab (max-width:30rem) {
- .pp-lab-command {gap:.5rem;padding:.75rem;border-radius:1.75rem;}
- .pp-lab-command-actions>.pp-btn {padding:.75rem;font-size:.8rem;max-inline-size:9rem;}
- .pp-lab-command-actions>.pp-btn svg {display:none;}
+ .pp-lab-command {grid-template-columns:minmax(0,1fr);gap:.5rem;padding:.75rem;border-radius:1.75rem;}
+ .pp-lab-command-actions {align-items:stretch;}
+ .pp-lab-command-actions>.pp-btn {padding:.75rem;font-size:.875rem;max-inline-size:none;inline-size:100%;}
  .pp-lab-parameter {grid-template-columns:minmax(0,1fr) 5rem;gap:.25rem;}
  .pp-lab-command .pp-lab-choices label {min-inline-size:0;font-size:.75rem;padding:.5rem;gap:.4rem;}
+ .pp-lab-command .pp-lab-choices span {text-wrap:balance;}
  .pp-lab-command .pp-lab-choices>div {flex-wrap:nowrap;gap:.375rem;}
  .pp-lab-parameter .pp-parameter-rail>span {display:none;}
  .pp-lab-parameter .pp-parameter-rail>div {gap:.25rem;}
