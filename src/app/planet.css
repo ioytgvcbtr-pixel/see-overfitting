@@ -344,7 +344,7 @@
 .pp-station-card {display:flex;flex-direction:column;padding:20px;text-align:left;border-radius:26px;background:white;color:var(--pp-ink);box-shadow:0 2px 6px #28423204,0 12px 32px #28423207;}
 .pp-station-art {position:relative;width:100%;height:150px;}
 .pp-station-art>img {display:block;width:100%;height:100%;object-fit:contain;}
-.pp-station-art>span {position:absolute;right:0;top:0;border-radius:50%;height:28px;width:28px;display:grid;place-items:center;background:var(--pp-soft);font-size:12px;color:var(--pp-brand);}
+.pp-station-art>.pp-station-number {position:absolute;right:0;top:0;border-radius:50%;height:28px;width:28px;display:grid;place-items:center;background:var(--pp-soft);font-size:12px;color:var(--pp-brand);}
 .pp-station-card>div:nth-child(2) {padding:16px 0 24px;}
 .pp-station-card h2 {font-size:22px;margin:8px 0 12px;}
 .pp-station-card p {font-size:14px;margin:0;min-height:3.4em;}

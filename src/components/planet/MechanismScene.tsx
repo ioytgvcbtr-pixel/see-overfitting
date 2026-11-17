@@ -4,7 +4,7 @@ import {fmt,type Inspection,type Result} from '@/lib/planet';
 import PlanetPortal from './PlanetPortal';
 
 export function MechanismStarter({kind}:{kind:string}){
- return <figure className="pp-mechanism-starter"><PlanetPortal variant={kind==='neighbors'?'classification':kind==='linear'?'regression':'mechanisms'}/><figcaption><strong>{kind==='neighbors'?'近处的样本，怎样一起投票？':kind==='linear'?'每个特征，怎样组成一次预测？':'从输入到预测，看看模型怎样判断。'}</strong><p>模型结构示意 · 训练后显示本次真实计算。</p></figcaption></figure>;
+ return <figure className="pp-mechanism-starter"><PlanetPortal variant={kind==='neighbors'?'classification':kind==='linear'?'regression':'mechanisms'} priority sizes="(max-width:650px) 210px, 260px"/><figcaption><strong>{kind==='neighbors'?'近处的样本，怎样一起投票？':kind==='linear'?'每个特征，怎样组成一次预测？':'从输入到预测，看看模型怎样判断。'}</strong><p>主题插画 · 训练后查看本次真实计算。</p></figcaption></figure>;
 }
 
 function useSceneFocus(key:string,values:string[]){

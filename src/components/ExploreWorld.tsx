@@ -77,7 +77,7 @@ export default function ExploreWorld({
         </div>
         <div className="world-host">
           <Image
-            src="/illustrations/planet-v11/mechanisms-v1.png"
+            src="/illustrations/planet-v18/mechanisms.png"
             alt=""
             width={120}
             height={120}

@@ -1,17 +1,9 @@
-"use client";
-import {useId} from 'react';
-export default function PlanetPortal({variant='mechanisms',className=''}:{variant?:string;className?:string}){
- const id=useId().replaceAll(':','');const green=['classification','forest'].includes(variant),orange=['regression','sensitivity','error'].includes(variant);
- const color=green?'#70bbaa':orange?'#eab17e':'#aea2d9',light=green?'#e0f4e9':orange?'#fff0d8':'#eee8fc',dark=green?'#348a7b':orange?'#c27a45':'#7865b0';
- return <svg className={`pp-portal-art ${className}`} viewBox="20 30 240 214" role="img" aria-label={`${variant==='classification'?'分类港':variant==='regression'?'回归谷':'机制星球'}示意图案`}>
-  <defs><radialGradient id={id}><stop stopColor={light}/><stop offset=".58" stopColor={color}/><stop offset="1" stopColor={dark}/></radialGradient><clipPath id={id+'clip'}><circle cx="140" cy="127" r="75"/></clipPath></defs>
-  <ellipse cx="141" cy="231" rx="61" ry="7" fill={dark} opacity=".09"/>
-  <g transform="rotate(-15 140 148)"><ellipse cx="140" cy="148" rx="115" ry="26" fill="none" stroke={color} strokeWidth="8" opacity=".45"/></g>
-  <circle cx="140" cy="127" r="75" fill={`url(#${id})`}/>
-  <g clipPath={`url(#${id}clip)`}><path d="M60 107q40-28 66-7t68-9q43-17 34 17-30 29-67 14t-69 14Z" fill={light} opacity=".45"/><path d="M74 163q28-23 52-6t60-7l24 34-28 31-87-5Z" fill={dark} opacity=".12"/><path d="M88 82q17-22 45-24" stroke="white" opacity=".55" strokeWidth="7" strokeLinecap="round" fill="none"/></g>
-  <path d="M29 165q102 43 219-28" transform="rotate(-15 140 148)" fill="none" stroke="#edd5aa" strokeWidth="8" strokeLinecap="round"/>
-  {variant==='error'?<g><rect x="96" y="75" width="90" height="64" rx="17" fill="#fff9ed"/><path d="M108 125 171 88M122 116v-20m22 10v-13m17 4v-14" stroke={dark} strokeWidth="3" strokeLinecap="round"/><circle cx="122" cy="96" r="4" fill="#a498ca"/><circle cx="144" cy="93" r="4" fill="#82b6a3"/></g>:variant==='sensitivity'?<g><path d="M95 129q13-61 31-21t32-24q14-20 25 31" stroke="#fff9ed" strokeWidth="6" fill="none" strokeLinecap="round"/><path d="M95 129q36-46 88-14" stroke={dark} strokeWidth="4" fill="none" strokeLinecap="round"/><circle cx="126" cy="108" r="6" fill="#d6e8da"/></g>:variant==='regularization'?<g><path d="M111 140V90m29 50v-35m29 35V82" stroke="#eef8ed" strokeWidth="5" strokeLinecap="round"/><ellipse cx="111" cy="89" rx="12" ry="6" fill="#d6e8da" transform="rotate(-24 111 89)"/><ellipse cx="140" cy="105" rx="12" ry="6" fill="#f8e4bd"/><ellipse cx="169" cy="82" rx="12" ry="6" fill="#d6e8da" transform="rotate(-24 169 82)"/></g>:green?<g><g transform="translate(111 86) rotate(-10)"><rect x="-24" y="-21" width="48" height="43" rx="14" fill="#faf9f5"/><circle cx="-7" cy="-3" r="5" fill="#78b3a6"/><circle cx="8" cy="7" r="5" fill="#a59acb"/></g><g transform="translate(170 108) rotate(13)"><rect x="-23" y="-19" width="46" height="39" rx="13" fill="#fff3d8"/><path d="m-9 4 6-11 10 15" fill="none" stroke={dark} strokeWidth="3" strokeLinecap="round"/></g><circle cx="133" cy="160" r="5" fill="#fff3d8"/></g>:orange?<g><rect x="97" y="78" width="90" height="65" rx="18" fill="#fff9ed" transform="rotate(-8 142 110)"/><path d="M108 127q17-38 33-24t33-17" fill="none" stroke={dark} strokeWidth="5" strokeLinecap="round"/><circle cx="119" cy="115" r="4" fill="#82b6a3"/><circle cx="152" cy="104" r="4" fill="#82b6a3"/></g>:<g><path d="M102 78q18-9 38 2 20-11 38-2v64q-18-9-38 2-20-11-38-2Z" fill="#fffaf0"/><path d="M140 80v63m-27-46h15m-15 12h15m25-12h13m-13 12h13" stroke={dark} strokeWidth="3" strokeLinecap="round" opacity=".6"/><circle cx="172" cy="158" r="17" fill="#d6e8da"/><path d="m168 158 4-5 4 5-4 5Z" fill={dark}/></g>}
-  <g fill={dark}><circle cx="127" cy="168" r="3"/><circle cx="151" cy="168" r="3"/><path d="M134 177q5 5 10 0" fill="none" stroke={dark} strokeWidth="2" strokeLinecap="round"/></g>
-  <g fill={dark} opacity=".45"><path d="M43 76h10m-5-5v10m175-34h10m-5-5v10" stroke={dark} strokeWidth="2" strokeLinecap="round"/><circle cx="236" cy="190" r="3"/><circle cx="57" cy="193" r="2"/></g>
- </svg>;
+import Image from 'next/image';
+
+const artwork:Record<string,string>={classification:'classification',regression:'regression',mechanisms:'mechanisms',error:'error',sensitivity:'sensitivity',regularization:'regularization',forest:'forest'};
+
+/** Frozen decorative artwork; the adjacent HTML supplies the name and action. */
+export default function PlanetPortal({variant='mechanisms',className='',priority=false,sizes='(max-width:650px) 160px, 240px'}:{variant?:string;className?:string;priority?:boolean;sizes?:string}){
+ const key=artwork[variant]||'mechanisms';
+ return <span className={`pp-portal-art pp-generated-art ${className}`} aria-hidden="true" data-art={key}><Image src={`/illustrations/planet-v18/${key}.png`} alt="" fill sizes={sizes} loading={priority?'eager':'lazy'} fetchPriority={priority?'high':undefined} draggable={false} style={{objectFit:'contain'}}/></span>;
 }
