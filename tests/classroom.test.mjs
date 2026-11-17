@@ -31,9 +31,17 @@ test('mechanism controls and datasets follow the actual model rather than only i
 test('old mechanism links and new task links remain distinguishable and roundtrip',()=>{
  assert.deepEqual(readClassroomLocation('#classification'),{view:'mechanisms',section:'classification'});
  assert.deepEqual(readClassroomLocation('#classroom/classification'),{view:'classification',section:'explore'});
- for(const section of ['explore','concepts','classification','studio','datasets','path','history'])assert.deepEqual(readClassroomLocation(classroomHash('mechanisms',section)),{view:'mechanisms',section});
+ for(const section of ['explore','concepts','classification','studio'])assert.deepEqual(readClassroomLocation(classroomHash('mechanisms',section)),{view:'mechanisms',section});
  assert.equal(readClassroomLocation('',true).view,'mechanisms');assert.equal(readClassroomLocation('#mechanisms/bogus').section,'explore');
 });
+test('saved bookmarks resolve to the current learning, records and real data flows',()=>{
+ for(const [section,view] of [['path','learning'],['datasets','regression'],['bench','regression'],['history','experiments'],['settings','settings']]){
+  for(const prefix of ['#','#mechanisms/'])assert.deepEqual(readClassroomLocation(prefix+section),{view,section:'explore'});
+  if(section!=='bench')assert.equal(classroomHash('mechanisms',section),'#classroom/'+view);
+ }
+ assert.deepEqual(readClassroomLocation('#learn'),{view:'mechanisms',section:'studio'});
+});
+
 test('classroom palette follows the learning context without changing a stored fixed preference',()=>{
  assert.equal(contextPalette('classification'),'lagoon');assert.equal(contextPalette('regression'),'apricot');assert.equal(contextPalette('workbench','classification',2),'meadow');
  assert.equal(readPalette('sky'),'sky');assert.equal(readPalette('invalid'),'auto');

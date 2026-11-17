@@ -155,6 +155,12 @@ def make_router(connect,archive_services=None):
             for row in c.execute('SELECT id,title,created_at FROM records'):
                 items.append({'id':'saved-'+str(row['id']),'created_at':row['created_at'],'kind':'saved','category':'experiments','title':row['title'],'state':'saved',
                     'entry':{'id':str(row['id']),'kind':'saved','title':row['title'],'stage':'complete','status':'已保存实验','updated_at':row['created_at'],'needs_review':False}})
+            for table,evidence_kind in (('action_plans','course_ai'),('island_actions','island_ai')):
+                for row in c.execute(f'SELECT content FROM {table}'):
+                    v=json.loads(row['content']);execution=v.get('execution') or {}
+                    items.append({'id':evidence_kind+'-'+v['id'],'created_at':execution.get('executed_at') or v['created_at'],'kind':evidence_kind,'category':'mechanisms',
+                        'title':'实验建议 · '+v['change']['label'],'state':'verified' if execution else 'planned','imported':bool(v.get('imported_at')),
+                        'evidence':{'kind':evidence_kind,'id':v['id']}})
         if kind!='all':items=[i for i in items if i['category']==kind]
         items.sort(key=lambda x:x['created_at'],reverse=True)
         return {'items':items[offset:offset+limit],'total':len(items),'offset':offset,'limit':limit}

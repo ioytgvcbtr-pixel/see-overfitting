@@ -22,11 +22,6 @@ export function JourneySteps({ attempt }: { attempt: LearningAttempt | null }) {
     attempt ? `已观察 ${attempt.observations.length}/3` : "预测后解锁",
     complete ? "本轮已完成" : attempt?.task ? "用新数据作答" : "三步后解锁",
   ];
-  const positions = [
-    { left: "11%", top: "59%" },
-    { left: "50%", top: "28%" },
-    { left: "89%", top: "51%" },
-  ];
   function jump(index: number) {
     const id =
       index === 0
@@ -48,63 +43,8 @@ export function JourneySteps({ attempt }: { attempt: LearningAttempt | null }) {
     target.focus({ preventScroll: true });
   }
   return (
-    <nav className="journey-map" aria-label="学习流程">
-      <svg viewBox="0 0 440 230" aria-hidden="true">
-        <circle cx="258" cy="113" r="105" fill="#EEE8FA" />
-        <circle
-          cx="258"
-          cy="113"
-          r="78"
-          fill="none"
-          stroke="#D9CFF0"
-          strokeWidth="1"
-        />
-        <circle
-          cx="258"
-          cy="113"
-          r="51"
-          fill="none"
-          stroke="#D9CFF0"
-          strokeWidth="1"
-          strokeDasharray="3 7"
-        />
-        <path
-          d="M48 136 C106 136 112 65 220 65"
-          fill="none"
-          stroke={attempt ? "#8555D8" : "#D3C4EB"}
-          strokeWidth="8"
-          strokeLinecap="round"
-        />
-        <path
-          d="M220 65 C304 65 310 117 392 117"
-          fill="none"
-          stroke={attempt?.task ? "#178A88" : "#C2DDD9"}
-          strokeWidth="8"
-          strokeLinecap="round"
-        />
-        <circle cx="46" cy="44" r="7" fill="#F0BB4D" />
-        <path
-          d="M91 45h12m-6-6v12"
-          stroke="#BE634A"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-      </svg>
-      {labels.map((label, i) => (
-        <button
-          key={label}
-          className={`journey-node node-${i} ${complete || i < phase ? "done" : i === phase ? "current" : ""}`}
-          style={positions[i]}
-          disabled={i === 1 ? !attempt : i === 2 ? !attempt?.task : false}
-          aria-current={!complete && i === phase ? "step" : undefined}
-          onClick={() => jump(i)}
-          aria-label={`${label}，${notes[i]}`}
-        >
-          <span>{complete || i < phase ? <Check size={22} /> : i + 1}</span>
-          <strong>{label}</strong>
-          <small>{notes[i]}</small>
-        </button>
-      ))}
+    <nav className="pp-journey-steps" aria-label="学习流程">
+      <ol>{labels.map((label,i)=><li key={label}><button type="button" disabled={i===1?!attempt:i===2?!attempt?.task:false} aria-current={!complete&&i===phase?'step':undefined} onClick={()=>jump(i)} aria-label={`${label}，${notes[i]}`}><span>{complete||i<phase?<Check size={18}/>:i+1}</span><div><strong>{label}</strong><small>{notes[i]}</small></div></button></li>)}</ol>
     </nav>
   );
 }

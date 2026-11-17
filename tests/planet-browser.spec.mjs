@@ -260,3 +260,29 @@ test('complete learning archives export, reset, import and undo through the stud
  await page.getByRole('button',{name:'重置学习进度',exact:true}).click();await page.getByRole('dialog',{name:'重新开始学习？',exact:true}).press('Escape');await expect(page.getByRole('button',{name:'重置学习进度',exact:true})).toBeFocused();expect((await(await request.get('/api/workspace/settings')).json()).reasoning_effort).toBe(settings.reasoning_effort);
  await page.setViewportSize({width:320,height:667});expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);await page.getByRole('button',{name:'撤销上次重置或导入',exact:true}).click();const undo=page.getByRole('dialog',{name:'恢复上次操作前的档案？',exact:true});await Promise.all([page.waitForEvent('load'),undo.getByRole('button',{name:'恢复上次档案',exact:true}).click()]);await expect(page.getByRole('progressbar',{name:'知识航线',exact:true})).toHaveAttribute('aria-valuenow','0');
 });
+
+test('classroom entry points share one archive and current task destinations',async({page})=>{
+ await page.goto('/#classroom/experiments');await expect(page.getByRole('heading',{name:'我的学习记录',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'导出全部学习记录',exact:true})).toHaveCount(1);
+ await expect(page.locator('a[href*="backup/file"]')).toHaveCount(0);await expect(page.locator('input[type=file]:visible')).toHaveCount(0);
+ for(const [hash,title,canonical] of [['#mechanisms/history','我的学习记录','#classroom/experiments'],['#mechanisms/settings','让学习，按你的节奏。','#classroom/settings'],['#path','从第一课出发，读懂机器学习。','#classroom/learning'],['#datasets','去回归谷，预测未知。','#classroom/regression']]){
+  await page.goto('/'+hash);await expect(page.locator('main h1').first()).toHaveText(title);await expect.poll(()=>page.evaluate(()=>location.hash)).toBe(canonical);await expect(page.locator('main')).toHaveCount(1);await expect(page.locator('.workspace-page,.dataset-lab,.sidebar')).toHaveCount(0);
+ }
+ await page.goto('/#mechanisms/studio');await expect(page.getByRole('group',{name:'选择对照主题',exact:true})).toBeVisible();
+ await page.getByRole('radio',{name:/^样本与噪声/}).check();await expect(page.locator('.studio-intro h1')).toContainText('样本数量与噪声');
+ await expect(page.getByRole('radio',{name:/^样本与噪声/})).toBeFocused();await page.reload();await expect(page.locator('.studio-intro h1')).toContainText('样本数量与噪声');
+ await expect(page.getByRole('navigation',{name:'机制学习导航'}).getByRole('button')).toHaveCount(4);
+ await page.setViewportSize({width:320,height:667});expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);
+ const boxes=await page.locator('.pp-foundation-picker label').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,height:r.height};}));expect(boxes.every(r=>r.left>=0&&r.right<=320&&r.height>=44)).toBe(true);
+});
+
+test('executed mechanism suggestions expose real evidence in current learning records',async({page,request})=>{
+ const parameters={scene:'complexity',degree:4,samples:12,noise:.22,alpha:.00000001,seed:42};
+ const plan=await(await request.post('/api/actions/plan',{data:{kind:'synthetic',parameters}})).json();const run=await(await request.post('/api/actions/'+plan.id+'/execute',{data:{parameters}})).json();
+ await page.goto('/#classroom/experiments');await page.getByRole('button',{name:'机制探索',exact:true}).click();
+ const row=page.locator('.pp-study-event').filter({hasText:'实验建议 · '+plan.change.label}).first();await row.getByRole('button',{name:'查看核验证据',exact:true}).click();
+ const proof=row.getByRole('region',{name:'实验核验证据',exact:true});await expect(proof).toContainText('规则方案');
+ await expect(proof).toContainText(run.before.metrics.validation_mse.toPrecision(5));await expect(proof).toContainText(run.after.metrics.validation_mse.toPrecision(5));
+ await proof.getByText('查看实验条件',{exact:true}).click();await expect(proof.getByRole('region',{name:'执行前后参数',exact:true})).toBeVisible();
+ await page.setViewportSize({width:320,height:667});expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);
+});

@@ -12,7 +12,7 @@ export type MechanismProgress={id:string;title:string;completed:boolean;started:
 export type StudyOverview={chapters:Chapter[];lessons:LessonMeta[];progress:Record<string,LessonProgress>;mechanisms:MechanismProgress[];completed:number;total:number;all_complete:boolean;next_id:string|null;resume_id:string|null;experiment_count:number;event_count:number};
 export type Lesson=LessonMeta&{sections:{title:string;text:string}[];quiz:{question:string;choices:{id:string;text:string}[]};sources:{title:string;url:string}[];practice?:{mechanism_model?:string;label?:string;dataset?:string;model?:string;section?:string;panel?:string}|null};
 export type LessonResponse={lesson:Lesson;progress:LessonProgress};
-export type StudyRecord={id:string;kind:string;category:'knowledge'|'experiments'|'mechanisms';created_at:string;title:string;lesson_id?:string;dataset?:string;dataset_title?:string;model?:string;state?:string;step?:number;run_id?:string;error?:string;changes?:Edit[];entry?:WorkspaceEntry;imported?:boolean};
+export type StudyRecord={id:string;kind:string;category:'knowledge'|'experiments'|'mechanisms';created_at:string;title:string;lesson_id?:string;dataset?:string;dataset_title?:string;model?:string;state?:string;step?:number;run_id?:string;error?:string;changes?:Edit[];entry?:WorkspaceEntry;imported?:boolean;evidence?:{kind:'course_ai'|'island_ai';id:string}};
 export type RecordPage={items:StudyRecord[];total:number;offset:number;limit:number};
 export type Edit={field:string;before:string;after:string};
 export const studyChanged=()=>window.dispatchEvent(new Event('modelplanet-study-changed'));

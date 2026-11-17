@@ -275,7 +275,7 @@ export default function ActionExperiment({
             </button>
           </div>
           <p className="small-copy muted">
-            核验记录已保存在学习档案的“AI核验”中，刷新后仍可查看。
+            核验记录已保存在“我的学习记录”的“机制探索”中，刷新后仍可查看。
           </p>
         </>
       )}

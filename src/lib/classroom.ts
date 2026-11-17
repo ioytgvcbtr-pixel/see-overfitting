@@ -4,24 +4,33 @@ export type ClassroomView='start'|'classification'|'regression'|'models'|'model-
 export type LocationState={view:ClassroomView;section:AppView;lesson?:string;panel?:string;model?:string};
 export const workshopSections:{id:AppView;label:string}[]=[
  {id:'explore',label:'探索地图'},{id:'concepts',label:'概念工坊'},
- {id:'classification',label:'分类边界'},{id:'studio',label:'实验工作台'},
- {id:'path',label:'基础实验课'},{id:'history',label:'学习档案'},
+ {id:'classification',label:'分类边界'},{id:'studio',label:'对照实验'},
 ];
-const legacySections=new Set(['explore','concepts','classification','studio','bench','datasets','path','learn','history','settings']);
+const mechanismSections=new Set(['explore','concepts','classification','studio']);
+export function mechanismLocation(section:string):LocationState{
+ if(section==='history')return {view:'experiments',section:'explore'};
+ if(section==='settings')return {view:'settings',section:'explore'};
+ if(section==='path')return {view:'learning',section:'explore'};
+ if(section==='datasets'||section==='bench')return {view:'regression',section:'explore'};
+ return {view:'mechanisms',section:(mechanismSections.has(section)?section:section==='learn'?'studio':'explore') as AppView};
+}
 export function readClassroomLocation(hash:string,initialMechanism=false):LocationState{
  const value=hash.replace(/^#/,'');
  if(value==='settings'||value==='mechanisms/settings')return {view:'settings',section:'explore'};
  if(value.startsWith('mechanisms/')){
-  const [section,panel]=value.slice(11).split('/');return {view:'mechanisms',section:legacySections.has(section)?(section==='bench'||section==='learn'?'studio':section) as AppView:'explore',...(['error','sensitivity','regularization'].includes(panel)?{panel}:{})};
+  const [section,panel]=value.slice(11).split('/');const state=mechanismLocation(section);return {...state,...(state.section==='concepts'&&['error','sensitivity','regularization'].includes(panel)?{panel}:{})};
  }
  if(value.startsWith('classroom/')){
   const model=value.match(/^classroom\/model-mechanism\/([a-z][a-z0-9_]{0,40})$/);if(model)return {view:'model-mechanism',section:'explore',model:model[1]};
   const [view,lesson]=value.slice(10).split('/');return {...(view==='learning'&&/^[a-z0-9-]{1,60}$/.test(lesson||'')?{lesson}:{}),view:['start','classification','regression','models','experiments','workbench','learning','settings'].includes(view)?view as ClassroomView:'start',section:'explore'};
  }
- if(legacySections.has(value))return {view:'mechanisms',section:(value==='bench'||value==='learn'?'studio':value) as AppView};
+ if(mechanismSections.has(value)||['bench','datasets','path','learn','history'].includes(value))return mechanismLocation(value);
  return {view:initialMechanism?'mechanisms':'start',section:'explore'};
 }
-export const classroomHash=(view:ClassroomView,section:AppView='explore',lesson:string|null=null,panel:string|null=null,model:string|null=null)=>view==='mechanisms'?`#mechanisms/${section}${panel?'/'+panel:''}`:view==='model-mechanism'?`#classroom/model-mechanism/${model||''}`:`#classroom/${view}${view==='learning'&&lesson?'/'+lesson:''}`;
+export function classroomHash(view:ClassroomView,section:AppView='explore',lesson:string|null=null,panel:string|null=null,model:string|null=null):string{
+ if(view==='mechanisms'){const state=mechanismLocation(section);return state.view==='mechanisms'?`#mechanisms/${state.section}${state.section==='concepts'&&panel?'/'+panel:''}`:classroomHash(state.view);}
+ return view==='model-mechanism'?`#classroom/model-mechanism/${model||''}`:`#classroom/${view}${view==='learning'&&lesson?'/'+lesson:''}`;
+}
 
 export const palettes={
  orchid:{name:'鸢尾紫',brand:'#7443a5',ink:'#2d243d',muted:'#6c6078',bg:'#f8f6fc',soft:'#eee6f6',nav:'#30223f'},

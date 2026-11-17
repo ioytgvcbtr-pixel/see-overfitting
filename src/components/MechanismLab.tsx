@@ -10,24 +10,14 @@ import {
   BookOpen,
   Check,
   CheckCheck,
-  ChevronRight,
   CircleHelp,
-  Compass,
-  Clock3,
-  Database,
   FlaskConical,
-  FolderOpen,
-  GraduationCap,
   Layers3,
-  Lightbulb,
   LoaderCircle,
   LockKeyhole,
-  Menu,
   Play,
-  Plus,
   RotateCcw,
   Save,
-  Settings2,
   ShieldCheck,
   Sparkles,
   Target,
@@ -35,7 +25,6 @@ import {
   X,
 } from "lucide-react";
 import { FitChart, ErrorChart } from "@/components/FitChart";
-import DatasetLab from "@/components/DatasetLab";
 import ExperimentControls from "@/components/ExperimentControls";
 import {
   JourneySteps,
@@ -45,16 +34,11 @@ import {
 } from "@/components/LearningJourney";
 import { useLearningJourney } from "@/components/useLearningJourney";
 import ActionExperiment from "@/components/ActionExperiment";
-import WorkspaceRecords from "@/components/WorkspaceRecords";
-import WorkspaceSettings from "@/components/WorkspaceSettings";
-import {connectionLabel,type Health,type WorkspaceOverview,type WorkspaceEntry} from "@/lib/workspace";
+import {type Health,type WorkspaceOverview,type WorkspaceEntry} from "@/lib/workspace";
 import type {IslandAttempt,IslandLaunch,IslandId} from "@/lib/island-learning";
 import ConceptWorkshop from "@/components/ConceptWorkshop";
 import ClassificationLab from "@/components/ClassificationLab";
-import ExploreMap from "@/components/ExploreMap";
-import SceneArtwork from "@/components/SceneArtwork";
-import { activateProgress } from "@/lib/island-progress";
-import { lessonVisual } from "@/lib/visual-scenes";
+import PlanetPortal from "@/components/planet/PlanetPortal";
 import type { ConceptPanel } from "@/lib/concepts";
 import type { ClassRecipeId } from "@/lib/exploration";
 import {
@@ -63,7 +47,7 @@ import {
   MetricHelp,
 } from "@/components/LearningGuide";
 import { lessonGuide, type ObservationSet } from "@/lib/learning-guide";
-import { viewFromHash, hashForView, type AppView } from "@/lib/navigation";
+import type { AppView } from "@/lib/navigation";
 import {
   api,
   metric,
@@ -78,18 +62,16 @@ import {
 } from "@/lib/experiment";
 
 type View = AppView;
-type Modal = "guide" | "save" | "report" | "final" | "sources" | null;
+type Modal = "save" | "report" | "final" | "sources" | null;
 const alphaLabel = (a: number) =>
   a < 0.001 ? a.toExponential(0).replace("e-", " × 10⁻") : String(a);
 
-export default function Home({embedded=false,section="explore",onSectionChange,topicRequest,resumeRequest}:{embedded?:boolean;section?:AppView;onSectionChange?:(view:AppView)=>void;topicRequest?:{panel:ConceptPanel;serial:number}|null;resumeRequest?:{entry:WorkspaceEntry;serial:number}|null}) {
-  const ContentTag=embedded?"div":"main";
+export default function MechanismLab({section="concepts",onSectionChange,topicRequest,resumeRequest}:{section?:AppView;onSectionChange:(view:AppView)=>void;topicRequest?:{panel:ConceptPanel;serial:number}|null;resumeRequest?:{entry:WorkspaceEntry;serial:number}|null}) {
   const [view, setViewState] = useState<View>(section);
-  const [navigationReady, setNavigationReady] = useState(false);
   const [classLaunch, setClassLaunch] = useState<ClassRecipeId | null>(null);
   const [conceptLaunch, setConceptLaunch] = useState<ConceptPanel | null>(null);
   const [islandLaunch,setIslandLaunch]=useState<IslandLaunch|null>(null);
-  const [workspace,setWorkspace]=useState<WorkspaceOverview|null>(null),[workspaceRevision,setWorkspaceRevision]=useState(0);
+  const [workspaceRevision,setWorkspaceRevision]=useState(0);
   const [serviceError,setServiceError]=useState(""),[workspaceError,setWorkspaceError]=useState("");
   const [params, setParams] = useState<Parameters>(scenes[0].defaults);
   const [sceneReady, setSceneReady] = useState(false);
@@ -103,15 +85,9 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
       ));
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
-  const [records, setRecords] = useState<SavedRecord[]>([]);
   const [actionIds, setActionIds] = useState<string[]>([]);
-  const [selected, setSelected] = useState<number[]>([]);
-  const [archiveTab, setArchiveTab] = useState<
-    "learning" | "actions" | "saved"
-  >("learning");
   const [completed, setCompleted] = useState<SceneId[]>([]);
   const [modal, setModal] = useState<Modal>(null);
-  const [mobileMenu, setMobileMenu] = useState(false);
   const [toast, setToast] = useState("");
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
@@ -135,7 +111,6 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
   const sweepAbort = useRef<AbortController | null>(null);
   const modalRef = useRef<HTMLElement | null>(null);
   const scene = scenes.find((s) => s.id === params.scene)!;
-  const comparison = records.filter((r) => selected.includes(r.id));
   const guide = lessonGuide(params);
   const journey = useLearningJourney(params, setParams, sceneReady);
   const canReveal = journey.ready && !!journey.activeId;
@@ -165,15 +140,9 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
         ? `${params.samples}个样本`
         : `α ${alphaLabel(params.alpha)}`;
   function setView(next: View) {
-    if(embedded&&(next==="history"||next==="settings")){onSectionChange?.(next);return;}
-    setViewState(next);
-    if(embedded)onSectionChange?.(next);
-    else if (window.location.hash !== hashForView(next))
-      window.history.pushState(null, "", hashForView(next));
-    window.scrollTo({ top: 0, behavior: "instant" });
-    requestAnimationFrame(() =>
-      document.getElementById(embedded?"mechanism-content":"main-content")?.focus({ preventScroll: true }),
-    );
+    onSectionChange(next);
+    if(["concepts","classification","studio"].includes(next))setViewState(next);
+    requestAnimationFrame(()=>document.getElementById("mechanism-content")?.focus());
   }
   function launchIsland(attempt:IslandAttempt){
     setIslandLaunch({attempt,serial:Date.now()});
@@ -193,8 +162,7 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
   useEffect(()=>{
     const abort=new AbortController();
     api<Health>("/health",undefined,abort.signal).then(value=>{setHealth(value);setServiceError("");}).catch(e=>{if(e.name!=="AbortError"){setHealth(null);setServiceError(e.message);}});
-    api<WorkspaceOverview>("/workspace/overview",undefined,abort.signal).then(value=>{setWorkspace(value);setWorkspaceError("");setCompleted(value.completed_scenes);localStorage.setItem("fitlab-learning-completed-v1",JSON.stringify(value.completed_scenes));}).catch(e=>{if(e.name!=="AbortError")setWorkspaceError(e.message);});
-    api<SavedRecord[]>("/records",undefined,abort.signal).then(setRecords).catch(()=>{});
+    api<WorkspaceOverview>("/workspace/overview",undefined,abort.signal).then(value=>{setWorkspaceError("");setCompleted(value.completed_scenes);localStorage.setItem("fitlab-learning-completed-v1",JSON.stringify(value.completed_scenes));}).catch(e=>{if(e.name!=="AbortError")setWorkspaceError(e.message);});
     return()=>abort.abort();
   },[view,workspaceRevision]);
   useEffect(() => {
@@ -203,25 +171,10 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
     if (previous) setParams({ ...previous.defaults });
     setSceneReady(true);
   }, []);
-  useEffect(()=>{if(embedded){setViewState(section);setNavigationReady(true);}},[embedded,section]);
-  useEffect(()=>{if(embedded&&topicRequest){setViewState("concepts");setConceptLaunch(topicRequest.panel);}},[embedded,topicRequest?.serial]);
+  useEffect(()=>{setViewState(section);},[section]);
+  useEffect(()=>{if(topicRequest){setViewState("concepts");setConceptLaunch(topicRequest.panel);}},[topicRequest?.serial]);
   const resumedSerial=useRef<number|null>(null);
-  useEffect(()=>{if(embedded&&sceneReady&&resumeRequest&&resumedSerial.current!==resumeRequest.serial){resumedSerial.current=resumeRequest.serial;void openWorkspaceEntry(resumeRequest.entry);}},[embedded,sceneReady,resumeRequest?.serial]);
-  useEffect(() => {
-    if(embedded)return;
-    const apply = () => {
-      setViewState(viewFromHash(window.location.hash));
-      setNavigationReady(true);
-      setMobileMenu(false);
-    };
-    apply();
-    window.addEventListener("popstate", apply);
-    window.addEventListener("hashchange", apply);
-    return () => {
-      window.removeEventListener("popstate", apply);
-      window.removeEventListener("hashchange", apply);
-    };
-  }, []);
+  useEffect(()=>{if(sceneReady&&resumeRequest&&resumedSerial.current!==resumeRequest.serial){resumedSerial.current=resumeRequest.serial;void openWorkspaceEntry(resumeRequest.entry);}},[sceneReady,resumeRequest?.serial]);
   useEffect(() => {
     if (journey.attempt?.stage !== "complete") return;
     setCompleted((previous) => {
@@ -319,8 +272,7 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
     localStorage.setItem("fitlab-current-scene-v1", id);
     setParams({ ...scenes.find((s) => s.id === id)!.defaults });
     setChartTab("fit");
-    setView("studio");
-    setMobileMenu(false);
+    if(view!=="studio")setView("studio");
   }
   function update<K extends keyof Parameters>(key: K, value: Parameters[K]) {
     setParams((p) => ({ ...p, [key]: value }));
@@ -384,9 +336,8 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
         note,
         prediction: journey.attempt?.prediction.label || "",
       });
-      setRecords(await api<SavedRecord[]>("/records"));
       setModal(null);
-      setToast("实验已保存，可在学习档案中回放与比较。");
+      setToast("实验已保存，可在“我的学习记录”中回看。");
     } catch (e) {
       setToast((e as Error).message);
     } finally {
@@ -417,7 +368,7 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
           explanation: coach?.content || "",
           explanation_mode: coach?.mode || "none",
           explanation_model: coach?.model || null,
-          record_ids: selected,
+          record_ids: [],
           learning_progress: completed,
           learning_attempt_id: journey.activeId,
           action_plan_ids: actionIds,
@@ -437,248 +388,10 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
   }
 
   return (
-    <div className={embedded?"pp-mechanism-host":"app-shell"} data-scene={params.scene}>
-      {!embedded&&<><a
-        href="#main-content"
-        className="skip-link"
-        onClick={(event) => {
-          event.preventDefault();
-          document.getElementById(embedded?"mechanism-content":"main-content")?.focus();
-        }}
-      >
-        跳到实验内容
-      </a>
-      {mobileMenu && (
-        <button
-          className="sidebar-shade"
-          aria-label="关闭导航"
-          onClick={() => setMobileMenu(false)}
-        />
-      )}
-      <aside className={`sidebar ${mobileMenu ? "open" : ""}`}>
-        <a href="/" className="brand">
-          <span className="brand-mark" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 32 32">
-              <circle cx="5" cy="24" r="2" fill="currentColor" />
-              <circle cx="14" cy="11" r="2" fill="currentColor" />
-              <circle cx="25" cy="15" r="2" fill="currentColor" />
-              <path
-                d="M3 25C8 18 10 6 17 10S24 23 29 12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </span>
-          <span>
-            模力星球<small>模型机制工坊</small>
-          </span>
-        </a>
-        <div className="workspace-label">
-          学习导航<span>个人版</span>
-        </div>
-        <nav className="main-nav" aria-label="主导航">
-          <button
-            className={view === "explore" ? "active" : ""}
-            onClick={() => {
-              setView("explore");
-              setMobileMenu(false);
-            }}
-          >
-            <Compass size={18} />
-            探索地图
-          </button>
-          <button
-            className={view === "concepts" ? "active" : ""}
-            onClick={() => {
-              setView("concepts");
-              setMobileMenu(false);
-            }}
-          >
-            <Lightbulb size={18} />
-            概念工坊
-          </button>
-          <button
-            className={view === "classification" ? "active" : ""}
-            onClick={() => {
-              setView("classification");
-              setMobileMenu(false);
-            }}
-          >
-            <Target size={18} />
-            分类边界
-          </button>
-          <button
-            className={view === "studio" ? "active" : ""}
-            onClick={() => {
-              setView("studio");
-              setMobileMenu(false);
-            }}
-          >
-            <FlaskConical size={18} />
-            实验工作台
-            <span className="nav-active-dot" />
-          </button>
-          <button
-            className={view === "datasets" ? "active" : ""}
-            onClick={() => {
-              setView("datasets");
-              setMobileMenu(false);
-            }}
-          >
-            <Database size={18} />
-            真实数据
-          </button>
-          <button
-            className={view === "path" ? "active" : ""}
-            onClick={() => {
-              setView("path");
-              setMobileMenu(false);
-            }}
-          >
-            <GraduationCap size={18} />
-            学习路径<span className="nav-count">3</span>
-          </button>
-          <button
-            className={view === "history" ? "active" : ""}
-            onClick={() => {
-              setView("history");
-              setMobileMenu(false);
-            }}
-          >
-            <FolderOpen size={18} />
-            学习档案
-          </button>
-        </nav>
-        {(view === "studio" || view === "path") && (
-          <>
-            <div className="sidebar-divider" />
-            <div className="sidebar-label">
-              交互实验<span>三步建立直觉</span>
-            </div>
-            <div className="lesson-nav">
-              {scenes.map((s) => (
-                <button
-                  key={s.id}
-                  className={
-                    view === "studio" && params.scene === s.id ? "selected" : ""
-                  }
-                  onClick={() => changeScene(s.id)}
-                >
-                  <span
-                    className={`lesson-number ${completed.includes(s.id) ? "done" : ""}`}
-                  >
-                    {completed.includes(s.id) ? <Check size={13} /> : s.number}
-                  </span>
-                  <span>
-                    {s.short}
-                    <small>{s.tag}</small>
-                  </span>
-                  {params.scene === s.id && view === "studio" && (
-                    <ChevronRight size={14} />
-                  )}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-        <div className="sidebar-spacer" />
-        <div className="journey-card">
-          <div>
-            <span className="tiny-spark">✦</span> 完成一次，理解一点
-          </div>
-          <p>从记住概念，到建立直觉。</p>
-          <div className="journey-progress">
-            <span style={{ width: `${(completed.length / 3) * 100}%` }} />
-          </div>
-          <footer>
-            <span>已完成课程</span>
-            <strong>{completed.length} / 3</strong>
-          </footer>
-        </div>
-        <button className="help-link" onClick={() => setModal("sources")}>
-          <CircleHelp size={17} />
-          方法与数据来源
-          <ArrowUpRight size={14} />
-        </button>
-      </aside></>}
-
-      <div className={embedded?"pp-embedded-shell":"main-shell"}>
-        {!embedded&&<header className="topbar">
-          <div className="breadcrumb">
-            <button
-              className="mobile-toggle"
-              aria-label="展开导航"
-              onClick={() => setMobileMenu(true)}
-            >
-              <Menu size={21} />
-            </button>
-            <span>我的工作空间</span>
-            <ChevronRight size={13} />
-            <strong>
-              {view === "explore"
-                ? "探索地图"
-                : view === "concepts"
-                  ? "概念工坊"
-                  : view === "classification"
-                    ? "分类边界实验室"
-                    : view === "studio"
-                      ? "实验工作台"
-                      : view === "path"
-                        ? "学习路径"
-                        : view === "datasets"
-                          ? "真实数据实验"
-                          : view === "settings" ? "设置与数据" : "学习档案"}
-            </strong>
-          </div>
-          <div className="topbar-right">
-            <span className="ai-status">
-              <i />
-              {health?connectionLabel(health.connection):serviceError?"实验服务未连接":"检查连接中"}
-            </span>
-            <span className="topbar-separator" />
-            <button className="text-button" aria-label="使用指南" onClick={() => setModal("guide")}>
-              <BookOpen size={16} />
-              <span className="workspace-guide-label">使用指南</span>
-            </button>
-            <button className="text-button workspace-settings-trigger" aria-label="设置与数据" onClick={()=>setView("settings")}><Settings2 size={20}/><span>设置</span></button>
-          </div>
-        </header>}
-
-        <ContentTag className={embedded?"pp-embedded-content":"content"} id={embedded?"mechanism-content":"main-content"} tabIndex={-1}>
+    <div className="pp-mechanism-host" data-scene={params.scene}>
+      <div className="pp-embedded-shell">
+        <div className="pp-embedded-content" id="mechanism-content" tabIndex={-1}>
           {serviceError&&<div className="workspace-service-error" role="alert"><p>{serviceError}</p><button className="text-button" onClick={()=>setWorkspaceRevision(n=>n+1)}>重新连接</button><button className="text-button" onClick={()=>setView("settings")}>检查设置</button></div>}
-          {!navigationReady && (
-            <div className="navigation-loading" role="status">
-              正在打开实验…
-            </div>
-          )}
-          {navigationReady && view === "explore" && (
-            <ExploreMap
-              onStart={async()=>launchIsland(await api<IslandAttempt>("/islands/tasks",{panel:"error",mode:"discovery"}))}
-              continueEntry={workspace?.latest??null}
-              onResumeEntry={openWorkspaceEntry}
-              onConcept={(panel) => {
-                setConceptLaunch(panel);
-                setView("concepts");
-              }}
-              onRecipe={(id) => {
-                setClassLaunch(id);
-                setView("classification");
-              }}
-              onStudy={() => setView("studio")}
-              onContinue={(id) => {
-                activateProgress(id);
-                if (id === "forest") {
-                  setClassLaunch(null);
-                  setView("classification");
-                } else {
-                  setConceptLaunch(id);
-                  setView("concepts");
-                }
-              }}
-            />
-          )}
           {view === "concepts" && (
             <ConceptWorkshop
               learningLaunch={islandLaunch}
@@ -698,14 +411,12 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
               onLaunchConsumed={() => setClassLaunch(null)}
             />
           )}
-          {view === "datasets" && <DatasetLab onNotify={setToast} />}
-          {view === "settings" && <WorkspaceSettings/>}
           {view === "studio" && (
             <>
               <div
                 className={`studio-intro ${canReveal ? "is-experiment" : ""}`}
               >
-                <div className="page-heading">
+                <div className="page-heading pp-contrast-heading">
                   <div>
                     <div className="eyebrow">
                       <span>学习主题 {scene.number}</span>
@@ -714,10 +425,10 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
                     </div>
                     <h1>
                       {scene.title}
-                      <span className="level-badge">基础探索</span>
                     </h1>
                     <p>{scene.description}</p>
                   </div>
+                  <PlanetPortal variant={params.scene==='complexity'?'sensitivity':params.scene==='samples'?'error':'regularization'} className="pp-contrast-planet" priority sizes="(max-width:650px) 80px, 140px"/>
                   <div className="heading-actions">
                     <button
                       className="button secondary"
@@ -742,6 +453,10 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
                   </div>
                 </div>
 
+                <fieldset className="pp-foundation-picker">
+                  <legend>选择对照主题</legend>
+                  <div>{scenes.map(s=><label key={s.id}><input type="radio" name="foundation-scene" value={s.id} checked={params.scene===s.id} onChange={()=>changeScene(s.id)}/><span><strong>{s.short}</strong><small>{s.description}</small></span></label>)}</div>
+                </fieldset>
                 <JourneySteps attempt={journey.attempt} />
               </div>
               {journey.error && (
@@ -1147,267 +862,10 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
                   </section>
                 </>
               )}
-              <footer className="page-footer">
-                <span>理解，来自亲手探索。</span>
-                <span>
-                  FITLAB <i /> 可复现的机器学习实验
-                </span>
-              </footer>
             </>
           )}
 
-          {view === "path" && (
-            <>
-              <div className="page-heading">
-                <div>
-                  <div className="eyebrow">学习路线</div>
-                  <h1>建立你的机器学习直觉</h1>
-                  <p>三个小实验，理解模型、数据与约束如何一起影响泛化。</p>
-                </div>
-                <div className="path-total">
-                  {completed.length}
-                  <span>/ 3 已完成</span>
-                </div>
-              </div>
-              <div className="path-grid">
-                {scenes.map((s) => (
-                  <section className="panel path-card" key={s.id}>
-                    <button
-                      className={`path-scene-cover cover-${s.id}`}
-                      aria-label={`进入${s.short}`}
-                      onClick={() => changeScene(s.id)}
-                    >
-                      <SceneArtwork
-                        scene={lessonVisual[s.id]}
-                        sizes="(max-width:760px) 80vw, 360px"
-                        eager
-                      />
-                      <span>
-                        进入课程
-                        <ArrowRight size={15} />
-                      </span>
-                    </button>
-                    <div className="path-card-body">
-                      <div className="eyebrow">
-                        实验 {s.number} · {s.tag}
-                      </div>
-                      <h2>{s.title}</h2>
-                      <p>{s.description}</p>
-                      <div className="path-card-task">
-                        <Target size={15} />
-                        {s.task}
-                      </div>
-                      <button
-                        className="button primary"
-                        onClick={() => changeScene(s.id)}
-                      >
-                        {completed.includes(s.id) ? (
-                          <Check size={16} />
-                        ) : (
-                          <Play size={15} />
-                        )}{" "}
-                        {completed.includes(s.id) ? "再次探索" : "开始实验"}
-                        <ArrowRight size={15} />
-                      </button>
-                    </div>
-                  </section>
-                ))}
-              </div>
-              <section className="panel learning-note">
-                <ShieldCheck size={23} />
-                <div>
-                  <h3>先验证直觉，再相信结论。</h3>
-                  <p>
-                    课程完成状态保存在当前浏览器。实验记录保存在本地服务，可以跨页面查看与导出。
-                  </p>
-                </div>
-              </section>
-            </>
-          )}
-
-          {view === "history" && (
-            <>
-              <div className="page-heading">
-                <div>
-                  <div className="eyebrow">可回放的实验记录</div>
-                  <h1>每一次探索，都有迹可循</h1>
-                  <p>回到某次实验，比较不同选择，找到你的证据。</p>
-                </div>
-                <button
-                  className="button primary"
-                  onClick={() => setView("studio")}
-                >
-                  <Plus size={16} />
-                  继续实验
-                </button>
-              </div>
-              <div className="archive-tabs" aria-label="档案分类">
-                <button
-                  aria-pressed={archiveTab === "learning"}
-                  onClick={() => setArchiveTab("learning")}
-                >
-                  课程与四岛
-                </button>
-                <button
-                  aria-pressed={archiveTab === "actions"}
-                  onClick={() => setArchiveTab("actions")}
-                >
-                  AI实验
-                </button>
-                <button
-                  aria-pressed={archiveTab === "saved"}
-                  onClick={() => setArchiveTab("saved")}
-                >
-                  已保存实验（{records.length}）
-                </button>
-              </div>
-              {workspaceError&&!serviceError&&<p role="alert">{workspaceError}<button className="text-button" onClick={()=>setWorkspaceRevision(n=>n+1)}>重试读取</button></p>}
-              {workspace&&archiveTab==="learning"&&<div className="workspace-learning-summary"><span>课程 <b>{workspace.stats.courses}/3</b></span><span>四岛学习 <b>{workspace.stats.island_rounds}轮</b></span><span>需复盘 <b>{workspace.stats.needs_review}条</b></span></div>}
-              {archiveTab === "actions" && <WorkspaceRecords overview={workspace} group="ai" onOpen={openWorkspaceEntry} onRefresh={()=>setWorkspaceRevision(n=>n+1)}/>}
-
-              {archiveTab === "learning" && (
-                <WorkspaceRecords overview={workspace} group="learning" onOpen={openWorkspaceEntry} onRefresh={()=>setWorkspaceRevision(n=>n+1)}/>
-              )}
-
-              <div className="saved-archive" hidden={archiveTab !== "saved"}>
-                {comparison.length > 0 && (
-                  <section className="panel comparison-panel">
-                    <div className="panel-heading compact">
-                      <h2>
-                        <Layers3 size={17} />
-                        实验对比
-                      </h2>
-                      <button
-                        className="text-button"
-                        onClick={() => setSelected([])}
-                      >
-                        清空选择
-                      </button>
-                    </div>
-                    <div className="comparison-scroll">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>实验</th>
-                            <th>阶数</th>
-                            <th>样本</th>
-                            <th>噪声</th>
-                            <th>正则 α</th>
-                            <th>种子</th>
-                            <th>训练 MSE</th>
-                            <th>验证 MSE</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {comparison.map((r) => (
-                            <tr key={r.id}>
-                              <td>{r.title}</td>
-                              <td>{r.result.parameters.degree}</td>
-                              <td>{r.result.parameters.samples}</td>
-                              <td>{r.result.parameters.noise}</td>
-                              <td>{alphaLabel(r.result.parameters.alpha)}</td>
-                              <td>{r.result.parameters.seed}</td>
-                              <td>{metric(r.result.metrics.train_mse)}</td>
-                              <td>{metric(r.result.metrics.validation_mse)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <p className="muted small-copy">
-                      最多对比三组。比较单一因素时，记得保持种子及其他参数一致。已选记录也将包含在导出报告中。
-                    </p>
-                  </section>
-                )}
-                {records.length === 0 ? (
-                  <section className="panel empty-history">
-                    <FolderOpen size={42} strokeWidth={1} />
-                    <h2>你的第一份实验记录，等你来写</h2>
-                    <p>在工作台点击“保存实验”，留下参数、结果与思考。</p>
-                    <button
-                      className="button primary"
-                      onClick={() => setView("studio")}
-                    >
-                      去做一次实验
-                      <ArrowRight size={15} />
-                    </button>
-                  </section>
-                ) : (
-                  <div className="record-grid">
-                    {records.map((r) => (
-                      <article className="panel record-card" key={r.id}>
-                        <div className="record-card-top">
-                          <span className="eyebrow">
-                            {
-                              scenes.find(
-                                (s) => s.id === r.result.parameters.scene,
-                              )?.short
-                            }
-                          </span>
-                          <label className="compare-check">
-                            <input
-                              type="checkbox"
-                              checked={selected.includes(r.id)}
-                              disabled={
-                                !selected.includes(r.id) && selected.length >= 3
-                              }
-                              onChange={(e) =>
-                                setSelected((ids) =>
-                                  e.target.checked
-                                    ? [...ids, r.id]
-                                    : ids.filter((id) => id !== r.id),
-                                )
-                              }
-                            />
-                            对比
-                          </label>
-                        </div>
-                        <h2>{r.title}</h2>
-                        <p className="record-time">
-                          <Clock3 size={12} />
-                          {new Date(r.created_at).toLocaleString("zh-CN")}
-                        </p>
-                        <div className="record-values">
-                          <span>
-                            训练 MSE
-                            <strong>
-                              {metric(r.result.metrics.train_mse)}
-                            </strong>
-                          </span>
-                          <span>
-                            验证 MSE
-                            <strong>
-                              {metric(r.result.metrics.validation_mse)}
-                            </strong>
-                          </span>
-                        </div>
-                        <p className="record-note">
-                          {r.note ||
-                            `${r.result.parameters.degree} 阶 · ${r.result.parameters.samples} 样本 · 噪声 ${r.result.parameters.noise}`}
-                        </p>
-                        <button
-                          className="text-button"
-                          onClick={() => {
-                            journey.reset(r.result.parameters.scene);
-                            setParams({ ...r.result.parameters });
-                            setView("studio");
-                            setChartTab("fit");
-                            setToast(
-                              "已恢复实验条件；先记录本轮判断，这是已见条件的复习。",
-                            );
-                          }}
-                        >
-                          载入并回放
-                          <ArrowUpRight size={15} />
-                        </button>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </ContentTag>
+        </div>
       </div>
 
       {toast && (
@@ -1434,51 +892,6 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
             >
               <X size={20} />
             </button>
-            {modal === "guide" && (
-              <>
-                <span className="modal-icon">
-                  <BookOpen size={25} />
-                </span>
-                <h2 id="modal-title">
-                  {["explore", "concepts", "classification"].includes(view)
-                    ? "先动手，再核对证据"
-                    : "一次实验，五个小步骤"}
-                </h2>
-                <p className="modal-description">
-                  保持好奇，也给每个结论留下证据。
-                </p>
-                <ol className="guide-steps">
-                  {(["explore", "concepts", "classification"].includes(view)
-                    ? [
-                        "从探索地图选一个问题，或直接进入实验配方。",
-                        "在概念工坊拖点、调参数，观察曲线与误差怎样联动。",
-                        "错分侦探中先检查空心验证点，再揭晓完整证据。",
-                        "A/B对照先定格A，再改变B；拖中线比较同一数据。",
-                        "探索不计课程成绩；进入学习工作台完成预测与迁移验证。",
-                      ]
-                    : [
-                        "选择一个场景，先回答预测问题。",
-                        "一次改变一个参数，观察曲线与验证误差。",
-                        "保存几组实验，在档案中选择对比。",
-                        "请教练解释当前指标，完成迁移练习。",
-                        "确定模型后揭示独立测试，导出实验报告。",
-                      ]
-                  ).map((text, index) => (
-                    <li key={text}>
-                      <span>{index + 1}</span>
-                      {text}
-                    </li>
-                  ))}
-                </ol>
-                <button
-                  className="button primary full-width"
-                  onClick={() => setModal(null)}
-                >
-                  明白，返回画面
-                  <ArrowRight size={16} />
-                </button>
-              </>
-            )}
             {modal === "save" && (
               <>
                 <span className="modal-icon">
@@ -1522,7 +935,7 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
                   ) : (
                     <Save size={16} />
                   )}{" "}
-                  {saving ? "正在保存…" : "保存到学习档案"}
+                  {saving ? "正在保存…" : "保存实验记录"}
                 </button>
               </>
             )}
@@ -1533,7 +946,7 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
                 </span>
                 <h2 id="modal-title">带走你的实验成果</h2>
                 <p className="modal-description">
-                  报告包含参数、真实指标、数据指纹、本轮预测与迁移作答、本轮AI核验及已选对比记录。
+                  报告包含参数、真实指标、数据指纹、本轮预测与迁移作答及AI核验。
                 </p>
                 <div className="report-preview">
                   <div>
@@ -1549,10 +962,6 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
                   <div>
                     <span>独立测试</span>
                     <strong>{final ? "已完成" : "尚未揭示"}</strong>
-                  </div>
-                  <div>
-                    <span>对比记录</span>
-                    <strong>{comparison.length} 组</strong>
                   </div>
                 </div>
                 <div className="export-options">
@@ -1659,7 +1068,7 @@ export default function Home({embedded=false,section="explore",onSectionChange,t
                 </span>
                 <h2 id="modal-title">看得见，也能复现</h2>
                 <p className="modal-description">
-                  基础课使用合成数据，进阶实验使用UCI公开快照；图表与指标由Python计算，解释基于同一份证据。
+                  对照实验使用合成数据，分类与回归任务使用内置公开快照；图表与指标由Python计算，解释基于同一份证据。
                 </p>
                 <div className="source-list">
                   <div>

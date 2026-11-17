@@ -71,6 +71,24 @@ def test_resume_moves_past_completed_lessons_but_keeps_unfinished_work(client):
     assert c.get('/study/overview').json()['resume_id']==last['id']
 
 
+def test_mechanism_ai_evidence_is_reachable_from_the_unified_record_timeline(client):
+    from backend.experiments import Parameters
+    params=Parameters().model_dump()
+    plan=client.post('/actions/plan',json={'kind':'synthetic','parameters':params}).json()
+    rows=client.get('/study/records?kind=mechanisms').json()['items']
+    entry=next(r for r in rows if r.get('evidence',{}).get('id')==plan['id'])
+    assert entry['state']=='planned' and entry['evidence']['kind']=='course_ai'
+    run=client.post(f"/actions/{plan['id']}/execute",json={'parameters':params})
+    assert run.status_code==200
+    rows=client.get('/study/records?kind=mechanisms').json()['items']
+    entry=next(r for r in rows if r.get('evidence',{}).get('id')==plan['id'])
+    assert entry['state']=='verified'
+    proof=client.get(f"/workspace/evidence/{entry['evidence']['kind']}/{entry['evidence']['id']}").json()['proof']
+    assert proof['before']==run.json()['before']['metrics']['validation_mse']
+    assert proof['after']==run.json()['after']['metrics']['validation_mse']
+    assert not any('evidence' in r for r in client.get('/study/records?kind=knowledge').json()['items'])
+
+
 def test_revised_checks_balance_position_and_remove_length_shortcuts():
     from collections import Counter
     positions=[];ranks=[]

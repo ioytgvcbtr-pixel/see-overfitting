@@ -16,7 +16,7 @@ export default function LearningArchive({onPrepare}:{onPrepare?:()=>Promise<void
  async function selectFile(selected:File){
   if(selected.size>32*1024*1024){setError('完整学习档案限32MB。');return;}setBusy('正在校验学习档案');setError('');
   try{let value:ArchivePackage;try{value=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(await selected.arrayBuffer()));}catch{throw Error('文件无法读取，请选择JSON格式的学习档案。');}
-   if(value?.format!=='modelplanet-learning-archive'||value.version!==1)throw Error('请选择“导出全部学习记录”生成的档案。旧版分项备份可在下方原入口导入。');
+   if(value?.format!=='modelplanet-learning-archive'||value.version!==1)throw Error('请选择“导出全部学习记录”生成的完整JSON档案。');
    await onPrepare?.();const checked=await api<{summary:ArchiveSummary}>('/learning-archive/preview',{archive:value});setPack(value);setPreview(checked.summary);setFilename(selected.name);setMode('import');
   }catch(e){setError((e as Error).message);}finally{setBusy('');}
  }
