@@ -150,7 +150,7 @@ test('home gives one primary learning action and short screens keep step actions
  await page.getByRole('button',{name:'看看逻辑回归怎样预测',exact:true}).click();await expect(page.getByRole('heading',{name:'逻辑回归',exact:true})).toBeVisible();await page.getByRole('button',{name:'返回当前实验',exact:true}).click();await expect(page.getByRole('textbox',{name:'误分/拟合惩罚 C',exact:true})).toHaveValue('2');
  for(const [width,height] of [[1366,768],[1024,768],[390,844]]){
   await page.setViewportSize({width,height});await page.evaluate(()=>scrollTo(0,0));
-  const actions=page.getByRole('navigation',{name:'实验步骤操作',exact:true});const next=actions.getByRole('button',{name:'去训练',exact:true});await expect(next).toBeVisible();
+  await expect(page.getByRole('navigation',{name:'实验步骤',exact:true}).getByRole('button',{name:'5 模型参数',exact:true})).toBeInViewport();const actions=page.getByRole('navigation',{name:'实验步骤操作',exact:true});const next=actions.getByRole('button',{name:'去训练',exact:true});await expect(next).toBeVisible();
   const box=await next.boundingBox();expect(box.y).toBeGreaterThanOrEqual(60);expect(box.y+box.height).toBeLessThan(height);expect(box.width).toBeGreaterThanOrEqual(44);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);
   await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));await expect(next).toBeInViewport();

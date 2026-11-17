@@ -526,6 +526,7 @@
 .pp-step-heading .pp-step-footer>span {margin:0 4px;white-space:nowrap;}
 .pp-step-heading .pp-step-footer>.pp-btn {min-height:48px;font-size:14px;}
 .pp-workbench input,.pp-workbench select,.pp-workbench button {scroll-margin-top:160px;}
+.pp-workbench .pp-stages {scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--pp-brand) 30%,transparent) transparent;}
 .pp-home-learning-action {display:flex;flex-direction:column;align-items:flex-start;gap:14px;margin-top:28px;}
 .pp-home-learning-action>span {font-size:14px;color:var(--pp-muted);}
 .pp-home-free>h2 {font-size:15px;color:var(--pp-muted);font-weight:500;margin:0 0 10px 9%;}

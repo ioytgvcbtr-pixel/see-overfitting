@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useState,useId} from 'react';
+import {useEffect,useState,useId,useRef} from 'react';
 import {ArrowRight,Check,FlaskConical,LoaderCircle,Sprout,Database,BrushCleaning,Split,SlidersHorizontal,GitCompareArrows,Flag} from 'lucide-react';
 import DatasetScene from './DatasetScene';
 import {api} from '@/lib/experiment';
@@ -19,6 +19,8 @@ export default function PlanetWorkbench({catalog,draft,setDraft,step,setStep,run
  const [preview,setPreview]=useState<Preview|null>(null),[previewBusy,setPreviewBusy]=useState(false),[quiz,setQuiz]=useState<string|null>(null);
  const [quality,setQuality]=useState<{eligible:number;missing_targets:number;conflicting_input_groups:number}|null>(null);
  useEffect(()=>{const request=new AbortController();setQuiz(null);setQuality(null);setPreview(null);void api<{eligible:number;missing_targets:number;conflicting_input_groups:number}>('/lab/datasets/'+d.id,undefined,request.signal).then(setQuality).catch(()=>{});return()=>request.abort();},[d.id]);
+ const stepsRef=useRef<HTMLElement|null>(null);
+ useEffect(()=>{const nav=stepsRef.current;if(!nav)return;const reveal=()=>{const active=nav.querySelector<HTMLElement>('[aria-current=step]');if(active&&nav.scrollWidth>nav.clientWidth){const a=active.getBoundingClientRect(),n=nav.getBoundingClientRect();nav.scrollLeft+=a.left-n.left-(nav.clientWidth-a.width)/2;}};reveal();const observer=new ResizeObserver(reveal);observer.observe(nav);return()=>observer.disconnect();},[step]);
  const put=(key:keyof Draft,value:Draft[keyof Draft])=>setDraft({...draft,[key]:value});
  const clean=(key:keyof Draft['cleaning'],value:string|boolean)=>setDraft({...draft,cleaning:{...draft.cleaning,[key]:value}});
  const split=(key:keyof Draft['split'],value:string|boolean)=>{setPreview(null);setDraft({...draft,split:{...draft.split,[key]:value}});};
@@ -47,7 +49,7 @@ export default function PlanetWorkbench({catalog,draft,setDraft,step,setStep,run
   </div>;
  }
  return <div className="pp-workbench"><header className="pp-task-header"><div><span className="pp-breadcrumb">{draft.task==='classification'?'分类港':'回归谷'} / {d.kind}</span><h1>{d.title}</h1><p>把你的选择填进去，再看模型怎样回答。</p></div><div className="pp-task-heading-art"><DatasetScene id={d.id}/></div><HelpHint title="怎样完成这次实验"><p>按步骤决定数据、处理、划分和参数。核心数字留给你填写；问号提供范围与含义。已有结果保留为快照，改配置后需要重新训练。</p></HelpHint></header>
- <nav className="pp-stages" aria-label="实验步骤">{stages.map((s,i)=><button key={s} aria-current={step===i?'step':undefined} onClick={()=>{onError('');setStep(i);}}><span>{i+1}</span>{s}</button>)}</nav>
+ <nav ref={stepsRef} className="pp-stages" aria-label="实验步骤">{stages.map((s,i)=><button key={s} aria-current={step===i?'step':undefined} onClick={()=>{onError('');setStep(i);}}><span>{i+1}</span>{s}</button>)}</nav>
  {error&&<p className="pp-error" role="alert">{error}</p>}
  <div className="pp-step-heading"><span className="pp-step-number"><StageIcon size={22} aria-hidden="true"/></span><h2>{stages[step]}</h2><nav aria-label="实验步骤操作" className="pp-step-footer"><button className="pp-btn secondary" disabled={step===0} onClick={()=>{onError('');setStep(step-1);}}>上一步</button><span>{step+1} / {stages.length}</span>{step<7&&<button className="pp-btn primary" onClick={next}>{step===4?'去训练':step===5?'看对照与解释':'完成这一步'}<ArrowRight size={20}/></button>}</nav>{draft.assisted&&<HelpHint title="本次使用过示例或AI"><p>这些辅助不会改写原始判断，实验档案保留辅助来源。</p></HelpHint>}</div>
  {step===0&&<div className="pp-intro-layout"><div><h3>{draft.task==='classification'?'为新样本预测类别':'为新样本预测数值'}</h3><p>目标：{targetMeta.map(t=>t.label).join('、')}{draft.task==='regression'?`（${targetMeta.map(t=>t.unit).join('、')}）`:''}。</p><p>{draft.task==='classification'?'类别编码写成数字，目标也可能是分类。多个标签同时成立，则是多标签任务。':'回归回答“多少”。多个数值目标可以同时预测，但需要分别核对单位和误差。'}</p><fieldset><legend>这个课例属于哪一类任务？</legend><div className="pp-choice-row"><button aria-pressed={quiz==='classification'} onClick={()=>setQuiz('classification')}>分类 · 找类别</button><button aria-pressed={quiz==='regression'} onClick={()=>setQuiz('regression')}>回归 · 预测数</button></div></fieldset></div><SmallGuide>你做的每个决定都进入这次实验。先写下选择，再让真实计算回答。</SmallGuide></div>}

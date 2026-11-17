@@ -43,6 +43,7 @@ export default function ModelMechanism({model,dataset,catalog,onBack,backLabel,o
   </aside><section className="pp-model-lab-evidence" aria-label="本模型实算机制">
    {!result?<SmallGuide>先训练这份明确标记的机制示例，再选一条验证样本，查看它怎样得到预测。</SmallGuide>:<>
     <p className={dirty?'pp-notice':'pp-positive'} role="status">{dirty?'设置已修改；下方仍是上次已训练结果。':'当前展示这次真实训练的结果。'}</p>
+    {result.warnings.length>0&&<details className="pp-details"><summary>本次训练提示</summary>{result.warnings.map((w,i)=><p key={i}>{w}</p>)}</details>}
     <div className="pp-model-lab-readings"><div><span>{model.task==='classification'?'训练错误率':'训练RMSE'}</span><strong>{fmt(result.training_error)}</strong></div><div><span>{model.task==='classification'?'验证错误率':'验证RMSE'}</span><strong>{fmt(result.validation_error)}</strong></div>{point&&<div><span>所选样本预测 / 观测</span><strong>{label(point.prediction[0])} / {label(point.actual[0])}</strong></div>}</div>
     <label className="pp-probe-select">验证样本<select value={inspection?.row||point?.row||''} disabled={!!busy||dirty} onChange={e=>void calculate('inspect',e.target.value)}>{result.validation.map((p,i)=><option key={p.row} value={p.row}>{i+1} · {p.row}</option>)}</select></label>
     {inspection&&<Mechanism inspection={inspection} result={result}/>}
