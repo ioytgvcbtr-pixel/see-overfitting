@@ -1,0 +1,16 @@
+{
+  "main": {
+    "legacy_quizzes_audited": 0,
+    "cached_independence_corrected": 0,
+    "later_exposure_noted": 0,
+    "existing_runs": 2,
+    "existing_quizzes": 0
+  },
+  "lessons-qa": {
+    "legacy_quizzes_audited": 1,
+    "cached_independence_corrected": 0,
+    "later_exposure_noted": 0,
+    "existing_runs": 15,
+    "existing_quizzes": 1
+  }
+}

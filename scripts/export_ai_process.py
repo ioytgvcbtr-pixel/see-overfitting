@@ -95,6 +95,8 @@ def main():
             cleaned = {k: payload[k] for k in ('type', 'name', 'namespace', 'arguments', 'input', 'output', 'call_id') if k in payload}
             if payload.get('call_id') in reference_calls and 'output' in cleaned:
                 cleaned['output'] = '[Reference lookup output omitted; source identifiers retained in call arguments.]'
+            if 'output' in cleaned and 'heading "AI创新应用挑战赛"' in str(cleaned['output']):
+                cleaned['output'] = '[External competition page body omitted; official URL retained in navigation.]'
             if payload.get('call_id') in asset_calls and 'output' in cleaned:
                 cleaned['output'] = '[Generated asset preview omitted; prompts retained in call and final assets in public/illustrations.]'
             if 'output' in cleaned and any(marker in str(cleaned['output']) for marker in ('# Browser Safety', '## Computer Use', '## How to use the API', '# Tab Capability:', '# Browser Capability:', '# File Uploads')):
