@@ -18,6 +18,7 @@
 - User-requested learning resets must be explicit, automatically backed up and reversible. Validate a full archive in isolation before atomic restore. Keep API settings, appearance, chat and scientific test-exposure history outside the reset scope. Test resets only in isolated QA data unless the user explicitly asks to reset their current archive.
 - Frozen application release: v1.9.1 at 8e9c38f8760be00d8f2ab36745484da1ffd0317d. Keep this tag immutable; application changes require a new user-authorized version. Current work is source/document delivery and reproducibility verification. Preserve real development records; video production is deferred per the user's selected scope.
 - Score against the official rubric and product evidence. Do not treat student trials as a required deliverable or deduct points for their absence.
+- Submission-facing material should explain the audience, functions, interaction, technical choices, AI role and practical value in ordinary project prose. Keep release identifiers and debug metadata out of the report and reading entry points. Preserve required runtime dependency information and authentic process records in appropriate technical files or appendices.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
