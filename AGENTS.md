@@ -16,7 +16,7 @@
 - Product scope: curated built-in ML tasks; student CSV creation is removed. Knowledge progress (18 lessons), mechanism progress (4 stations), and legacy foundation records are distinct. Preserve existing first answers and history.
 - Keep one current classroom interface: knowledge in Learning Path, real datasets in classification/regression tasks, all records and evidence in Learning Records, and a single full-archive workflow. Resolve historical URLs into current destinations. Preserve useful mechanism and contrast experiments within the classroom; never reintroduce standalone legacy hubs or separate backup controls.
 - User-requested learning resets must be explicit, automatically backed up and reversible. Validate a full archive in isolation before atomic restore. Keep API settings, appearance, chat and scientific test-exposure history outside the reset scope. Test resets only in isolated QA data unless the user explicitly asks to reset their current archive.
-- Current user priority: improve project features and interactions. Continue real development records, but defer competition videos, submission PDFs and other submission-material preparation until requested.
+- Frozen application release: v1.9.1 at 8e9c38f8760be00d8f2ab36745484da1ffd0317d. Keep this tag immutable; application changes require a new user-authorized version. Current work is source/document delivery and reproducibility verification. Preserve real development records; video production is deferred per the user's selected scope.
 - Score against the official rubric and product evidence. Do not treat student trials as a required deliverable or deduct points for their absence.
 
 <!-- BEGIN:nextjs-agent-rules -->
