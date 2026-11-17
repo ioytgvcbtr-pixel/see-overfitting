@@ -69,7 +69,7 @@ def make_router(connect):
             run=json.loads(row['content']) if row else None
             if run and run['state']=='completed' and run['operation'] in ('train','decision'):
                 if request.context.view=='model-mechanism' and request.context.model_id!=run['spec']['model']:raise HTTPException(409,'当前模型与运行快照不同，请重新打开对应机制。')
-                r=run['result'];evidence['experiment']={'dataset':r['dataset']['title'],'model':r['model']['title'],'parameters':r['parameters'],
+                r=run['result'];evidence['experiment']={'dataset':r['dataset']['title'],'model':r['model']['title'],'model_id':run['spec']['model'],'parameters':r['parameters'],
                     'cleaning':{k:r['cleaning'][k] for k in ('actual_training','dropped','processed_features','fit_scope')},'split':r['split'],
                     'training_metrics':r['training_metrics'],'validation_metrics':r['validation_metrics'],'baseline':r['baseline'],
                     'targets':r['targets'],'warnings':r['warnings'],'draft_changed':request.context.draft_changed,
@@ -101,8 +101,13 @@ def make_router(connect):
         question=request.question.lower()
         if 'experiment' in evidence:
             r=evidence['experiment'];sample=evidence.get('sample');detail=f"\n\n验证样本{sample['row']}：预测{sample['prediction']}，观测{sample['actual']}。" if sample else '';score=lambda v:format(v,'.4g') if isinstance(v,(int,float)) else '不可计算'
+            fields={f['key']:f for f in planet_models.MODELS[r['model_id']]['parameters']+planet_models.MODELS[r['model_id']]['advanced']}
+            parts=[]
+            for key,v in r['parameters'].items():
+                f=fields.get(key,{'label':key});text=next((o['label'] for o in f.get('options',[]) if type(o['value']) is type(v) and o['value']==v),str(v));parts.append(f"{f['label']} {text}")
+            parameters='；'.join(parts)
             ref=evidence.get('reference');contrast=f"定格A验证误差{score(ref['validation_error'])}。"+('两次使用相同评估群体。' if ref['comparable'] else '评估群体不同，不能直接归因单个参数。') if ref else ''
-            return f"我先按已有证据陪你看：这次是{r['dataset']}，使用{r['model']}，实际训练{r['cleaning']['actual_training']}条。参数：{json.dumps(r['parameters'],ensure_ascii=False)}。{detail}\n\n训练误差{score(r['training_error'])}，验证误差{score(r['validation_error'])}，结合本页指标与目标单位阅读。{contrast}"+('当前草稿已变，以上仍属于上次完成运行；重新训练后才能核对新结果。' if r['draft_changed'] else '保持验证身份，只改一项，再比较实际结果。')
+            return f"我先按已有证据陪你看：这次是{r['dataset']}，使用{r['model']}，实际训练{r['cleaning']['actual_training']}条。参数：{parameters}。{detail}\n\n训练误差{score(r['training_error'])}，验证误差{score(r['validation_error'])}，结合本页指标与目标单位阅读。{contrast}"+('当前草稿已变，以上仍属于上次完成运行；重新训练后才能核对新结果。' if r['draft_changed'] else '保持验证身份，只改一项，再比较实际结果。')
         if 'model' in evidence:
             m=evidence['model'];return f"你正在探索{m['title']}。{m['summary']}\n\n当前没有共享已完成的机制运行。先训练明确标记的示例，再选一个验证样本，我就能结合该次快照一起看。"
         if 'lesson' in evidence:

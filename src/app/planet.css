@@ -561,7 +561,8 @@
 @media(max-width:650px){.pp-workbench .pp-step-heading {top:62px;gap:10px;}.pp-step-heading>.pp-step-footer {flex:1 0 100%;justify-content:space-between;gap:8px;}.pp-step-heading .pp-step-footer>.pp-btn {padding:10px 14px;font-size:13px;}.pp-home-resume {align-items:flex-start;flex-direction:column;gap:4px;}.pp-home-resume>.pp-text-link {margin-left:32px;}.pp-home-free>h2 {margin:20px 0 0 6%;}.pp-model-lab-heading {gap:14px;}.pp-model-lab-heading>.pp-model-glyph {width:48px;flex-shrink:0;}.pp-model-lab-heading h1 {font-size:27px;}.pp-model-lab-controls {padding:20px;border-radius:36px;}.pp-model-lab-readings {gap:20px;}.pp-model-lab-readings strong {font-size:17px;}.pp-probe-select select {width:100%;}.pp-model-lab-evidence .pp-mechanism h3 {line-height:1.6;}}
 
 /* Companion overlays the page without participating in its layout. */
-.pp-pet-panel {bottom:auto;height:min(660px,calc(100dvh - 108px));}
+.pp-pet-panel {bottom:auto;height:min(520px,calc(100dvh - 108px));}
+.pp-pet-panel[data-expanded=true] {height:min(660px,calc(100dvh - 108px));}
 .pp-pet-panel[data-side=left] {left:234px;right:auto;}
 .pp-pet-drag-handle[role=button] {cursor:grab;touch-action:none;user-select:none;border-radius:8px;}
 .pp-pet-drag-handle[role=button]:active {cursor:grabbing;}
@@ -622,3 +623,6 @@
 @media(max-height:820px){.pp-model-lab-controls {position:static;}.pp-model-lab-heading {margin-top:16px;margin-bottom:24px;}.pp-model-learning-steps {margin-bottom:24px;}}
 @media(max-width:650px){.pp-island>.pp-portal-art {height:175px;}.pp-mechanism-satellite>.pp-portal-art {width:80px;height:80px;}.pp-learning-hero>.pp-portal-art {width:90px;height:100px;align-self:start;margin-top:20px;}.pp-station-art>.pp-portal-art {height:100px;}.pp-shelf-planet.pp-portal-art {width:86px;height:86px;}.pp-model-learning-steps {gap:12px 16px;}.pp-model-learning-steps li {font-size:12px;gap:6px;}.pp-model-learning-steps li>span,.pp-model-learning-steps li>svg {width:24px;height:24px;padding:4px;}.pp-mechanism-starter {min-height:300px;}.pp-mechanism-starter>.pp-portal-art {width:210px;height:200px;}.pp-mechanism-starter strong {font-size:18px;}.pp-neighbor-scene svg text {font-size:15px;}.pp-coefficient-scene svg text {font-size:22px;}.pp-term-equation {gap:12px;}.pp-term-equation strong {font-size:17px;}.pp-term-equation span {font-size:12px;}.pp-term-equation>b {font-size:18px;}}
 @media(prefers-reduced-motion:reduce){.pp-island:hover>.pp-portal-art {transform:none;}.pp-neighbor-scene circle {transition:none;}}
+
+.pp-model-lab-controls>.pp-text-link {display:flex;width:100%;justify-content:flex-start;margin-top:6px;}
+.pp-diagnostic-probe {display:flex;margin:-10px 0 12px;}

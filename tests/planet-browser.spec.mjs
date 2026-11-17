@@ -170,7 +170,7 @@ test('floating companion preserves content width and columns on desktop and tabl
    expect(await page.locator('.pp-home-hero,.pp-task-grid,.pp-settings-columns,.pp-model-lab-layout').evaluateAll(es=>es.filter(e=>e.getBoundingClientRect().height).map(e=>getComputedStyle(e).gridTemplateColumns))).toEqual(columns);
    if(await panel.getByRole('button',{name:'移到右侧',exact:true}).isVisible())await panel.getByRole('button',{name:'移到右侧',exact:true}).click();const right=await panel.boundingBox();expect(right.x+right.width).toBeLessThanOrEqual(width);expect(await panel.evaluate(e=>getComputedStyle(e).position)).toBe('fixed');
    await panel.getByRole('button',{name:'移到左侧',exact:true}).click();const left=await panel.boundingBox();expect(left.x).toBeLessThan(right.x);expect(Math.abs((await main.boundingBox()).width-before.width)).toBeLessThan(1);
-   const handle=panel.getByRole('button',{name:'移动小模浮窗，方向键可调整位置',exact:true});await handle.focus();await handle.press('ArrowRight');expect((await panel.boundingBox()).x).toBeCloseTo(left.x+24,0);
+   const handle=panel.getByRole('button',{name:'移动小模浮窗，方向键可调整位置',exact:true});await handle.focus();await handle.press('ArrowRight');expect((await panel.boundingBox()).x).toBeCloseTo(left.x+24,0);const shortHeight=(await panel.boundingBox()).height;await handle.press('Enter');expect((await panel.boundingBox()).height).toBeGreaterThan(shortHeight);expect(Math.abs((await main.boundingBox()).width-before.width)).toBeLessThan(1);await handle.press('Enter');
    await panel.getByRole('button',{name:'关闭小模问答',exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);
   }
  }
