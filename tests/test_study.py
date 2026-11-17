@@ -69,3 +69,38 @@ def test_resume_moves_past_completed_lessons_but_keeps_unfinished_work(client):
     assert c.get('/study/overview').json()['resume_id']==second['id']
     last=curriculum.LESSONS[7];c.post('/study/lessons/'+last['id']+'/open')
     assert c.get('/study/overview').json()['resume_id']==last['id']
+
+
+def test_revised_checks_balance_position_and_remove_length_shortcuts():
+    from collections import Counter
+    positions=[];ranks=[]
+    for l in curriculum.LESSONS:
+        choices=l['quiz']['choices'];correct=next(c for c in choices if c['id']==l['_answer'])
+        positions.append(choices.index(correct));lengths=[len(c['text']) for c in choices]
+        ranks.append(sum(n<len(correct['text']) for n in lengths))
+        assert len(set(c['text'] for c in choices))==3
+        assert curriculum.quiz_revision(l,1) and curriculum.quiz_revision(l,2)
+    assert sorted(Counter(positions).values())==[6,6,6]
+    assert sorted(Counter(ranks).values())==[6,6,6]
+
+
+def test_original_questions_and_first_answers_survive_new_checks_and_restore(client,tmp_path,monkeypatch):
+    c=client;l=curriculum.LESSONS[0];old=curriculum.quiz_revision(l,1);stamp='2026-11-16T01:00:00+00:00'
+    original={'id':l['id'],'version':1,'first_opened_at':stamp,'read_at':stamp,'attempts':[{'id':uuid.uuid4().hex,'choice':old['answer'],'correct':True,'submitted_at':stamp}]}
+    c.post('/study/lessons/'+l['id']+'/open')
+    with main.connect() as db:db.execute('UPDATE study_progress SET content=? WHERE id=?',(json.dumps(original),l['id']))
+    before=c.get('/study/lessons/'+l['id']).json()['progress']
+    assert before['completed'] and before['first_answer']['quiz_version']==1
+    assert before['first_answer']['question_text']==old['quiz']['question']
+    assert before['first_answer']['choice_text']==next(c['text'] for c in old['quiz']['choices'] if c['id']==old['answer'])
+    assert c.post('/study/lessons/'+l['id']+'/answer',json={'id':original['attempts'][0]['id'],'choice':old['answer']}).json()==before
+    assert c.post('/study/lessons/'+l['id']+'/answer',json={'id':uuid.uuid4().hex,'choice':old['answer']}).status_code==422
+    answer(c,l,False);after=answer(c,l);assert after['first_answer']==before['first_answer'] and after['completed']
+    assert [a['quiz_version'] for a in after['attempts']]==[1,2,2]
+    pack=c.get('/study/backup/file').json();pack['progress'][0]['attempts'][1]['correct']=True
+    monkeypatch.setattr(main,'DB_PATH',tmp_path/'v2-restored.sqlite')
+    assert c.post('/study/backup/restore',json=pack).status_code==200
+    restored=c.get('/study/lessons/'+l['id']).json()['progress']
+    assert restored['first_answer']==before['first_answer'] and not restored['attempts'][1]['correct'] and restored['completed']
+    pack['progress'][0]['attempts'][0]['quiz_version']=2
+    assert c.post('/study/backup/restore',json=pack).status_code==422

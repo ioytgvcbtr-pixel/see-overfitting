@@ -1,5 +1,5 @@
 """Original short lessons. Public sources support concepts; examples/copy are local teaching design."""
-import hashlib
+import hashlib,copy
 
 CHAPTERS=[
  {'id':'start','title':'认识机器学习','subtitle':'从一个问题出发','palette':'orchid','icon':'compass'},
@@ -128,4 +128,21 @@ lesson('responsible','practice','把模型放到真实世界之前','核对分�
  '整体准确率很高，部署前还应核对什么？',['不同情境的错误、数据代表性与证据来源','只看界面是否美观','清空不理想的实验记录'],0,'真实使用需要核对分组表现、数据与环境差异，以及结论的可追溯性。',['fair'],visual='evidence')
 
 BY_ID={x['id']:x for x in LESSONS}
+# Keep the exact old questions available for historical first answers and backups.
+QUIZ_VERSIONS={l['id']:{1:copy.deepcopy({'quiz':l['quiz'],'answer':l['_answer'],'explanation':l['_explanation']})} for l in LESSONS}
+from backend.knowledge_checks import CHECKS
+for index,l in enumerate(LESSONS):
+    question,answers,correct,explanation=CHECKS[l['id']]
+    options=[{'id':f"{l['id']}-v2-{i}",'text':text} for i,text in enumerate(answers)]
+    right=options.pop(correct);options.insert(index%3,right)
+    l.update(quiz={'question':question,'choices':options},_answer=right['id'],_explanation=explanation,version=2)
+    QUIZ_VERSIONS[l['id']][2]=copy.deepcopy({'quiz':l['quiz'],'answer':l['_answer'],'explanation':explanation})
+
+def quiz_revision(lesson,version):return QUIZ_VERSIONS[lesson['id']].get(version)
+
+def checked_attempt(lesson,attempt,fallback_version=1):
+    version=attempt.get('quiz_version',fallback_version);revision=quiz_revision(lesson,version)
+    choice=next((c for c in revision['quiz']['choices'] if c['id']==attempt['choice']),None) if revision else None
+    return {**attempt,'quiz_version':version,'correct':bool(choice and attempt['choice']==revision['answer']),
+            'choice_text':choice['text'] if choice else '原选项不可用','question_text':revision['quiz']['question'] if revision else ''}
 def public_lesson(item):return {k:v for k,v in item.items() if not k.startswith('_')}

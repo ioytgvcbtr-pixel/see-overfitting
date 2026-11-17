@@ -32,6 +32,15 @@ def test_deepseek_only_settings_apply_depth_to_real_request_and_never_echo_key(c
     assert 'private-thought' not in json.dumps(a) and 'fixture-private' not in json.dumps(c.get('/pet/sessions/'+b['session_id']).json())
     assert a['provider_effort']==('high' if depth=='xhigh' else depth)
 
+def test_old_lesson_answer_does_not_unlock_answers_to_revised_question(client):
+    c=client;c.post('/study/lessons/ml-intro/open');stamp='2026-11-16T01:00:00+00:00'
+    value={'id':'ml-intro','version':1,'read_at':stamp,'attempts':[{'id':'b'*32,'choice':'ml-intro-1','correct':True,'submitted_at':stamp}]}
+    with closing(main.connect()) as db:
+        db.execute('UPDATE study_progress SET content=? WHERE id=?',(json.dumps(value),'ml-intro'));db.commit()
+    _,response=ask(c,question='这道题正确选项是什么？',context={'view':'learning','lesson_id':'ml-intro'})
+    assert response['mode']=='guided'
+
+
 def test_settings_refuse_other_hosts_models_and_validation_does_not_return_key(client):
     c=client
     for host in ['https://example.org/v1','https://api.deepseek.com.evil.org','https://api.deepseek.com@evil.org/v1','http://api.deepseek.com','https://api.deepseek.com/v1?invalid=x']:

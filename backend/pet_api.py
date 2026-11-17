@@ -50,7 +50,7 @@ def make_router(connect):
             lesson=curriculum.BY_ID[request.context.lesson_id];progress=None
             if exists(c,'study_progress'):
                 row=c.execute('SELECT content FROM study_progress WHERE id=?',(lesson['id'],)).fetchone();progress=json.loads(row['content']) if row else None
-            submitted=bool(progress and progress.get('attempts'))
+            submitted=bool(progress and any(a.get('quiz_version',progress.get('version',1))==lesson['version'] for a in progress.get('attempts',[])))
             if request.share_context:evidence['lesson']={'id':lesson['id'],'title':lesson['title'],'goal':lesson['goal'],'sections':lesson['sections'],'first_answer_submitted':submitted}
             seeking=bool(re.search(r'答案|选项|这题|本题|这道|正确选|选[ABCabc123]',request.question)) or lesson['quiz']['question'] in request.question or any(v['text'] in request.question for v in lesson['quiz']['choices'])
             if not submitted and seeking:

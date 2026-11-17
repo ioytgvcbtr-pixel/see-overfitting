@@ -6,7 +6,7 @@ from typing import Literal
 from fastapi import APIRouter,HTTPException,Request
 from fastapi.responses import Response
 from pydantic import BaseModel,ConfigDict,Field
-from backend.curriculum import CHAPTERS,LESSONS,BY_ID,public_lesson
+from backend.curriculum import CHAPTERS,LESSONS,BY_ID,public_lesson,quiz_revision,checked_attempt
 from backend.planet_api import CANCEL
 
 
@@ -53,10 +53,11 @@ def make_router(connect):
         return BY_ID[key]
     def state_public(value):
         result=copy.deepcopy(value);lesson=BY_ID[value['id']]
-        result['completed']=any(a['choice']==lesson['_answer'] for a in value['attempts'])
+        result['attempts']=[checked_attempt(lesson,a,value.get('version',1)) for a in value['attempts']]
+        result['completed']=any(a['correct'] for a in result['attempts'])
         result['status']='completed' if result['completed'] else 'read' if value.get('read_at') else 'opened' if value.get('first_opened_at') else 'unseen'
-        result['first_answer']=value['attempts'][0] if value['attempts'] else None
-        if value['attempts']:result['explanation']=lesson['_explanation']
+        result['first_answer']=result['attempts'][0] if result['attempts'] else None
+        if result['attempts']:result['explanation']=quiz_revision(lesson,result['attempts'][-1]['quiz_version'])['explanation']
         return result
     def states(c):return {r['id']:state_public(json.loads(r['content'])) for r in c.execute('SELECT id,content FROM study_progress') if r['id'] in BY_ID}
     def mechanisms(c):
@@ -108,7 +109,6 @@ def make_router(connect):
     @router.post('/lessons/{key}/answer')
     def answer(key:str,request:Answer):
         l=known(key)
-        if request.choice not in {v['id'] for v in l['quiz']['choices']}:raise HTTPException(422,'请选择本课的一个选项。')
         with db() as c:
             c.execute('BEGIN IMMEDIATE');value=load(c,key)
             if not value.get('read_at'):raise HTTPException(409,'请先读完课题，再进行检查。')
@@ -116,8 +116,9 @@ def make_router(connect):
             if old:
                 if old['choice']!=request.choice:raise HTTPException(409,'这次首答已经保存，复练请使用新的尝试。')
                 return state_public(value)
+            if request.choice not in {v['id'] for v in l['quiz']['choices']}:raise HTTPException(422,'题目或选项已更新，请重新打开本课再作答。')
             if len(value['attempts'])>=40:raise HTTPException(409,'本课已保留40次检查，可直接复习内容与原始答案。')
-            a={'id':request.id,'choice':request.choice,'correct':request.choice==l['_answer'],'submitted_at':now()};value['attempts'].append(a)
+            a={'id':request.id,'choice':request.choice,'quiz_version':l['version'],'correct':request.choice==l['_answer'],'submitted_at':now()};value['attempts'].append(a)
             if a['correct']:value.setdefault('completed_at',a['submitted_at'])
             put(c,'study_progress',value);event(c,'lesson_check',('检查通过 · ' if a['correct'] else '复习课题 · ')+l['title'],key)
             return state_public(value)
@@ -172,13 +173,14 @@ def make_router(connect):
             rebuilt=[]
             for original in progress:
                 assert isinstance(original,dict)
-                l=known(original['id']);assert original['version']==l['version'];value={'id':l['id'],'version':l['version'],'attempts':[],'imported':True}
+                l=known(original['id']);assert quiz_revision(l,original['version']);value={'id':l['id'],'version':original['version'],'attempts':[],'imported':True}
                 for key in ('first_opened_at','last_opened_at','read_at'):
                     if original.get(key):datetime.fromisoformat(original[key]);value[key]=original[key]
                 assert len(original['attempts'])<=40
                 for a in original['attempts']:
-                    checked=Answer.model_validate({'id':a['id'],'choice':a['choice']});assert checked.choice in {v['id'] for v in l['quiz']['choices']};datetime.fromisoformat(a['submitted_at'])
-                    value['attempts'].append({'id':checked.id,'choice':checked.choice,'correct':checked.choice==l['_answer'],'submitted_at':a['submitted_at']})
+                    checked=Answer.model_validate({'id':a['id'],'choice':a['choice']});version=a.get('quiz_version',original['version']);revision=quiz_revision(l,version)
+                    assert revision and checked.choice in {v['id'] for v in revision['quiz']['choices']};datetime.fromisoformat(a['submitted_at'])
+                    value['attempts'].append({'id':checked.id,'choice':checked.choice,'quiz_version':version,'correct':checked.choice==revision['answer'],'submitted_at':a['submitted_at']})
                 good=next((a for a in value['attempts'] if a['correct']),None)
                 if good:value['completed_at']=good['submitted_at']
                 rebuilt.append(value)
