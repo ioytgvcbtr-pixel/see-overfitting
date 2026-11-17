@@ -103,6 +103,9 @@ export default function PlanetApp({initialMechanism=false}:{initialMechanism?:bo
  }
  const originLesson=study?.lessons.find(l=>l.id===practiceOrigin);
  const selectedModel=catalog?.models.find(m=>m.id===mechanismModel);
+ const pageName=view==='learning'&&selectedLesson?study?.lessons.find(l=>l.id===selectedLesson)?.title:view==='model-mechanism'?selectedModel?.title:view==='workbench'?activeDataset?.title:undefined;
+ const browserTitle=pageName||navigation.find(n=>n.id===view)?.label||'机器学习实验课堂';
+ useEffect(()=>{document.title=`${browserTitle} · 模力星球`;},[browserTitle]);
  const visibleModels=catalog?.models.filter(m=>(filter==='all'||m.task===filter)&&modelMatches(m,modelQuery))||[];
  return <div className="planet-app" data-palette={currentPalette} data-pet-open={petOpen} data-pet-enabled={petPreferences.enabled} data-reader-size={petPreferences.reader_size} style={paletteStyle}><a className="pp-skip" href="#planet-content">跳到学习内容</a><aside className="pp-sidebar" data-open={mobile}><button onClick={()=>navigate('start')} className="pp-brand" aria-label="模力星球首页"><PlanetLogo/><span>模力星球<small>机器学习实验课堂</small></span></button><nav aria-label="模力星球主导航">{navigation.map(n=><button key={n.id} aria-current={view===n.id||n.id==='models'&&view==='model-mechanism'?'page':undefined} onClick={()=>navigate(n.id)}><n.icon size={21}/>{n.label}</button>)}</nav><div className="pp-sidebar-footer" data-pet={petPreferences.enabled}><span>{petPreferences.enabled?'和小模一起，探索下一站。':'让每次选择，都看见结果。'}</span></div></aside>
  {mobile&&<button className="pp-nav-backdrop" aria-label="收起导航" onClick={()=>setMobile(false)}/>}

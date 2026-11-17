@@ -1,6 +1,6 @@
 {
   "name": "see-overfitting",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,6 +11,7 @@
     "test:ui": "node --test tests/learning-guide.test.mjs tests/exploration.test.mjs tests/island-experiments.test.mjs tests/island-progress.test.mjs tests/island-learning.test.mjs tests/classroom.test.mjs"
   },
   "dependencies": {
+    "@microsoft/focusgroup-polyfill": "1.6.0",
     "lucide-react": "1.72.0",
     "next": "16.4.6",
     "react": "19.3.1",

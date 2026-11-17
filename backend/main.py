@@ -36,7 +36,7 @@ for line in ENV_PATH.read_text(encoding='utf-8').splitlines() if ENV_PATH.exists
         os.environ.setdefault(key.strip(), value.strip())
 
 DB_PATH = Path(os.environ.get('FITLAB_DB', str(ROOT / 'data' / 'fitlab.sqlite')))
-app = FastAPI(title='模力星球 · 机器学习实验课堂', version='1.7.0')
+app = FastAPI(title='模力星球 · 机器学习实验课堂', version='1.7.1')
 @app.exception_handler(RequestValidationError)
 async def private_validation_error(request,exc):
     return JSONResponse(status_code=422,content={'detail':[{'loc':list(e['loc']),'msg':e['msg'],'type':e['type']} for e in exc.errors()]})
@@ -71,7 +71,7 @@ app.include_router(pet_router(connect))
 
 @app.get('/health')
 def health():
-    return {'app': 'fitlab', 'status': 'ok', 'version': '1.7.0', **ai_status(), 'connection': connection_status()}
+    return {'app': 'fitlab', 'status': 'ok', 'version': '1.7.1', **ai_status(), 'connection': connection_status()}
 
 
 @app.post('/experiments/run')

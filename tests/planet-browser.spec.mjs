@@ -59,7 +59,7 @@ test('learning route persists understanding and experiment edits without student
  await page.goto('/');await expect(page.getByText(/机制基础课.*3/)).toHaveCount(0);
  await page.getByRole('button',{name:'学习航线',exact:true}).click();await page.getByRole('button',{name:'从什么是机器学习开始',exact:true}).click();
  await expect(page.getByRole('heading',{name:'什么是机器学习？',exact:true})).toBeVisible();
- await page.getByRole('button',{name:'读完了，做个小检查',exact:true}).click();await page.getByRole('button',{name:'用测量特征学习物种，在未参与训练的样本上评估',exact:true}).click();await page.getByRole('button',{name:'保存判断并核对',exact:true}).click();
+ await page.getByRole('button',{name:'读完了，做个小检查',exact:true}).click();await page.getByRole('radio',{name:'用测量特征学习物种，在未参与训练的样本上评估',exact:true}).check();await page.getByRole('button',{name:'保存判断并核对',exact:true}).click();
  await expect(page.getByText('检查通过，学习进度已保存。',{exact:true})).toBeVisible();await page.reload();await expect(page.getByText('本课已完成',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'我的学习记录',exact:true}).click();await expect(page.getByRole('progressbar',{name:'知识航线',exact:true})).toHaveAttribute('aria-valuenow','1');
  await page.getByRole('button',{name:'分类任务',exact:true}).click();await expect(page.getByRole('button',{name:'导入一份CSV',exact:true})).toHaveCount(0);await expect(page.locator('input[accept*=csv]')).toHaveCount(0);
@@ -206,4 +206,21 @@ test('mechanism toolbar and sticky actions remain usable across short and narrow
 
 test('formal Ridge results reuse their actual run in the coefficient scene',async({page})=>{
  test.setTimeout(90000);await page.goto('/');await exampleRun(page,'回归任务','混凝土','ridge');await page.getByRole('tab',{name:'预测机制',exact:true}).click();await expect(page.locator('.pp-coefficient-scene')).toBeVisible();await expect(page.getByRole('region',{name:'真实训练结果'})).toBeVisible();await expect(page).toHaveURL(/#classroom\/workbench$/);await page.getByRole('toolbar',{name:'机制画布工具',exact:true}).getByRole('button',{name:'读数',exact:true}).click();await expect(page.locator('.pp-coefficient-bars')).toBeVisible();
+});
+
+
+test('result tabs support deliberate keyboard activation, focus return and preserved computations',async({page})=>{
+ test.setTimeout(120000);await page.goto('/');await exampleRun(page,'回归任务','混凝土','ridge');
+ const tabs=page.getByRole('tablist',{name:'结果视图',exact:true}),overview=tabs.getByRole('tab',{name:'预测对照',exact:true}),residual=tabs.getByRole('tab',{name:'残差',exact:true});
+ await overview.focus();await overview.press('ArrowRight');await expect(residual).toBeFocused();await expect(overview).toHaveAttribute('aria-selected','true');await residual.press('Enter');const panel=page.getByRole('tabpanel',{name:'残差',exact:true});await expect(panel).toBeVisible();await expect(panel.locator('[data-zero-line=true]')).toBeVisible();
+ await panel.getByRole('combobox',{name:'选择验证样本',exact:true}).selectOption({index:3});const row=await panel.getByRole('combobox',{name:'选择验证样本',exact:true}).inputValue();await expect(panel.locator('g[data-selected=true]')).toHaveAttribute('data-row',row);await panel.getByText('查看样本数值',{exact:true}).click();await expect(panel.getByRole('table')).toBeVisible();
+ await tabs.getByRole('tab',{name:'学习曲线',exact:true}).click();const learning=page.getByRole('tabpanel',{name:'学习曲线',exact:true});await learning.getByRole('button',{name:'实际运行学习曲线',exact:true}).click();await expect(learning.locator('.pp-series')).toHaveCount(2,{timeout:45000});await learning.getByText('查看曲线数值',{exact:true}).click();await expect(learning.getByRole('table')).toContainText('训练池使用比例');
+ let analysisRequests=0;page.on('request',r=>{if(r.method()==='POST'&&r.url().includes('/analysis/learning'))analysisRequests++;});await overview.click();await tabs.getByRole('tab',{name:'学习曲线',exact:true}).click();await expect(learning.locator('.pp-series')).toHaveCount(2);expect(analysisRequests).toBe(0);
+ await overview.click();await page.locator('[data-result-panel=learning]').evaluate(e=>e.dispatchEvent(new Event('beforematch',{bubbles:true})));await expect(tabs.getByRole('tab',{name:'学习曲线',exact:true})).toHaveAttribute('aria-selected','true');await expect(learning).toBeVisible();
+ for(const width of [1024,390,320]){await page.setViewportSize({width,height:844});await tabs.getByRole('tab',{name:'稳定性',exact:true}).click();await expect(tabs.getByRole('tab',{name:'稳定性',exact:true})).toBeInViewport();const ys=await tabs.getByRole('tab').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().y));expect(Math.max(...ys)-Math.min(...ys)).toBeLessThan(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);}
+});
+
+test('classification slices provide labeled patterns, complete coordinates and a numerical alternative',async({page})=>{
+ test.setTimeout(90000);await page.goto('/');await exampleRun(page,'分类任务','企鹅','tree_c');await page.getByRole('tab',{name:'边界/条件切片',exact:true}).click();await page.getByRole('button',{name:'计算当前条件视图',exact:true}).click();const panel=page.getByRole('tabpanel',{name:'边界/条件切片',exact:true});await expect(panel.locator('.pp-surface-chart')).toBeVisible({timeout:45000});await expect(panel.locator('[aria-label="预测类别图例"]>span')).toHaveCount(3);await expect(panel.locator('pattern')).toHaveCount(5);await panel.getByText('查看切片网格数值',{exact:true}).click();await expect(panel.getByRole('table')).toContainText('单元格是固定条件下的预测');await panel.getByText('查看切片网格数值',{exact:true}).click();
+ await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);await page.emulateMedia({forcedColors:'active'});const active=page.getByRole('tablist',{name:'结果视图',exact:true}).locator('[aria-selected=true]');expect(await active.evaluate(e=>getComputedStyle(e,'::after').borderBottomStyle)).toBe('solid');expect(await active.evaluate(e=>getComputedStyle(e,'::after').borderBottomWidth)).toBe('3px');
 });

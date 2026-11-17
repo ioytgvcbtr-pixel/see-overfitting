@@ -38,13 +38,13 @@ export function CoefficientScene({inspection,before,result}:{inspection:Inspecti
  const coefficients=inspection.coefficients||[],focus=useSceneFocus(focusScope(result,'coefficient'),coefficients.map(c=>c.name)),selected=coefficients.findIndex(c=>c.name===focus.selected);
  const current=coefficients[selected]||coefficients[0],shown=coefficients.slice(0,12);if(current&&!shown.includes(current))shown[shown.length-1]=current;
  const scale=Math.max(...shown.map(c=>Math.abs(c.coefficient)),...(before?.coefficients||[]).map(c=>Math.abs(c.coefficient)),1e-9),feature=inspection.features.find(f=>f.name===current?.name);
- return <section className="pp-coefficient-scene" aria-label="同尺度系数与预测联动"><h3>让系数的变化，回到一次预测。</h3><svg viewBox="0 0 600 270" role="img" aria-label="当前与定格A共享零点和系数刻度">
+ return <section className="pp-coefficient-scene" aria-label="同尺度系数与预测联动"><h3>让系数的变化，回到一次预测。</h3><svg viewBox="0 0 600 270" role="img" aria-label={before?'当前与定格A共享零点和系数刻度':'当前系数共享零点与刻度'}>
   <ellipse cx="300" cy="224" rx="263" ry="20" fill="#e8efe7"/><path d="M32 135H568" stroke="#b9afca" strokeWidth="1.5"/>
   {shown.map((c,i)=>{const x=50+i*500/Math.max(1,shown.length-1),old=before?.coefficients?.find(v=>v.name===c.name),y=135-90*c.coefficient/scale;return <g key={c.name} data-feature={c.name} data-focused={c.name===current?.name}>
    {old&&<line x1={x-6} y1="135" x2={x-6} y2={135-90*old.coefficient/scale} stroke="#a2a0aa" strokeWidth="5" strokeDasharray="4 3"/>}
    <line x1={x} y1="135" x2={x} y2={y} stroke={c.coefficient<0?'#bf8658':'#4b9885'} strokeWidth={c.name===current?.name?6:4} strokeLinecap="round"/><ellipse cx={x} cy={y} rx={c.name===current?.name?11:8} ry="5" fill={c.coefficient<0?'#e5bd91':'#8dbba5'} transform={`rotate(-22 ${x} ${y})`}/><text x={x} y="252" textAnchor="middle" fontSize="12" fill="#71627e">{coefficients.indexOf(c)+1}</text>
   </g>;})}<text x="34" y="22" fontSize="12" fill="#71627e">共用刻度 ±{fmt(scale)}</text><text x="567" y="130" textAnchor="end" fontSize="11" fill="#71627e">0</text>
- </svg><p className="pp-scene-caption">实线当前 · 虚线定格A。正负号与条长共同表示处理后系数，所有系数与截距共同组成预测。</p>
+ </svg><p className="pp-scene-caption">实线表示当前。{before?'虚线为定格A。':''}正负号与条长共同表示处理后系数，所有系数与截距共同组成预测。</p>
  {focus.notice&&<p className="pp-note" role="status">{focus.notice}</p>}<label className="pp-probe-select">观察一个特征<select value={current?.name||''} onChange={e=>focus.select(e.target.value)}>{coefficients.map((c,i)=><option key={c.name} value={c.name}>{i+1} · {c.name}</option>)}</select></label>
  {current&&<div className="pp-term-equation"><span>系数 <strong>{fmt(current.coefficient)}</strong></span><b>×</b><span>处理后输入 <strong>{fmt(feature?.value)}</strong></span><b>=</b><span>本项贡献 <strong>{fmt(current.contribution)}</strong></span></div>}
  <p className="pp-prediction-equation">截距 {fmt(inspection.intercept)} ＋ 全部特征贡献 ＝ 本样本预测 <strong>{fmt(inspection.prediction[0])} {result.targets[0]?.unit}</strong></p>

@@ -87,3 +87,18 @@ test('model search supports ids, names and combined keywords',()=>{
  const ridge={id:'ridge',title:'岭回归',family:'正则化线性',summary:'观察约束与验证误差'};
  assert.ok(modelMatches(ridge,'  RIDGE '));assert.ok(modelMatches(ridge,'正则 验证'));assert.ok(!modelMatches(ridge,'KNN'));assert.ok(modelMatches(ridge,''));
 });
+
+
+import {plotDomain,seriesPath} from '../src/lib/chart-evidence.ts';
+test('residual domains include a visible zero for one-sided errors and constant values',()=>{
+ for(const values of [[2,4,7],[-7,-4,-2],[0,0],[9,9]]){const [lo,hi]=plotDomain(values,true);assert.ok(lo<0&&hi>0);assert.ok(values.every(v=>v>lo&&v<hi));}
+ assert.deepEqual(plotDomain([NaN,Infinity]),[0,1]);
+});
+test('failed or nonfinite fits leave a real break in a plotted series',()=>{
+ const points=[{x:1,y:2},{x:2,y:null},{x:3,y:4},{x:4,y:5},{x:5,y:NaN},{x:6,y:8}];
+ assert.equal(seriesPath(points,v=>v,v=>v),'M1 2 M3 4 L4 5 M6 8');
+ assert.equal(seriesPath([{x:1,y:0},{x:2,y:1}],v=>v,v=>v),'M1 0 L2 1');
+});
+test('parameter scans follow numerical coordinates and retain missing values',()=>{
+ assert.equal(seriesPath([{x:10,y:3},{x:1,y:4},{x:5,y:null}],v=>v,v=>v,true),'M1 4 M10 3');
+});
