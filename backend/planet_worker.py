@@ -62,13 +62,16 @@ def work(payload,path,queue,operation='train',extra=None):
                 joblib.dump(a,extra['_destination'])
             elif operation=='challenge':
                 before=engine.Spec.model_validate(extra['before']);after=engine.Spec.model_validate(extra['after'])
-                sp=engine.split_rows(payload['dataset'],before)
+                sp=payload['split']
                 notify('在新条件下实际拟合A')
-                first,_=engine.fit_payload({'dataset':payload['dataset'],'spec':before.model_dump(),'split':engine.safe_json(sp)})
+                first,first_artifact=engine.fit_payload({'dataset':payload['dataset'],'spec':before.model_dump(),'split':engine.safe_json(sp)})
                 notify('保持同一验证样本实际拟合B')
-                last,_=engine.fit_payload({'dataset':payload['dataset'],'spec':after.model_dump(),'split':engine.safe_json(sp)})
+                last,last_artifact=engine.fit_payload({'dataset':payload['dataset'],'spec':after.model_dump(),'split':engine.safe_json(sp)})
+                if first['evaluation_signature']!=last['evaluation_signature'] or first['evaluation_signature']!=sp['signature']:raise ValueError('迁移评估身份不一致，未生成核验结论。')
                 result={'before':first['validation_error'],'after':last['validation_error'],'before_training':first['training_error'],
-                    'after_training':last['training_error'],'signature':first['evaluation_signature'],'seed':before.seed}
+                    'after_training':last['training_error'],'signature':first['evaluation_signature'],'seed':before.seed,
+                    '_fit':sorted(set(first_artifact['training'].tolist())|set(last_artifact['training'].tolist())),
+                    '_validation':first_artifact['validation'].tolist()}
             else:raise ValueError('未知运行操作。')
         queue.put(('result',engine.safe_json(result)))
     except Exception as e:

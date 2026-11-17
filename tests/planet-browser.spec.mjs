@@ -3,7 +3,7 @@ async function nav(page,label){const menu=page.getByRole('button',{name:'展开�
 async function exampleRun(page,task,card,model){
  await nav(page,task);await page.getByRole('button',{name:new RegExp(card)}).click();
  await page.getByRole('button',{name:'5 模型参数',exact:true}).click();
- if(await page.locator('.pp-mobile-model').isVisible())await page.locator('.pp-mobile-model select').selectOption(model);else await page.locator('.pp-model-radio').getByRole('button',{name:task==='分类任务'?'决策树分类':'决策树回归',exact:true}).click();
+ if(await page.locator('.pp-mobile-model').isVisible())await page.locator('.pp-mobile-model select').selectOption(model);else await page.locator('.pp-model-radio').getByRole('button',{name:({tree_c:'决策树分类',tree_r:'决策树回归',ridge:'岭回归',knn_c:'K近邻分类'})[model],exact:true}).click();
  await expect(page.locator('.pp-parameter-form input').first()).toHaveValue('');
  await page.getByText('需要一组可尝试的示例？',{exact:true}).click();await page.getByRole('button',{name:'采用这组示例配置',exact:true}).click();
  await page.getByRole('button',{name:'去训练',exact:true}).click();await page.getByRole('button',{name:'暂不确定',exact:true}).click();await page.getByRole('button',{name:'训练这组配置',exact:true}).click();
@@ -16,8 +16,8 @@ test('Model Planet blank fields, real pipeline and paired AI transfer',async({pa
  await page.getByRole('tab',{name:'边界/条件切片',exact:true}).click();await page.getByRole('button',{name:'计算当前条件视图',exact:true}).click();await expect(page.locator('.pp-chart figcaption').filter({hasText:'条件切片'})).toBeVisible({timeout:45000});
  await page.getByRole('button',{name:'7 对照解释',exact:true}).click();await page.getByRole('button',{name:'生成可执行建议',exact:true}).click();await expect(page.getByRole('button',{name:'采用并训练这项建议',exact:true})).toBeVisible();await page.getByRole('button',{name:'采用并训练这项建议',exact:true}).click();
  await expect(page.getByRole('button',{name:'带着这个结果再验证',exact:true})).toBeEnabled({timeout:45000});await page.getByRole('button',{name:'带着这个结果再验证',exact:true}).click();
- const quiz=page.getByRole('region',{name:'新情境迁移验证'});await expect(quiz).toBeVisible({timeout:45000});await expect(quiz.getByText('选择依据',{exact:true})).toHaveCount(0);await quiz.locator('fieldset button').first().click();await quiz.getByRole('button',{name:'锁定判断，选择依据',exact:true}).click();await expect(quiz.getByText('选择依据',{exact:true})).toBeVisible();
- await page.reload();await expect(page.getByRole('heading',{name:'对照解释',exact:true})).toBeVisible();await expect(page.getByText('已锁定：',{exact:false})).toBeVisible();
+ const quiz=page.getByRole('region',{name:'新情境迁移验证'});await expect(quiz).toBeVisible({timeout:45000});await expect(quiz.getByText('选择依据',{exact:true})).toHaveCount(0);await quiz.getByRole('radio',{name:'A更低',exact:true}).check();await quiz.getByRole('button',{name:'锁定新情境判断',exact:true}).click();await expect(quiz.getByRole('heading',{name:'读完证据，再解释一次',exact:true})).toBeVisible();
+ await page.reload();await expect(page.getByRole('heading',{name:'对照解释',exact:true})).toBeVisible();await expect(page.getByText('本题首答：',{exact:false})).toBeVisible();
  await page.screenshot({path:'artifacts/local/playwright-results/planet-desktop.png',fullPage:true,animations:'disabled'});
 });
 test('mobile classroom keeps blank split fields, working model choices and no overflow',async({page})=>{
@@ -107,7 +107,7 @@ test('course practice keeps its return path through mechanism and data tasks',as
  await page.goto('/#classroom/learning/ml-intro');await page.getByRole('button',{name:'去对应场景试一试',exact:true}).click();
  const ribbon=page.getByRole('complementary',{name:'课题实践',exact:true});await expect(ribbon).toContainText('什么是机器学习？');
  await ribbon.getByRole('button',{name:'回到原课题',exact:true}).click();await expect(page.getByRole('heading',{name:'什么是机器学习？',exact:true})).toBeVisible();
- await page.goto('/#classroom/learning/linear');await page.getByRole('button',{name:'去对应场景试一试',exact:true}).click();await expect(page.getByRole('slider',{name:'工坊正则化强度α',exact:true})).toBeVisible();await expect(ribbon).toContainText('从线性模型到正则化');
+ await page.goto('/#classroom/learning/linear');await page.getByRole('button',{name:'进入Ridge系数实验',exact:true}).click();await expect(page.getByRole('slider',{name:'正则化强度 α调节',exact:true})).toBeVisible();await expect(ribbon).toContainText('从线性模型到正则化');
  await page.reload();await expect(ribbon).toContainText('从线性模型到正则化');await ribbon.getByRole('button',{name:'回到原课题',exact:true}).click();await expect(page.getByRole('heading',{name:'从线性模型到正则化',exact:true})).toBeVisible();
 });
 
@@ -138,16 +138,16 @@ test('all model entries target their own mechanism and a real kernel run can be 
  }
  await page.locator('.pp-atlas>article').filter({has:page.getByRole('heading',{name:'RBF SVM',exact:true})}).getByRole('button',{name:'先看预测机制',exact:true}).click();
  await page.getByRole('button',{name:'训练机制示例',exact:true}).click();await expect(page.locator('.pp-kernel-bars')).toBeVisible({timeout:45000});
- await page.getByRole('textbox',{name:'核影响范围 γ',exact:true}).fill('0.2');await expect(page.getByRole('status').filter({hasText:'设置已修改'})).toBeVisible();
+ await page.getByRole('spinbutton',{name:'核影响范围 γ',exact:true}).fill('0.2');await expect(page.getByRole('status').filter({hasText:'设置已修改'})).toBeVisible();
  await page.getByRole('button',{name:'按新设置重新训练',exact:true}).click();await expect(page.getByText('当前展示这次真实训练的结果。',{exact:true})).toBeVisible({timeout:45000});
- await page.reload();await expect(page.locator('.pp-kernel-bars')).toBeVisible();await expect(page.getByRole('textbox',{name:'核影响范围 γ',exact:true})).toHaveValue('0.2');
+ await page.reload();await expect(page.locator('.pp-kernel-bars')).toBeVisible();await expect(page.getByRole('spinbutton',{name:'核影响范围 γ',exact:true})).toHaveValue('0.2');
 });
 
 test('home gives one primary learning action and short screens keep step actions reachable',async({page})=>{
  await page.goto('/');await expect(page.locator('.pp-home-hero .pp-btn.primary')).toHaveCount(1);await expect(page.getByRole('heading',{name:'自由实验',exact:true})).toBeVisible();
  await page.getByRole('button',{name:'分类任务',exact:true}).click();await page.getByRole('button',{name:/企鹅物种识别/}).click();await page.getByRole('button',{name:'5 模型参数',exact:true}).click();
  await page.locator('.pp-model-radio').getByRole('button',{name:'逻辑回归',exact:true}).click();await page.getByRole('textbox',{name:'误分/拟合惩罚 C',exact:true}).fill('2');
- await page.getByRole('button',{name:'看看逻辑回归怎样预测',exact:true}).click();await expect(page.getByRole('heading',{name:'逻辑回归',exact:true})).toBeVisible();await page.getByRole('button',{name:'返回当前实验',exact:true}).click();await expect(page.getByRole('textbox',{name:'误分/拟合惩罚 C',exact:true})).toHaveValue('2');
+ await page.getByRole('button',{name:'打开逻辑回归示例课',exact:true}).click();await expect(page.getByRole('heading',{name:'逻辑回归',exact:true})).toBeVisible();await page.getByRole('button',{name:'返回当前实验',exact:true}).click();await expect(page.getByRole('textbox',{name:'误分/拟合惩罚 C',exact:true})).toHaveValue('2');
  for(const [width,height] of [[1366,768],[1024,768],[390,844]]){
   await page.setViewportSize({width,height});await page.evaluate(()=>scrollTo(0,0));
   await expect(page.getByRole('navigation',{name:'实验步骤',exact:true}).getByRole('button',{name:'5 模型参数',exact:true})).toBeInViewport();const actions=page.getByRole('navigation',{name:'实验步骤操作',exact:true});const next=actions.getByRole('button',{name:'去训练',exact:true});await expect(next).toBeVisible();
@@ -176,20 +176,34 @@ test('floating companion preserves content width and columns on desktop and tabl
  }
 });
 
-for(const {id,title,field,value,scene} of [{id:'knn_c',title:'K近邻分类',field:'邻居数 K',value:'11',scene:'.pp-neighbor-scene'},{id:'ridge',title:'岭回归',field:'正则化强度 α',value:'10',scene:'.pp-coefficient-scene'}]){
+for(const {id,title,field,value,scene} of [{id:'knn_c',title:'K近邻分类',field:'邻居数 K',value:'17',scene:'.pp-neighbor-scene'},{id:'ridge',title:'岭回归',field:'正则化强度 α',value:'10',scene:'.pp-coefficient-scene'}]){
  test('representative lesson '+id+' preserves prediction evidence and transfers to a new context',async({page})=>{
   test.setTimeout(120000);await page.goto('/#classroom/model-mechanism/'+id);
   await expect(page.locator('.pp-mechanism-starter')).toBeVisible();await expect(page.getByRole('list',{name:'代表课学习闭环',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'训练机制示例',exact:true}).click();await expect(page.locator(scene)).toBeVisible({timeout:45000});
   if(id==='ridge')expect(await page.getByRole('slider',{name:field+'调节',exact:true}).getAttribute('min')).toBe('-6');
-  await page.getByRole('textbox',{name:field,exact:true}).fill(value);await expect(page.getByRole('button',{name:'锁定预测并训练B',exact:true})).toBeDisabled();
-  await page.locator('.pp-forecast-inline').getByRole('button',{name:'降低',exact:true}).click();await page.getByRole('button',{name:'锁定预测并训练B',exact:true}).click();
-  const comparison=page.getByRole('region',{name:'机制受控对照',exact:true});await expect(comparison).toBeVisible({timeout:45000});await expect(comparison).toContainText('同一评估群体');await expect(comparison.getByRole('status')).toContainText(/预测与这次实算/);
-  const diagnostic=page.getByRole('button',{name:id==='knn_c'?'观察一个错分点':'观察偏差较大的验证点',exact:true});if(await diagnostic.isEnabled()){const inspectStarted=page.waitForResponse(r=>r.url().includes('/analysis/inspect')&&r.request().method()==='POST'&&r.ok());await diagnostic.click();await inspectStarted;await expect(diagnostic).toBeEnabled({timeout:45000});}const selectedRow=await page.getByRole('combobox',{name:'验证样本',exact:true}).inputValue();
+  await page.getByRole('combobox',{name:'验证样本',exact:true}).selectOption({index:1});await expect(page.getByRole('combobox',{name:'验证样本',exact:true})).toBeEnabled({timeout:45000});const originalRow=await page.getByRole('combobox',{name:'验证样本',exact:true}).inputValue();let focusedFeature=null;if(id==='ridge'){await page.getByRole('combobox',{name:'观察一个特征',exact:true}).selectOption({index:3});focusedFeature=await page.getByRole('combobox',{name:'观察一个特征',exact:true}).inputValue();}
+  await page.getByRole('spinbutton',{name:field,exact:true}).fill(value);await expect(page.getByRole('button',{name:'锁定预测并训练B',exact:true})).toBeEnabled();
+  await page.getByRole('radio',{name:'降低',exact:true}).check();await page.getByRole('button',{name:'锁定预测并训练B',exact:true}).click();
+  await expect(page.getByRole('combobox',{name:'验证样本',exact:true})).toBeEnabled({timeout:45000});await expect(page.getByRole('combobox',{name:'验证样本',exact:true})).toHaveValue(originalRow);if(focusedFeature)await expect(page.getByRole('combobox',{name:'观察一个特征',exact:true})).toHaveValue(focusedFeature);if(id==='knn_c'){const neighbor=page.getByRole('combobox',{name:'观察训练邻居',exact:true});await neighbor.selectOption({index:16});const row=await neighbor.inputValue();await expect(page.locator('.pp-neighbor-scene g[data-focused=true]')).toHaveAttribute('data-row',row);}
+  const comparison=page.getByRole('region',{name:'机制受控对照',exact:true});await expect(comparison).toBeVisible({timeout:45000});await expect(comparison).toContainText('同一群体');await expect(comparison.getByRole('status')).toContainText(/预测与这次实算/);
+  const diagnostic=page.getByRole('button',{name:id==='knn_c'?'观察一个错分点':'观察偏差较大的验证点',exact:true});if(await diagnostic.isEnabled()){await diagnostic.click();await expect(diagnostic).toBeEnabled({timeout:45000});}const selectedRow=await page.getByRole('combobox',{name:'验证样本',exact:true}).inputValue();
   await page.getByRole('button',{name:'和小模聊聊',exact:true}).click();const pet=page.getByRole('dialog',{name:'小模学习助手',exact:true});await pet.getByRole('textbox',{name:'向小模提问',exact:true}).fill('解释当前样本和这次参数');await pet.getByRole('button',{name:'发送给小模',exact:true}).click();await expect(pet.locator('.pp-pet-answer-text').last()).toContainText(title);await expect(pet.locator('.pp-pet-answer-text').last()).toContainText('验证样本'+selectedRow);await expect(pet.locator('.pp-pet-answer-text').last()).toContainText('定格A');await pet.getByRole('button',{name:'关闭小模问答',exact:true}).click();
-  await page.getByRole('button',{name:'换个情境验证',exact:true}).click();const quiz=page.getByRole('region',{name:'代表课新情境验证',exact:true});await expect(quiz).toBeVisible({timeout:45000});await expect(quiz.locator('.pp-transfer-readings')).toHaveCount(0);
-  await quiz.getByRole('button',{name:'A更低',exact:true}).click();await quiz.getByRole('button',{name:'锁定新情境判断',exact:true}).click();await expect(quiz.locator('.pp-transfer-readings')).toBeVisible();
-  await quiz.getByRole('button',{name:/^比较同一验证群体/}).click();await quiz.getByRole('button',{name:'保存依据并核验',exact:true}).click();await expect(quiz.getByRole('status')).toBeVisible();
-  await page.reload();await expect(quiz).toContainText('本题首答：A更低');await expect(page.getByRole('textbox',{name:field,exact:true})).toHaveValue(value);
+  await page.getByRole('button',{name:'换个情境验证',exact:true}).click();const quiz=page.getByRole('region',{name:'新情境迁移验证',exact:true});await expect(quiz).toBeVisible({timeout:45000});await expect(quiz.locator('.pp-transfer-readings')).toHaveCount(0);
+  await quiz.getByRole('radio',{name:'A更低',exact:true}).check();await quiz.getByRole('button',{name:'锁定新情境判断',exact:true}).click();await expect(quiz.locator('.pp-transfer-readings')).toBeVisible();
+  await quiz.getByRole('group',{name:'根据实算读数，哪组验证误差更低？',exact:true}).getByRole('radio').first().check();await quiz.locator('input[name=reason]').first().check();await quiz.getByRole('button',{name:'保存依据并核验',exact:true}).click();await expect(quiz.getByRole('status')).toBeVisible();
+  await page.reload();await expect(quiz).toContainText('本题首答：A更低');await expect(page.getByRole('combobox',{name:'验证样本',exact:true})).toHaveValue(selectedRow);if(focusedFeature)await expect(page.getByRole('combobox',{name:'观察一个特征',exact:true})).toHaveValue(focusedFeature);await expect(page.getByRole('spinbutton',{name:field,exact:true})).toHaveValue(value);
  });
 }
+
+
+test('mechanism toolbar and sticky actions remain usable across short and narrow screens',async({page})=>{
+ test.setTimeout(120000);await page.goto('/#classroom/model-mechanism/knn_c');await page.getByRole('button',{name:'训练机制示例',exact:true}).click();await expect(page.locator('.pp-neighbor-scene')).toBeVisible({timeout:45000});
+ const toolbar=page.getByRole('toolbar',{name:'机制画布工具',exact:true}),figure=toolbar.getByRole('button',{name:'图形',exact:true}),readings=toolbar.getByRole('button',{name:'读数',exact:true});await figure.focus();await figure.press('ArrowRight');await expect(readings).toBeFocused();await readings.press('Space');await expect(readings).toHaveAttribute('aria-pressed','true');await expect(page.locator('.pp-neighbor-scene')).toHaveCount(0);await figure.click();await expect(page.locator('.pp-neighbor-scene')).toBeVisible();
+ for(const [width,height] of [[1366,768],[1024,768],[390,844],[320,667]]){await page.setViewportSize({width,height});await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));const box=await page.locator('.pp-lab-command').boundingBox();expect(box.y).toBeGreaterThanOrEqual(60);expect(box.y+box.height).toBeLessThan(height);expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);await expect(page.getByRole('spinbutton',{name:'邻居数 K',exact:true})).toBeInViewport();}
+});
+
+
+test('formal Ridge results reuse their actual run in the coefficient scene',async({page})=>{
+ test.setTimeout(90000);await page.goto('/');await exampleRun(page,'回归任务','混凝土','ridge');await page.getByRole('tab',{name:'预测机制',exact:true}).click();await expect(page.locator('.pp-coefficient-scene')).toBeVisible();await expect(page.getByRole('region',{name:'真实训练结果'})).toBeVisible();await expect(page).toHaveURL(/#classroom\/workbench$/);await page.getByRole('toolbar',{name:'机制画布工具',exact:true}).getByRole('button',{name:'读数',exact:true}).click();await expect(page.locator('.pp-coefficient-bars')).toBeVisible();
+});

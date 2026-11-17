@@ -1,4 +1,4 @@
-import copy,time
+import copy,time,json
 import pytest
 from fastapi.testclient import TestClient
 from backend import main,planet_api
@@ -78,9 +78,10 @@ def test_ai_experiment_and_two_step_new_challenge(client,tmp_path,monkeypatch):
     assert c.post('/lab/quizzes/'+qid+'/answer',json={'reason':0}).status_code==409
     q=post(c,'/lab/quizzes/'+qid+'/decision',{'choice':0});assert len(q['reasons'])==3
     assert c.post('/lab/quizzes/'+qid+'/decision',json={'choice':1}).status_code==409
-    reason=next(i for i,r in enumerate(q['reasons']) if r.startswith('比较同一'))
-    q=post(c,'/lab/quizzes/'+qid+'/answer',{'reason':reason})
-    assert q['answer']['passed']==(q['answer']['correct_choice']==0)
+    with main.connect() as db:private=json.loads(db.execute('SELECT content FROM planet_quizzes WHERE id=?',(qid,)).fetchone()[0])
+    assert c.post('/lab/quizzes/'+qid+'/answer',json={'reason':0}).status_code==422
+    q=post(c,'/lab/quizzes/'+qid+'/answer',{'reason':private['_reason'],'interpretation':private['_truth']})
+    assert q['answer']['passed'] and q['answer']['understanding_passed']
     assert c.get('/lab/runs/'+a['id']).json()['spec']['prediction']==a['spec']['prediction']
     final=done(c,post(c,f"/lab/runs/{b['id']}/final"))
     assert final['result']['independent'], 'Transfer must keep the original test population sealed'
@@ -121,9 +122,24 @@ def test_representative_prediction_is_frozen_with_run_and_blind_transfer_hides_o
     pack=c.get('/lab/backup').json();assert 'observations' not in next(q for q in pack['quizzes'] if q['id']==qid)
     revealed=post(c,'/lab/quizzes/'+qid+'/decision',{'choice':0});assert revealed['observations'] and revealed['reasons']
     assert c.post('/lab/quizzes/'+qid+'/decision',json={'choice':1}).status_code==409
-    reason=next(i for i,r in enumerate(revealed['reasons']) if r.startswith('比较同一'))
-    answer=post(c,'/lab/quizzes/'+qid+'/answer',{'reason':reason});assert answer['decision']==revealed['decision']
+    with main.connect() as db:private=json.loads(db.execute('SELECT content FROM planet_quizzes WHERE id=?',(qid,)).fetchone()[0])
+    answer=post(c,'/lab/quizzes/'+qid+'/answer',{'reason':private['_reason'],'interpretation':private['_truth']});assert answer['decision']==revealed['decision'] and answer['answer']['passed']
     next_job=done(c,post(c,f"/lab/runs/{b['id']}/challenge",{'blind':True}));new=c.get('/lab/quizzes/'+next_job['result']['quiz_id']).json()
     assert new['before_spec']['seed']!=q['before_spec']['seed'] and 'observations' not in new
     monkeypatch.setattr(main,'DB_PATH',tmp_path/'blind-restored.sqlite');post(c,'/lab/backup/restore',pack)
     restored=c.get('/lab/quizzes/'+qid).json();assert restored['blind'] and 'observations' not in restored
+
+
+def test_inspection_cache_reuses_actual_evidence_and_never_exposes_hidden_rows(client):
+    c=client;a=done(c,post(c,'/lab/runs',{'spec':spec_for('iris','knn_c').model_dump()}));result=a['result']
+    first=result['inspection']['row'];row=next(p['row'] for p in result['validation'] if p['row']!=first)
+    endpoint=f"/lab/runs/{a['id']}/inspection"
+    assert c.get(endpoint,params={'row':first}).json()['inspection']==result['inspection']
+    assert not c.get(endpoint,params={'row':row}).json()['available']
+    actual=done(c,post(c,f"/lab/runs/{a['id']}/analysis/inspect",{'row':row}))['result']
+    with main.connect() as db:count=db.execute('SELECT count(*) FROM planet_runs').fetchone()[0]
+    for _ in range(3):assert c.get(endpoint,params={'row':row}).json()['inspection']==actual
+    with main.connect() as db:assert db.execute('SELECT count(*) FROM planet_runs').fetchone()[0]==count
+    assert c.get(endpoint,params={'row':'hidden'}).status_code==422
+    assert c.get(endpoint,params={'row':row,'target':8}).status_code==422
+    assert c.get('/lab/provenance').json()=={'legacy_quizzes_audited':0,'cached_independence_corrected':0,'later_exposure_noted':0}

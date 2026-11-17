@@ -15,7 +15,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel,Field,ValidationError
 from backend import planet_data as data,planet_models as models,planet_engine as engine
 from backend.planet_worker import work
-from backend import coach
+from backend import coach,transfer_assessment as assessment,legacy_roles
 
 ARTIFACTS=Path(__file__).resolve().parents[1]/'artifacts/local/modelplanet'
 GATE=threading.Semaphore(1)
@@ -38,6 +38,8 @@ def make_router(connect):
             for table in ('planet_runs','planet_sessions','planet_imports','planet_plans','planet_quizzes'):
                 c.execute(f'CREATE TABLE IF NOT EXISTS {table}(id TEXT PRIMARY KEY,content TEXT NOT NULL)')
             c.execute('CREATE TABLE IF NOT EXISTS planet_exposure(source TEXT,entity TEXT,kind TEXT,PRIMARY KEY(source,entity,kind))')
+            legacy_roles.reconcile(c)
+            c.commit()
             yield c
     def save(c,table,item):c.execute(f'INSERT OR REPLACE INTO {table}(id,content) VALUES(?,?)',(item['id'],json.dumps(engine.safe_json(item),ensure_ascii=False,allow_nan=False)))
     def load(c,table,key):
@@ -130,10 +132,17 @@ def make_router(connect):
                             if operation=='challenge':
                                 quiz=extra['_quiz'];a,b=value['before'],value['after']
                                 if a is None or b is None:raise ValueError('新情境缺少可比较的汇总指标。')
+                                with db() as c:
+                                    mark(c,d,sp['rows'],value.pop('_fit',[]),'fit');mark(c,d,sp['rows'],value.pop('_validation',[]),'validation')
+                                if quiz.get('split_protocol',1)<2 and quiz.get('observations'):
+                                    quiz.setdefault('legacy_observations',copy.deepcopy(quiz['observations']))
+                                    if quiz.get('answer'):quiz.setdefault('legacy_answer',copy.deepcopy(quiz['answer']))
+                                    quiz['provenance_note']='已按封存测试角色复算，原观测与核验记录保留为旧协议档案。'
+                                quiz['split_protocol']=2
                                 truth=2 if abs(a-b)<=1e-8+abs(a)*1e-6 else 0 if a<b else 1
-                                quiz.update(observations=value,_truth=truth,state='ready')
+                                quiz.update(observations=value,_truth=truth,state='ready');assessment.prepare(quiz)
                                 if quiz.get('answer'):
-                                    quiz['answer'].update(passed=quiz['decision']['choice']==truth and quiz['answer']['reason']==quiz['_reason'],correct_choice=truth,correct_reason=quiz['_reason'])
+                                    assessment.grade(quiz)
                                 with db() as c:
                                     mark(c,d,sp['rows'],sp['roles']['validation'],'validation');save(c,'planet_quizzes',quiz)
                                 value={'quiz_id':quiz['id'],'state':'ready'}
@@ -222,6 +231,28 @@ def make_router(connect):
         with db() as c:r=load(c,'planet_runs',key)
         if key in CANCEL and r['state'] in ('queued','running'):CANCEL[key].set()
         return {'requested':True,'state':r['state']}
+
+    @router.get('/provenance')
+    def provenance():
+        with db() as c:return json.loads(c.execute('SELECT content FROM planet_metadata WHERE id=?',(legacy_roles.KEY,)).fetchone()[0])
+
+    @router.get('/runs/{key}/inspection')
+    def inspection_cache(key:str,row:str|None=None,target:int=0,feature:int=0):
+        with db() as c:
+            r=load(c,'planet_runs',key)
+            if r['state']!='completed' or r['operation'] not in ('train','decision') or not r.get('result'):raise HTTPException(409,'先完成训练再查看探针。')
+            result=r['result'];chosen=row or result['validation'][0]['row']
+            if chosen not in {p['row'] for p in result['validation']} or not 0<=target<len(result['targets']) or not 0<=feature<result['cleaning']['processed_features']:raise HTTPException(422,'探针不在当前公开验证范围内。')
+            def matches(value):
+                if not value or value.get('row')!=chosen or value.get('target')!=target:return False
+                return 'gaussian' not in value or value['gaussian']['feature']==value['features'][feature]['name']
+            initial=result.get('inspection')
+            if matches(initial):return {'available':True,'inspection':initial}
+            rows=c.execute("SELECT content FROM planet_runs WHERE json_extract(content,'$.source_id')=? AND json_extract(content,'$.operation')='inspect' AND json_extract(content,'$.state')='completed' AND json_extract(content,'$.result.row')=? ORDER BY rowid DESC LIMIT 30",(key,chosen))
+            for item in rows:
+                candidate=json.loads(item['content'])
+                if candidate.get('fit_fingerprint')==r.get('fit_fingerprint') and candidate.get('dataset_version')==r.get('dataset_version') and matches(candidate['result']):return {'available':True,'inspection':candidate['result']}
+        return {'available':False,'inspection':None}
 
     @router.post('/runs/{key}/analysis/{kind}')
     def analyze(key:str,kind:str,request:dict=None):
@@ -349,9 +380,10 @@ def make_router(connect):
     def quiz_public(q):
         v={k:value for k,value in q.items() if not k.startswith('_')}
         if not q.get('decision'):v['reasons']=[]
-        if q.get('blind') and not q.get('decision'):v.pop('observations',None)
+        if q.get('blind') and not q.get('decision'):
+            v.pop('observations',None);v.pop('legacy_observations',None)
         return v
-    def create_quiz(source,plan_id=None,blind=False):
+    def create_quiz(source,plan_id=None,blind=True):
         d=dataset(source['spec']['dataset']);option=candidates(source)[0]
         with db() as c:used={json.loads(r['content'])['before_spec']['seed'] for r in c.execute("SELECT content FROM planet_quizzes WHERE json_extract(content,'$.source_id')=?",(source['id'],))}
         for step in range(1,21):
@@ -364,12 +396,11 @@ def make_router(connect):
             try:sp=engine.split_rows(d,before,source['_split']['anchor']);engine.prepare(d,before,sp);engine.prepare(d,after,sp);break
             except ValueError:
                 if step==20:raise HTTPException(422,'当前条件无法形成有效新情境，请调整模型或样本量。')
-        reason=int(hashlib.sha256(f'{before.seed}:{before.model}'.encode()).hexdigest()[:8],16)%3
-        reasons=['比较训练误差，以对已见样本的拟合作为新样本表现依据。','比较模型复杂程度，以模型能力作为本次验证表现依据。']
-        reasons.insert(reason,'比较同一验证群体的实算误差，把训练表现与模型复杂度另作解释。')
         q={'id':uuid.uuid4().hex,'created_at':now(),'source_id':source['id'],'plan_id':plan_id,'state':'preparing','before_spec':before.model_dump(),'after_spec':after.model_dump(),
-            'change':option,'question':'在这组新条件下，哪一组的验证误差更低？','choices':['A更低','B更低','近似相同'],'reasons':reasons,
-            'decision':None,'answer':None,'assisted':bool(plan_id or before.assisted),'blind':blind,'_reason':reason}
+            'change':option,'question':'在这组新条件下，哪一组的验证误差更低？','choices':['A更低','B更低','近似相同'],'reasons':[],
+            'decision':None,'answer':None,'assisted':bool(plan_id or before.assisted),'blind':blind,'assessment_version':2,'split_protocol':2}
+        q['choices'].append('暂无法判断，先保留不确定')
+        q['reasons']=[]
         with db() as c:save(c,'planet_quizzes',q)
         job=launch(before,d,sp,'challenge',source,{'before':before.model_dump(),'after':after.model_dump(),'_quiz':q})
         with db() as c:q['job_id']=job['id'];save(c,'planet_quizzes',q)
@@ -380,7 +411,7 @@ def make_router(connect):
         with db() as c:r=load(c,'planet_runs',key)
         if r['state']!='completed' or r['operation'] not in ('train','decision'):raise HTTPException(409,'先完成训练，再创建新情境。')
         if request and (set(request)-{'blind'} or type(request.get('blind',False)) is not bool):raise HTTPException(422,'迁移选项不合法。')
-        return create_quiz(r,blind=bool(request and request.get('blind')))
+        return create_quiz(r,blind=(request or {}).get('blind',True))
 
     @router.post('/plans/{key}/challenge')
     def ai_challenge(key:str):
@@ -402,9 +433,10 @@ def make_router(connect):
     @router.post('/quizzes/{key}/decision')
     def quiz_decision(key:str,request:dict):
         choice=request.get('choice')
-        if type(choice) is not int or not 0<=choice<=2:raise HTTPException(422,'选择一项判断。')
+        if type(choice) is not int:raise HTTPException(422,'选择一项判断。')
         with db() as c:
             q=load(c,'planet_quizzes',key)
+            if not 0<=choice<len(q['choices']):raise HTTPException(422,'选择本题的一项预期。')
             if q.get('state')!='ready':raise HTTPException(409,'先等待新情境实算完成。')
             if q['decision'] and q['decision']['choice']!=choice:raise HTTPException(409,'首次判断已锁定。')
             if not q['decision']:q['decision']={'choice':choice,'submitted_at':now()};save(c,'planet_quizzes',q)
@@ -417,10 +449,13 @@ def make_router(connect):
         with db() as c:
             q=load(c,'planet_quizzes',key)
             if not q.get('decision') or '_truth' not in q:raise HTTPException(409,'先锁定判断。')
-            if q['answer'] and q['answer']['reason']!=reason:raise HTTPException(409,'首次依据已保留。')
+            interpretation=request.get('interpretation')
+            if assessment.version(q)==2 and (type(interpretation) is not int or not 0<=interpretation<=2):raise HTTPException(422,'先根据实算读数选择结论。')
+            if q['answer'] and (q['answer']['reason']!=reason or assessment.version(q)==2 and q['answer']['interpretation']!=interpretation):raise HTTPException(409,'本次理解检查已保留，复练请开启新情境。')
             if not q['answer']:
-                q['answer']={'reason':reason,'submitted_at':now(),'passed':q['decision']['choice']==q['_truth'] and reason==q['_reason'],
-                    'correct_choice':q['_truth'],'correct_reason':q['_reason']};save(c,'planet_quizzes',q)
+                q['answer']={'reason':reason,'submitted_at':now()}
+                if assessment.version(q)==2:q['answer']['interpretation']=interpretation
+                assessment.grade(q);save(c,'planet_quizzes',q)
         return quiz_public(q)
 
     @router.get('/backup')
@@ -469,7 +504,7 @@ def make_router(connect):
                     'operation':'train','dataset_version':str(item['dataset_version'])[:64],'dataset_title':s.dataset,'result':None,'source_id':item.get('source_id'),'imported':True})
             exposures=[]
             for v in pack.get('exposures',[]):
-                if v['kind'] not in ('fit','validation','diagnostic','test','legacy') or len(v['source'])>100 or len(v['entity'])>100:raise ValueError()
+                if v['kind'] not in ('fit','validation','diagnostic','test','legacy','legacy_fit','legacy_validation','legacy_uncertain') or len(v['source'])>100 or len(v['entity'])>100:raise ValueError()
                 exposures.append((v['source'],v['entity'],v['kind']))
             quizzes=[]
             for q in pack.get('quizzes',[]):
@@ -486,12 +521,22 @@ def make_router(connect):
                 reasons=['比较训练误差，以对已见样本的拟合作为新样本表现依据。','比较模型复杂程度，以模型能力作为本次验证表现依据。']
                 index=int(hashlib.sha256(f'{before.seed}:{before.model}'.encode()).hexdigest()[:8],16)%3
                 reasons.insert(index,'比较同一验证群体的实算误差，把训练表现与模型复杂度另作解释。')
+                av=q.get('assessment_version',1)
+                if type(av) is not int or av not in (1,2):raise ValueError()
                 decision=q.get('decision');answer=q.get('answer')
-                if decision and (type(decision.get('choice')) is not int or not 0<=decision['choice']<=2):raise ValueError()
+                if decision and (type(decision.get('choice')) is not int or not 0<=decision['choice']<=(3 if av==2 else 2)):raise ValueError()
                 if answer and (not decision or type(answer.get('reason')) is not int or not 0<=answer['reason']<=2):raise ValueError()
+                if answer and av==2 and (type(answer.get('interpretation')) is not int or not 0<=answer['interpretation']<=2):raise ValueError()
                 quizzes.append({'id':q['id'],'created_at':str(q['created_at'])[:40],'source_id':valid_id(q['source_id']),'plan_id':q.get('plan_id'),
                     'before_spec':before.model_dump(),'after_spec':after.model_dump(),'decision':decision,'answer':({'reason':answer['reason'],'submitted_at':str(answer['submitted_at'])[:40]} if answer else None),
                     'state':'restored','assisted':bool(q.get('assisted')),'blind':bool(q.get('blind')),'reasons':reasons,'_reason':index,'question':'在这组新条件下，哪一组的验证误差更低？','choices':['A更低','B更低','近似相同'],'change':q.get('change',{})})
+                quizzes[-1]['assessment_version']=av
+                if av==2:
+                    quizzes[-1]['choices'].append('暂无法判断，先保留不确定');quizzes[-1]['reasons']=[];quizzes[-1].pop('_reason',None)
+                    if answer:quizzes[-1]['answer']['interpretation']=answer['interpretation']
+                quizzes[-1]['split_protocol']=q.get('split_protocol',1)
+                for key in ('legacy_observations','legacy_answer','provenance_note','role_audit'):
+                    if key in q:quizzes[-1][key]=q[key]
         except (ValueError,KeyError,TypeError,ValidationError):raise HTTPException(422,'备份格式或配置不合法，未写入记录。')
         added=0
         with db() as c:
@@ -501,6 +546,7 @@ def make_router(connect):
                     if c.execute(f'SELECT id FROM {table} WHERE id=?',(item['id'],)).fetchone():continue
                     save(c,table,item);added+=1
             c.executemany('INSERT OR IGNORE INTO planet_exposure(source,entity,kind) VALUES(?,?,?)',exposures)
+            if any(q.get('split_protocol',1)<2 for q in quizzes):c.execute('DELETE FROM planet_metadata WHERE id=?',(legacy_roles.KEY,))
         return {'new':added,'recompute_required':True,'first_answers_preserved':True}
 
     @router.post('/runs/{key}/recompute')

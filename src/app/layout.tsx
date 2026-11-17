@@ -14,6 +14,7 @@ import "./island-learning.css";
 import "./workspace.css";
 import "./garden.css";
 import "./planet.css";
+import "./lab.css";
 
 export const metadata: Metadata = {
   title: "模力星球 · 机器学习实验课堂",
