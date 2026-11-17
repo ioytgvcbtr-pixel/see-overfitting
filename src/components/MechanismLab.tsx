@@ -418,11 +418,6 @@ export default function MechanismLab({section="concepts",onSectionChange,topicRe
               >
                 <div className="page-heading pp-contrast-heading">
                   <div>
-                    <div className="eyebrow">
-                      <span>学习主题 {scene.number}</span>
-                      <span className="eyebrow-sep">/</span>
-                      <span>机器学习基础</span>
-                    </div>
                     <h1>
                       {scene.title}
                     </h1>
@@ -455,7 +450,7 @@ export default function MechanismLab({section="concepts",onSectionChange,topicRe
 
                 <fieldset className="pp-foundation-picker">
                   <legend>选择对照主题</legend>
-                  <div>{scenes.map(s=><label key={s.id}><input type="radio" name="foundation-scene" value={s.id} checked={params.scene===s.id} onChange={()=>changeScene(s.id)}/><span><strong>{s.short}</strong><small>{s.description}</small></span></label>)}</div>
+                  <div>{scenes.map(s=><label key={s.id}><input type="radio" name="foundation-scene" value={s.id} checked={params.scene===s.id} onChange={()=>changeScene(s.id)}/><span><strong>{s.short}</strong></span></label>)}</div>
                 </fieldset>
                 <JourneySteps attempt={journey.attempt} />
               </div>

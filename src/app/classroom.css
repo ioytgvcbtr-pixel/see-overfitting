@@ -6,12 +6,11 @@
 .pp-foundation-picker {border:0;padding:0;margin:1.5rem 0;min-inline-size:0;}
 .pp-foundation-picker legend {font-size:.875rem;font-weight:600;margin-block-end:.75rem;color:var(--pp-muted);}
 .pp-foundation-picker>div {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;}
-.pp-foundation-picker label {display:flex;gap:.75rem;align-items:flex-start;padding:1rem;border-radius:1.25rem;background:white;box-shadow:0 2px 6px #29364d04,0 8px 24px #29364d07;cursor:pointer;}
+.pp-foundation-picker label {display:flex;gap:.75rem;align-items:center;min-block-size:3.25rem;padding:1rem;border-radius:1.25rem;background:white;box-shadow:0 2px 6px #29364d04,0 8px 24px #29364d07;cursor:pointer;}
 .pp-foundation-picker label:has(:checked) {background:var(--pp-soft);box-shadow:0 2px 6px #29364d04,0 8px 24px #29364d07,inset 0 0 0 1px var(--pp-brand);}
-.pp-foundation-picker input {accent-color:var(--pp-brand);margin:.25rem 0 0;inline-size:1rem;block-size:1rem;flex:none;}
+.pp-foundation-picker input {accent-color:var(--pp-brand);margin:0;inline-size:1rem;block-size:1rem;flex:none;}
 .pp-foundation-picker span {min-inline-size:0;}
 .pp-foundation-picker strong {display:block;font-size:.9375rem;color:var(--pp-ink);line-height:1.5;}
-.pp-foundation-picker small {display:block;margin-block-start:.5rem;font-size:.8125rem;line-height:1.7;color:var(--pp-muted);}
 .pp-record-evidence {margin-block-start:.75rem;max-inline-size:100%;}
 .pp-record-evidence>section {padding:1rem;border-radius:1.5rem;background:var(--pp-soft);}
 .pp-evidence-reading {display:flex;flex-wrap:wrap;align-items:baseline;gap:.75rem;font-variant-numeric:tabular-nums;}
@@ -28,4 +27,5 @@
 .pp-journey-steps small {display:block;font-size:.75rem;color:var(--pp-muted);margin-block-start:.25rem;}
 @media(max-width:650px){.pp-mechanism-host .pp-contrast-planet{inline-size:80px;block-size:80px;}.pp-journey-steps ol{gap:.25rem;}.pp-journey-steps button{flex-direction:column;align-items:flex-start;padding:.5rem;gap:.5rem;}.pp-journey-steps small{line-height:1.6;}}
 @media(max-width:760px){.pp-foundation-picker>div{grid-template-columns:minmax(0,1fr);gap:.75rem;}.pp-foundation-picker label{padding:.875rem 1rem;}}
+@media(max-width:650px){.pp-workshop-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;overflow:visible;}.pp-workshop-tabs>button{min-inline-size:0;min-block-size:44px;text-align:center;white-space:normal;}}
 @media(forced-colors:active){.pp-foundation-picker label:has(:checked){outline:2px solid Highlight;}}
