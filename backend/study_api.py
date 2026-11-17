@@ -33,7 +33,7 @@ OPERATIONS={'train':'训练模型','decision':'调整分类阈值','inspect':'�
 STAGES=['认识任务','数据体检','清洗方案','划分数据','模型参数','训练验证','对照解释','测试迁移']
 
 
-def make_router(connect):
+def make_router(connect,archive_services=None):
     router=APIRouter(prefix='/study')
     @contextmanager
     def db():
@@ -203,4 +203,5 @@ def make_router(connect):
                 existing['imported']=True;put(c,'study_progress',existing)
             for e in accepted:c.execute('INSERT OR IGNORE INTO study_events(id,content) VALUES(?,?)',(e['id'],json.dumps(e,ensure_ascii=False)))
         return {'restored':True,'first_answers_preserved':True,'progress_recomputed':True}
+    if archive_services is not None:archive_services.update(export=backup,restore=restore)
     return router

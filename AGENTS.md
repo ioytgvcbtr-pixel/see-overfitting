@@ -14,6 +14,7 @@
 - The companion is a movable overlay: opening it must not change main content width or column count. Use a focus-isolated cover on narrow screens; retain normal page geometry on desktop/tablet.
 - Use conventional commits on the current feature branch. Local author `Codex <codex@local.invalid>` identifies AI-created commits, not the entrant's personal identity.
 - Product scope: curated built-in ML tasks; student CSV creation is removed. Knowledge progress (18 lessons), mechanism progress (4 stations), and legacy foundation records are distinct. Preserve existing first answers and history.
+- User-requested learning resets must be explicit, automatically backed up and reversible. Validate a full archive in isolation before atomic restore. Keep API settings, appearance, chat and scientific test-exposure history outside the reset scope. Test resets only in isolated QA data unless the user explicitly asks to reset their current archive.
 - Current user priority: improve project features and interactions. Continue real development records, but defer competition videos, submission PDFs and other submission-material preparation until requested.
 - Score against the official rubric and product evidence. Do not treat student trials as a required deliverable or deduct points for their absence.
 

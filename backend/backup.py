@@ -259,7 +259,7 @@ def rebuild(entry):
     return value
 
 
-def make_router(connect):
+def make_router(connect,archive_services=None):
     router = APIRouter(prefix='/workspace')
 
     @router.get('/backup')
@@ -324,4 +324,5 @@ def make_router(connect):
     @router.post('/backup/restore')
     async def restore(request: Request): return merge(await parse(request), True)
 
+    if archive_services is not None:archive_services.update(export=export,restore=restore)
     return router

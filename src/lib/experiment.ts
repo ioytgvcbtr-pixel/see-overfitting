@@ -181,7 +181,7 @@ export async function api<T>(
   let response: Response;
   try { response = await fetch("/api" + path, {
     method: body === undefined ? "GET" : "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(path.startsWith('/learning-archive/')?{'X-ModelPlanet-Archive':'1'}:{}) },
     body: body === undefined ? undefined : JSON.stringify(body),
     signal,
   }); } catch (error) {

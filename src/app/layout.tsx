@@ -16,6 +16,7 @@ import "./garden.css";
 import "./planet.css";
 import "./lab.css";
 import "./artwork.css";
+import "./archive.css";
 
 export const metadata: Metadata = {
   title: "模力星球 · 机器学习实验课堂",

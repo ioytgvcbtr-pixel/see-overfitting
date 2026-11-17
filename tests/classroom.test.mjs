@@ -102,3 +102,19 @@ test('failed or nonfinite fits leave a real break in a plotted series',()=>{
 test('parameter scans follow numerical coordinates and retain missing values',()=>{
  assert.equal(seriesPath([{x:10,y:3},{x:1,y:4},{x:5,y:null}],v=>v,v=>v,true),'M1 4 M10 3');
 });
+
+import {collectLearningState,clearLearningState,restoreLearningState} from '../src/lib/archive-storage.ts';
+function archiveStore(entries){const values=new Map(entries);return {get length(){return values.size;},key:i=>[...values.keys()][i]??null,getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};}
+test('learning exports include drafts and exclude credentials, appearance and chat',()=>{
+ const store=archiveStore([['modelplanet-draft-v1','draft'],['fitlab-learning-completed-v1','progress'],['modelplanet-palette-v1','orchid'],['modelplanet-companion-v1','prefs'],['modelplanet-pet-session-v1','chat'],['provider-api-key','local-only']]);
+ assert.deepEqual(collectLearningState(store),{'modelplanet-draft-v1':'draft','fitlab-learning-completed-v1':'progress'});
+});
+test('progress reset keeps model drafts while dropping course state and unsent events',()=>{
+ const store=archiveStore([['modelplanet-draft-v1','draft'],['modelplanet-last-run','run'],['fitlab-island-progress-v1','old'],['fitlab-learning-completed-v1','done'],['modelplanet-study-outbox-v1','pending'],['modelplanet-palette-v1','sky']]);
+ clearLearningState(store,'progress');assert.equal(store.getItem('modelplanet-draft-v1'),'draft');assert.equal(store.getItem('modelplanet-last-run'),'run');assert.equal(store.getItem('fitlab-island-progress-v1'),null);assert.equal(store.getItem('modelplanet-study-outbox-v1'),null);assert.equal(store.getItem('modelplanet-palette-v1'),'sky');
+});
+test('full learning restoration cannot overwrite unrelated settings',()=>{
+ const store=archiveStore([['modelplanet-draft-v1','new'],['modelplanet-palette-v1','sky'],['provider-api-key','kept']]);clearLearningState(store,'all');
+ restoreLearningState(store,{'modelplanet-draft-v1':'restored','modelplanet-palette-v1':'changed','provider-api-key':'changed'});
+ assert.equal(store.getItem('modelplanet-draft-v1'),'restored');assert.equal(store.getItem('modelplanet-palette-v1'),'sky');assert.equal(store.getItem('provider-api-key'),'kept');
+});

@@ -5,7 +5,9 @@ async function proxy(request: Request, context: {params: Promise<{path:string[]}
   const {path} = await context.params;
   const url = `${origin}/${path.map(encodeURIComponent).join("/")}${new URL(request.url).search}`;
   try {
-    const response = await fetch(url, {method:request.method, headers:{"Content-Type":request.headers.get("Content-Type") || "application/json"},
+    const headersToForward:Record<string,string>={"Content-Type":request.headers.get("Content-Type") || "application/json"};
+    if(path[0]==='learning-archive'&&request.headers.get('X-ModelPlanet-Archive')==='1')headersToForward['X-ModelPlanet-Archive']='1';
+    const response = await fetch(url, {method:request.method, headers:headersToForward,
       body:request.method === "GET" || request.method === "HEAD" ? undefined : await request.arrayBuffer(),
       signal:request.signal, cache:"no-store"});
     const headers = new Headers({"Cache-Control":"no-store"});

@@ -27,6 +27,7 @@ from backend.backup import make_router as backup_router
 from backend.planet_api import make_router as planet_router
 from backend.study_api import make_router as study_router
 from backend.pet_api import make_router as pet_router
+from backend.learning_archive import make_router as archive_router,gate as archive_gate
 
 ROOT = Path(__file__).resolve().parents[1]
 ENV_PATH = Path(os.environ.get('FITLAB_ENV_FILE', str(ROOT / 'backend' / '.env')))
@@ -36,7 +37,14 @@ for line in ENV_PATH.read_text(encoding='utf-8').splitlines() if ENV_PATH.exists
         os.environ.setdefault(key.strip(), value.strip())
 
 DB_PATH = Path(os.environ.get('FITLAB_DB', str(ROOT / 'data' / 'fitlab.sqlite')))
-app = FastAPI(title='模力星球 · 机器学习实验课堂', version='1.8.0')
+app = FastAPI(title='模力星球 · 机器学习实验课堂', version='1.9.0')
+@app.middleware('http')
+async def coordinate_archive_changes(request,call_next):
+    tracked=request.method not in ('GET','HEAD','OPTIONS')
+    if tracked and not archive_gate.enter():return JSONResponse(status_code=409,content={'detail':'学习档案正在切换，请完成后重试。'})
+    try:return await call_next(request)
+    finally:
+        if tracked:archive_gate.leave()
 @app.exception_handler(RequestValidationError)
 async def private_validation_error(request,exc):
     return JSONResponse(status_code=422,content={'detail':[{'loc':list(e['loc']),'msg':e['msg'],'type':e['type']} for e in exc.errors()]})
@@ -67,11 +75,12 @@ app.include_router(backup_router(connect))
 app.include_router(planet_router(connect))
 app.include_router(study_router(connect))
 app.include_router(pet_router(connect))
+app.include_router(archive_router(connect))
 
 
 @app.get('/health')
 def health():
-    return {'app': 'fitlab', 'status': 'ok', 'version': '1.8.0', **ai_status(), 'connection': connection_status()}
+    return {'app': 'fitlab', 'status': 'ok', 'version': '1.9.0', **ai_status(), 'connection': connection_status()}
 
 
 @app.post('/experiments/run')

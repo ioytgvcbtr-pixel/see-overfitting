@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
 import {api} from './experiment';
+import {archiveChanging} from './archive-storage';
 import type {Draft,Job} from './planet';
 import type {WorkspaceEntry} from './workspace';
 export type LessonMeta={id:string;title:string;chapter:string;goal:string;visual:string;version:number};
@@ -34,14 +35,19 @@ export function editLabel(field:string){const names:Record<string,string>={featu
 type JournalEvent={id:string;kind:'config_change'|'step_open';session_id:string;dataset:string;model:string;step?:number;changes:Edit[]};
 const OUTBOX='modelplanet-study-outbox-v1';
 export function useStudyJournal(){
- const outbox=useRef<JournalEvent[]>([]),pending=useRef<{draft:Draft;changes:Map<string,Edit>}|null>(null),timer=useRef<ReturnType<typeof setTimeout>|null>(null),busy=useRef(false);
+ const outbox=useRef<JournalEvent[]>([]),pending=useRef<{draft:Draft;changes:Map<string,Edit>}|null>(null),timer=useRef<ReturnType<typeof setTimeout>|null>(null),inflight=useRef<Promise<void>|null>(null),paused=useRef(false);
  const [warning,setWarning]=useState('');
  function persist(){try{localStorage.setItem(OUTBOX,JSON.stringify(outbox.current));}catch{setWarning('操作记录暂存未完成，请保持页面打开并检查浏览器存储。');}}
- async function drain(){if(busy.current)return;busy.current=true;let saved=false;try{while(outbox.current.length){const e=outbox.current[0];await api('/study/events',e);saved=true;outbox.current=outbox.current.filter(v=>v.id!==e.id);persist();}setWarning('');}catch{setWarning('操作记录等待同步；连接恢复后会补记。');}finally{busy.current=false;if(saved)window.dispatchEvent(new Event('modelplanet-journal-saved'));}}
- function add(e:JournalEvent){outbox.current.push(e);persist();void drain();}
- function flush(){if(timer.current)clearTimeout(timer.current);timer.current=null;const p=pending.current;pending.current=null;if(p?.changes.size)add({id:crypto.randomUUID().replaceAll('-',''),kind:'config_change',session_id:p.draft.session,dataset:p.draft.dataset,model:p.draft.model,changes:[...p.changes.values()]});}
- function edits(before:Draft,after:Draft){if(pending.current&&pending.current.draft.session!==after.session)flush();const changes=draftChanges(before,after);if(!changes.length)return;const p=pending.current||{draft:after,changes:new Map<string,Edit>()};p.draft=after;for(const e of changes){const old=p.changes.get(e.field);p.changes.set(e.field,{...e,before:old?.before??e.before});}pending.current=p;if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(flush,750);}
+ function drain():Promise<void>{
+  if(paused.current)return Promise.resolve();if(inflight.current)return inflight.current;
+  const work=(async()=>{let saved=false;try{while(!paused.current&&outbox.current.length){const e=outbox.current[0];await api('/study/events',e);if(paused.current)return;saved=true;outbox.current=outbox.current.filter(v=>v.id!==e.id);persist();}setWarning('');}catch{if(!paused.current)setWarning('操作记录等待同步；连接恢复后会补记。');}finally{if(saved&&!paused.current)window.dispatchEvent(new Event('modelplanet-journal-saved'));}})();
+  inflight.current=work;void work.finally(()=>{if(inflight.current===work)inflight.current=null;});return work;
+ }
+ function add(e:JournalEvent){if(paused.current)return;outbox.current.push(e);persist();void drain();}
+ function flush(){if(timer.current)clearTimeout(timer.current);timer.current=null;const p=pending.current;pending.current=null;if(p?.changes.size)add({id:crypto.randomUUID().replaceAll('-',''),kind:'config_change',session_id:p.draft.session,dataset:p.draft.dataset,model:p.draft.model,changes:[...p.changes.values()]});return drain();}
+ async function prepareArchive(){await flush();if(outbox.current.length)throw Error('学习操作还在等待同步，请连接恢复后重试档案操作。');}
+ function edits(before:Draft,after:Draft){if(paused.current)return;if(pending.current&&pending.current.draft.session!==after.session)flush();const changes=draftChanges(before,after);if(!changes.length)return;const p=pending.current||{draft:after,changes:new Map<string,Edit>()};p.draft=after;for(const e of changes){const old=p.changes.get(e.field);p.changes.set(e.field,{...e,before:old?.before??e.before});}pending.current=p;if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(flush,750);}
  function step(d:Draft,n:number){flush();add({id:crypto.randomUUID().replaceAll('-',''),kind:'step_open',session_id:d.session,dataset:d.dataset,model:d.model,step:n,changes:[]});}
- useEffect(()=>{try{const saved=JSON.parse(localStorage.getItem(OUTBOX)||'[]');if(Array.isArray(saved))outbox.current=saved.filter(e=>typeof e.id==='string'&&['config_change','step_open'].includes(e.kind));}catch{}void drain();const online=()=>void drain();const hide=()=>{flush();for(const e of outbox.current.slice(0,10))void fetch('/api/study/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(e),keepalive:true}).catch(()=>{});};window.addEventListener('online',online);window.addEventListener('pagehide',hide);const repeat=setInterval(online,15000);return()=>{flush();clearInterval(repeat);window.removeEventListener('online',online);window.removeEventListener('pagehide',hide);};},[]);
- return {edits,step,flush,warning};
+ useEffect(()=>{const stop=()=>{paused.current=true;if(timer.current)clearTimeout(timer.current);timer.current=null;pending.current=null;outbox.current=[];localStorage.removeItem(OUTBOX);};window.addEventListener(archiveChanging,stop);try{const saved=JSON.parse(localStorage.getItem(OUTBOX)||'[]');if(Array.isArray(saved))outbox.current=saved.filter(e=>typeof e.id==='string'&&['config_change','step_open'].includes(e.kind));}catch{}void drain();const online=()=>void drain();const hide=()=>{if(paused.current)return;flush();for(const e of outbox.current.slice(0,10))void fetch('/api/study/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(e),keepalive:true}).catch(()=>{});};window.addEventListener('online',online);window.addEventListener('pagehide',hide);const repeat=setInterval(online,15000);return()=>{flush();clearInterval(repeat);window.removeEventListener(archiveChanging,stop);window.removeEventListener('online',online);window.removeEventListener('pagehide',hide);};},[]);
+ return {edits,step,flush,prepareArchive,warning};
 }

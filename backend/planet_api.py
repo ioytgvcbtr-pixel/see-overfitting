@@ -30,7 +30,7 @@ class RunRequest(engine.Strict):
     source_id:str|None=Field(default=None,pattern=r'^[0-9a-f]{32}$')
 
 
-def make_router(connect):
+def make_router(connect,archive_services=None):
     router=APIRouter(prefix='/lab')
     @contextmanager
     def db():
@@ -580,4 +580,5 @@ def make_router(connect):
         if format=='md':content='# 模力星球 · 实验记录\n\n'+result['dataset']['title']+' · '+result['model']['title']+'\n\n配置与真实评估：\n\n```json\n'+content+'\n```\n'
         return Response(content,media_type='application/json' if format=='json' else 'text/markdown; charset=utf-8',headers={'Content-Disposition':f'attachment; filename="modelplanet-{key}.{format}"'})
 
+    if archive_services is not None:archive_services.update(export=lambda:backup(include_uploads=True),restore=restore)
     return router
