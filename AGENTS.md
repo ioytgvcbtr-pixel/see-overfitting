@@ -11,6 +11,7 @@
 - Real-data holdouts group identical feature rows; fit scaling/encoding on training only. Compare RMSE within the same dataset/unit. Preserve paired seeds and label standard deviations as descriptive, not confidence intervals.
 - DeepSeek official API only. Reasoning depth is user-selectable (none/low/high/max and existing xhigh compatibility mapped to high); preserve xhigh as the current default until changed by the user. Settings tests and every AI request must use the saved choice. Show final answers/usage, never reasoning content.
 - Keep Chinese product copy concrete. Responsive, keyboard-accessible UI; reduced-motion support.
+- The companion is a movable overlay: opening it must not change main content width or column count. Use a focus-isolated cover on narrow screens; retain normal page geometry on desktop/tablet.
 - Use conventional commits on the current feature branch. Local author `Codex <codex@local.invalid>` identifies AI-created commits, not the entrant's personal identity.
 - Product scope: curated built-in ML tasks; student CSV creation is removed. Knowledge progress (18 lessons), mechanism progress (4 stations), and legacy foundation records are distinct. Preserve existing first answers and history.
 - Current user priority: improve project features and interactions. Continue real development records, but defer competition videos, submission PDFs and other submission-material preparation until requested.

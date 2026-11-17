@@ -1,0 +1,55 @@
+{
+  "source": "Actual isolated QA runs, not student trials",
+  "pairs": [
+    {
+      "model": "knn_c",
+      "dataset": "iris",
+      "seed": 42,
+      "before_parameters": {
+        "n_neighbors": "5",
+        "weights": "uniform"
+      },
+      "after_parameters": {
+        "n_neighbors": "11",
+        "weights": "uniform"
+      },
+      "before_training_error": 0.011111111111111072,
+      "after_training_error": 0.033333333333333326,
+      "before_validation_error": 0.03448275862068961,
+      "after_validation_error": 0.06896551724137934,
+      "delta": 0.034482758620689724,
+      "comparable": true,
+      "single_change": true,
+      "forecast": {
+        "choice": "lower",
+        "observed": "higher",
+        "correct": false
+      }
+    },
+    {
+      "model": "ridge",
+      "dataset": "concrete",
+      "seed": 42,
+      "before_parameters": {
+        "alpha": "1",
+        "fit_intercept": "true"
+      },
+      "after_parameters": {
+        "alpha": "10",
+        "fit_intercept": "true"
+      },
+      "before_training_error": 10.181306391785405,
+      "after_training_error": 10.206811100549771,
+      "before_validation_error": 11.176188554906906,
+      "after_validation_error": 11.276039153160326,
+      "delta": 0.09985059825342013,
+      "comparable": true,
+      "single_change": true,
+      "forecast": {
+        "choice": "lower",
+        "observed": "higher",
+        "correct": false
+      }
+    }
+  ]
+}
