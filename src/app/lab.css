@@ -108,6 +108,7 @@
 
 /* Evidence stays readable when students switch plots or enlarge the page. */
 .pp-results {container:results-area / inline-size;}
+.pp-metrics>div {display:flex;flex-direction:column;align-items:flex-start;}
 .pp-result-views>.pp-result-tabs {flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;scroll-snap-type:inline proximity;scroll-padding-inline:1rem;padding:.4rem .4rem .7rem;gap:.5rem;}
 .pp-result-views>.pp-result-tabs>button {position:relative;flex:none;scroll-snap-align:start;font-size:.875rem;min-block-size:3rem;border-radius:.875rem;white-space:nowrap;}
 .pp-result-views [role=tab][aria-selected=true]:after {content:'';position:absolute;inset:auto 1rem .2rem;border-block-end:3px solid currentColor;border-radius:2px;}
@@ -131,5 +132,5 @@
 .pp-chart-data [data-selected=true] {background:var(--pp-soft);}
 .pp-surface-scale {display:flex;align-items:center;gap:.75rem;max-inline-size:24rem;margin:1rem auto;color:var(--pp-muted);font-size:.875rem;}
 .pp-surface-scale>i {flex:1;block-size:.75rem;border-radius:.5rem;background:linear-gradient(to right,rgb(229,237,244),rgb(124,117,194));}
-@container results-area (max-width:32rem) {.pp-evidence-chart svg text {font-size:23px;}.pp-chart-legend {gap:.75rem 1rem;}.pp-result-views>.pp-result-tabs {margin-inline:-.25rem;}}
+@container results-area (max-width:32rem) {.pp-metrics span {min-block-size:3.3em;}.pp-evidence-chart svg text {font-size:23px;}.pp-chart-legend {gap:.75rem 1rem;}.pp-result-views>.pp-result-tabs {margin-inline:-.25rem;}}
 @media(forced-colors:active) {.pp-result-views [role=tab][aria-selected=true]:after {border-color:Highlight;}.pp-evidence-chart .pp-chart-grid,.pp-evidence-chart .pp-chart-reference {stroke:CanvasText;}.pp-evidence-chart .pp-series {color:CanvasText!important;}.pp-evidence-chart .pp-chart-selection {stroke:Highlight;}.pp-evidence-chart .pp-scatter-point {fill:Canvas;stroke:CanvasText;}.pp-evidence-chart [data-selected=true] .pp-scatter-point {fill:Highlight;stroke:Canvas;}.pp-chart-data [data-selected=true] {outline:2px solid Highlight;}.pp-chart-legend>span>svg {color:CanvasText!important;}}
