@@ -1,0 +1,231 @@
+{
+  "scope": "18 revised knowledge checks; mechanism challenge banks unchanged",
+  "positions": {
+    "1": 6,
+    "2": 6,
+    "3": 6
+  },
+  "length_ranks": {
+    "3": 6,
+    "1": 6,
+    "2": 6
+  },
+  "checks": [
+    {
+      "id": "ml-intro",
+      "version": 2,
+      "choice_lengths": [
+        22,
+        18,
+        18
+      ],
+      "correct_position": 1,
+      "correct_length_rank": 3,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "task-types",
+      "version": 2,
+      "choice_lengths": [
+        22,
+        12,
+        22
+      ],
+      "correct_position": 2,
+      "correct_length_rank": 1,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "train-infer",
+      "version": 2,
+      "choice_lengths": [
+        21,
+        21,
+        9
+      ],
+      "correct_position": 3,
+      "correct_length_rank": 1,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "features",
+      "version": 2,
+      "choice_lengths": [
+        25,
+        20,
+        22
+      ],
+      "correct_position": 1,
+      "correct_length_rank": 3,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "splits",
+      "version": 2,
+      "choice_lengths": [
+        21,
+        28,
+        22
+      ],
+      "correct_position": 2,
+      "correct_length_rank": 3,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "preprocess",
+      "version": 2,
+      "choice_lengths": [
+        25,
+        14,
+        19
+      ],
+      "correct_position": 3,
+      "correct_length_rank": 2,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "linear",
+      "version": 2,
+      "choice_lengths": [
+        12,
+        22,
+        22
+      ],
+      "correct_position": 1,
+      "correct_length_rank": 1,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "local-models",
+      "version": 2,
+      "choice_lengths": [
+        22,
+        16,
+        10
+      ],
+      "correct_position": 2,
+      "correct_length_rank": 2,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "trees",
+      "version": 2,
+      "choice_lengths": [
+        24,
+        24,
+        30
+      ],
+      "correct_position": 3,
+      "correct_length_rank": 3,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "generalize",
+      "version": 2,
+      "choice_lengths": [
+        21,
+        16,
+        26
+      ],
+      "correct_position": 1,
+      "correct_length_rank": 2,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "metrics",
+      "version": 2,
+      "choice_lengths": [
+        23,
+        13,
+        23
+      ],
+      "correct_position": 2,
+      "correct_length_rank": 1,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "controlled",
+      "version": 2,
+      "choice_lengths": [
+        10,
+        23,
+        20
+      ],
+      "correct_position": 3,
+      "correct_length_rank": 2,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "transformers",
+      "version": 2,
+      "choice_lengths": [
+        12,
+        21,
+        22
+      ],
+      "correct_position": 1,
+      "correct_length_rank": 1,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "transfer",
+      "version": 2,
+      "choice_lengths": [
+        22,
+        33,
+        23
+      ],
+      "correct_position": 2,
+      "correct_length_rank": 3,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "rag",
+      "version": 2,
+      "choice_lengths": [
+        14,
+        24,
+        19
+      ],
+      "correct_position": 3,
+      "correct_length_rank": 2,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "multimodal",
+      "version": 2,
+      "choice_lengths": [
+        24,
+        17,
+        25
+      ],
+      "correct_position": 1,
+      "correct_length_rank": 2,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "agents",
+      "version": 2,
+      "choice_lengths": [
+        24,
+        29,
+        25
+      ],
+      "correct_position": 2,
+      "correct_length_rank": 3,
+      "legacy_version_preserved": true
+    },
+    {
+      "id": "responsible",
+      "version": 2,
+      "choice_lengths": [
+        24,
+        23,
+        18
+      ],
+      "correct_position": 3,
+      "correct_length_rank": 1,
+      "legacy_version_preserved": true
+    }
+  ]
+}
