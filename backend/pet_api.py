@@ -6,14 +6,17 @@ from typing import Literal
 import httpx
 from fastapi import APIRouter,HTTPException
 from pydantic import BaseModel,ConfigDict,Field
-from backend import coach,curriculum,deepseek
+from backend import coach,curriculum,deepseek,planet_models
 
 class Strict(BaseModel):model_config=ConfigDict(extra='forbid')
 class Context(Strict):
-    view:Literal['start','learning','classification','regression','models','mechanisms','experiments','workbench','settings']='start'
+    view:Literal['start','learning','classification','regression','models','mechanisms','experiments','workbench','settings','model-mechanism']='start'
     lesson_id:str|None=Field(default=None,max_length=60)
     run_id:str|None=Field(default=None,pattern=r'^[0-9a-f]{32}$')
     draft_changed:bool=False
+    model_id:str|None=Field(default=None,pattern=r'^[a-z][a-z0-9_]{0,40}$')
+    row_id:str|None=Field(default=None,max_length=80)
+    reference_run_id:str|None=Field(default=None,pattern=r'^[0-9a-f]{32}$')
 class Turn(Strict):
     question:str=Field(max_length=1600)
     answer:str=Field(max_length=7000)
@@ -56,16 +59,40 @@ def make_router(connect):
             if not submitted and seeking:
                 guard=True;hint=f"这道检查的首答还没有提交，我先陪你梳理，不直接指出选项。\n\n本课要抓住：{lesson['goal']}\n先用自己的话描述问题中的输入、目标或判断依据，再回到课题选择。提交后，我们可以一起回看你的理由。"
             actions.append({'type':'lesson','id':lesson['id'],'label':'回到当前课题'})
-        elif request.context.view in ('mechanisms','workbench') and re.search(r'答案|选项|这题|本题|这道|正确选|选[ABCabc123]',request.question):
+        elif request.context.view in ('mechanisms','workbench','model-mechanism') and re.search(r'答案|选项|这题|本题|这道|正确选|选[ABCabc123]',request.question):
             guard=True;hint='先保留这次的独立判断，我陪你看证据：当前要比较的是什么，A和B是否使用同一批验证样本，实际误差怎样变化？\n\n把模型复杂程度、训练表现与验证表现分开考虑，再锁定你的判断。'
-        if request.share_context and request.context.view=='workbench' and request.context.run_id and exists(c,'planet_runs'):
+        if request.share_context and request.context.view=='model-mechanism' and request.context.model_id in planet_models.MODELS:
+            m=planet_models.MODELS[request.context.model_id]
+            evidence['model']={k:m[k] for k in ('id','title','summary','task','mechanism')}
+        if request.share_context and request.context.view in ('workbench','model-mechanism') and request.context.run_id and exists(c,'planet_runs'):
             row=c.execute('SELECT content FROM planet_runs WHERE id=?',(request.context.run_id,)).fetchone()
             run=json.loads(row['content']) if row else None
             if run and run['state']=='completed' and run['operation'] in ('train','decision'):
+                if request.context.view=='model-mechanism' and request.context.model_id!=run['spec']['model']:raise HTTPException(409,'当前模型与运行快照不同，请重新打开对应机制。')
                 r=run['result'];evidence['experiment']={'dataset':r['dataset']['title'],'model':r['model']['title'],'parameters':r['parameters'],
                     'cleaning':{k:r['cleaning'][k] for k in ('actual_training','dropped','processed_features','fit_scope')},'split':r['split'],
                     'training_metrics':r['training_metrics'],'validation_metrics':r['validation_metrics'],'baseline':r['baseline'],
-                    'targets':r['targets'],'warnings':r['warnings'],'draft_changed':request.context.draft_changed}
+                    'targets':r['targets'],'warnings':r['warnings'],'draft_changed':request.context.draft_changed,
+                    'training_error':r['training_error'],'validation_error':r['validation_error']}
+                if request.context.view=='model-mechanism':
+                    selected=next((p for p in r['validation'] if p['row']==request.context.row_id),None) if request.context.row_id else r['validation'][0]
+                    if selected is None:raise HTTPException(422,'请选择这次运行已公开的验证样本。')
+                    evidence['sample']={k:selected[k] for k in ('row','actual','prediction')}
+                    detail=r.get('inspection') if (r.get('inspection') or {}).get('row')==selected['row'] else None
+                    if detail is None:
+                        cached=c.execute("SELECT content FROM planet_runs WHERE json_extract(content,'$.source_id')=? AND json_extract(content,'$.operation')='inspect' AND json_extract(content,'$.state')='completed' AND json_extract(content,'$.result.row')=? ORDER BY rowid DESC LIMIT 1",(run['id'],selected['row'])).fetchone()
+                        detail=json.loads(cached['content'])['result'] if cached else None
+                    if detail:
+                        evidence['mechanism']={k:detail[k] for k in ('intercept','link','probabilities','decision_score') if k in detail}
+                        for k in ('neighbors','coefficients','trees'):
+                            if k in detail:evidence['mechanism'][k]=detail[k][:12]
+                        if 'kernel' in detail:evidence['mechanism']['kernel']={**detail['kernel'],'points':detail['kernel']['points'][:8]}
+                    if request.context.reference_run_id:
+                        previous=c.execute('SELECT content FROM planet_runs WHERE id=?',(request.context.reference_run_id,)).fetchone()
+                        previous=json.loads(previous['content']) if previous else None
+                        if not previous or previous['state']!='completed' or not previous.get('result') or previous['spec']['model']!=run['spec']['model'] or previous['spec']['dataset']!=run['spec']['dataset']:raise HTTPException(409,'定格A与当前模型不匹配，请重新选择对照。')
+                        before=previous['result'];evidence['reference']={'parameters':before['parameters'],'training_error':before['training_error'],'validation_error':before['validation_error'],
+                            'comparable':before['evaluation_signature']==r['evaluation_signature'] and previous['spec']['targets']==run['spec']['targets']}
                 evidence['note']='只按已完成运行回答；当前草稿如有更改，需提交当前配置后再核对新结果。测试集信息未提供。'
                 actions.append({'type':'run','id':run['id'],'label':'回到这份实验结果'})
         if not actions:actions.append({'type':'lesson','id':'ml-intro','label':'从机器学习入门'})
@@ -73,7 +100,11 @@ def make_router(connect):
     def fallback(request,evidence):
         question=request.question.lower()
         if 'experiment' in evidence:
-            r=evidence['experiment'];return f"我先按已有证据陪你看：这次是{r['dataset']}，使用{r['model']}，实际训练{r['cleaning']['actual_training']}条。\n\n先比较本页训练、验证与基线，再保持验证身份，只改一项处理或参数。如果草稿已改变，当前数字仍属于已完成运行，需要重新训练后核对。"
+            r=evidence['experiment'];sample=evidence.get('sample');detail=f"\n\n验证样本{sample['row']}：预测{sample['prediction']}，观测{sample['actual']}。" if sample else '';score=lambda v:format(v,'.4g') if isinstance(v,(int,float)) else '不可计算'
+            ref=evidence.get('reference');contrast=f"定格A验证误差{score(ref['validation_error'])}。"+('两次使用相同评估群体。' if ref['comparable'] else '评估群体不同，不能直接归因单个参数。') if ref else ''
+            return f"我先按已有证据陪你看：这次是{r['dataset']}，使用{r['model']}，实际训练{r['cleaning']['actual_training']}条。参数：{json.dumps(r['parameters'],ensure_ascii=False)}。{detail}\n\n训练误差{score(r['training_error'])}，验证误差{score(r['validation_error'])}，结合本页指标与目标单位阅读。{contrast}"+('当前草稿已变，以上仍属于上次完成运行；重新训练后才能核对新结果。' if r['draft_changed'] else '保持验证身份，只改一项，再比较实际结果。')
+        if 'model' in evidence:
+            m=evidence['model'];return f"你正在探索{m['title']}。{m['summary']}\n\n当前没有共享已完成的机制运行。先训练明确标记的示例，再选一个验证样本，我就能结合该次快照一起看。"
         if 'lesson' in evidence:
             l=evidence['lesson'];return f"本课围绕“{l['title']}”。\n\n{l['sections'][0]['text']}\n\n可以先想一想：{l['goal']}结合课题里的例子说说你的理解，我再陪你往下看。"
         if any(x in question for x in ('机器学习是什么','什么是机器学习','从哪里','哪里开始')):return '机器学习让算法从样本中学到输入与目标之间的关系，再把学到的规律用于新样本。识别企鹅物种是分类，预测混凝土强度是回归。\n\n可以从学习航线第一课开始，先弄清输入、目标与怎样评估，再去内置课例动手。'
@@ -117,7 +148,7 @@ def make_router(connect):
                     v=json.loads(r['content'])
                     if v.get('answer'):prior.append({'question':v['question'],'answer':v['answer'][:2000]})
             value={'id':request.id,'session_id':request.session_id,'question':request.question,'created_at':stamp(),'state':'running','answer':None,
-                'context_label':evidence.get('lesson',{}).get('title') or evidence.get('experiment',{}).get('dataset') or ('未共享页面' if not request.share_context else '当前学习页面')}
+                'context_label':evidence.get('lesson',{}).get('title') or evidence.get('experiment',{}).get('dataset') or evidence.get('model',{}).get('title') or ('未共享页面' if not request.share_context else '当前学习页面')}
             if request.save_history:save(c,value)
         status=coach.ai_status();answer=fallback(request,evidence);mode='rules';notice='当前为本地知识提示，未调用模型。';usage={};model=None
         if guard:answer=hint;mode='guided';notice='首答保护：先梳理思路，提交后可回看解释。'

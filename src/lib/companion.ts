@@ -3,6 +3,8 @@ export const defaultCompanion:CompanionPreferences={enabled:true,motion:true,qui
 export function companionPreferences(value:string|null):CompanionPreferences{
  try{const p=JSON.parse(value||'{}');return {...defaultCompanion,...Object.fromEntries(Object.keys(defaultCompanion).filter(k=>typeof defaultCompanion[k as keyof CompanionPreferences]==='boolean'?typeof p[k]==='boolean':k==='answer_style'?['concise','detailed'].includes(p[k]):k==='reader_size'?['normal','large'].includes(p[k]):false).map(k=>[k,p[k]]))};}catch{return {...defaultCompanion};}
 }
-export type PetContext={view:string;lesson_id:string|null;run_id:string|null;draft_changed:boolean};
+export type MechanismEvidence={model_id:string;run_id:string|null;row_id:string|null;reference_run_id?:string|null;draft_changed:boolean;busy:boolean};
+export type PetContext={view:string;lesson_id:string|null;run_id:string|null;draft_changed:boolean;model_id?:string|null;row_id?:string|null;reference_run_id?:string|null};
+export function floatingPosition(x:number,y:number,width:number,height:number,viewportWidth:number,viewportHeight:number){return{x:Math.min(Math.max(8,viewportWidth-width-8),Math.max(8,x)),y:Math.min(Math.max(76,viewportHeight-height-8),Math.max(76,y))};}
 export type PetAction={type:'lesson'|'run';id:string;label:string};
 export type PetMessage={id:string;session_id:string;question:string;answer:string|null;state:string;created_at:string;completed_at?:string;mode?:'online'|'rules'|'guided';notice?:string;model?:string;context_label:string;actions?:PetAction[];reasoning_effort?:string;provider_effort?:string;usage?:{total_tokens?:number}};

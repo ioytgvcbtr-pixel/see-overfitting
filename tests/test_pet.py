@@ -51,6 +51,42 @@ def test_settings_refuse_other_hosts_models_and_validation_does_not_return_key(c
     c.post('/workspace/settings',json={'remove_key':True});assert not c.get('/workspace/settings').json()['key_configured']
     assert 'AI_API_KEY' not in workspace.ENV_PATH.read_text()
 
+
+def test_mechanism_chat_receives_only_matching_completed_run_and_public_sample(client,monkeypatch):
+    from backend import planet_data,planet_engine,planet_analysis
+    from test_planet_engine import spec_for
+    c=client;c.get('/lab/runs');s=spec_for('iris','knn_c');d=planet_data.builtin('iris');split=planet_engine.split_rows(d,s)
+    result,artifact=planet_engine.fit_payload({'dataset':d,'spec':s.model_dump(),'split':planet_engine.safe_json(split)})
+    result['inspection']=planet_analysis.inspect(artifact);run_id=uuid.uuid4().hex
+    with closing(main.connect()) as db:
+        db.execute('INSERT INTO planet_runs(id,content) VALUES(?,?)',(run_id,json.dumps({'id':run_id,'state':'completed','operation':'train','spec':s.model_dump(),'result':result})));db.commit()
+    calls=[]
+    class Fake:
+        def __init__(self,**kw):pass
+        async def __aenter__(self):return self
+        async def __aexit__(self,*a):pass
+        async def post(self,url,**kw):calls.append(kw['json']);return httpx.Response(200,json={'choices':[{'message':{'content':'按当前邻居和验证证据解释。'}}]})
+    monkeypatch.setattr(httpx,'AsyncClient',Fake);monkeypatch.setenv('AI_ENABLED','1')
+    ctx={'view':'model-mechanism','model_id':'knn_c','run_id':run_id,'row_id':result['validation'][0]['row'],'reference_run_id':run_id,'draft_changed':True}
+    _,response=ask(c,question='解释当前样本的邻居',context=ctx)
+    evidence=json.loads(calls[-1]['messages'][1]['content'])['context']
+    assert evidence['model']['id']=='knn_c' and evidence['sample']['row']==ctx['row_id']
+    assert evidence['reference']['comparable'] and evidence['reference']['validation_error']==result['validation_error']
+    assert evidence['mechanism']['neighbors']==result['inspection']['neighbors']
+    assert evidence['experiment']['draft_changed'] and evidence['experiment']['validation_error']==result['validation_error']
+    assert set(evidence['sample'])=={'row','actual','prediction'} and 'features' not in evidence['mechanism']
+    assert 'training_rows' not in evidence['experiment']['cleaning']
+    base={'id':uuid.uuid4().hex,'session_id':'c'*32,'question':'解释当前模型','context':{**ctx,'model_id':'ridge'}}
+    assert c.post('/pet/ask',json=base).status_code==409
+    assert c.post('/pet/ask',json={**base,'id':uuid.uuid4().hex,'context':{**ctx,'row_id':'not-a-validation-row'}}).status_code==422
+    ask(c,question='解释模型',context=ctx,share_context=False)
+    assert 'sample' not in json.loads(calls[-1]['messages'][1]['content'])['context']
+
+
+def test_untrained_mechanism_names_model_without_inventing_results(client):
+    _,r=ask(client,question='这个模型怎样工作？',context={'view':'model-mechanism','model_id':'ridge'})
+    assert '岭回归' in r['answer'] and '没有共享已完成' in r['answer']
+
 def test_pet_offline_history_idempotency_and_no_learning_award(client):
     c=client;b,a=ask(c);assert a['mode']=='rules' and '过拟合' in a['answer']
     assert c.post('/pet/ask',json=b).json()==a
