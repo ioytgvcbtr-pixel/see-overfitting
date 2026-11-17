@@ -156,3 +156,39 @@ test('home gives one primary learning action and short screens keep step actions
   await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));await expect(next).toBeInViewport();
  }
 });
+
+test('floating companion preserves content width and columns on desktop and tablet',async({page})=>{
+ test.setTimeout(120000);
+ for(const width of [1440,1024]){
+  await page.setViewportSize({width,height:900});
+  for(const hash of ['start','classification','settings','model-mechanism/knn_c']){
+   await page.goto('/#classroom/'+hash);await expect(page.locator(hash==='start'?'.pp-home-hero':hash==='classification'?'.pp-task-grid':hash==='settings'?'.pp-settings-columns':'.pp-model-lab')).toBeVisible();
+   const main=page.locator('main'),before=await main.boundingBox();
+   const columns=await page.locator('.pp-home-hero,.pp-task-grid,.pp-settings-columns,.pp-model-lab-layout').evaluateAll(es=>es.filter(e=>e.getBoundingClientRect().height).map(e=>getComputedStyle(e).gridTemplateColumns));
+   await page.getByRole('button',{name:'和小模聊聊',exact:true}).click();const panel=page.getByRole('dialog',{name:'小模学习助手',exact:true});await expect(panel).toBeVisible();
+   const after=await main.boundingBox();expect(Math.abs(after.width-before.width)).toBeLessThan(1);
+   expect(await page.locator('.pp-home-hero,.pp-task-grid,.pp-settings-columns,.pp-model-lab-layout').evaluateAll(es=>es.filter(e=>e.getBoundingClientRect().height).map(e=>getComputedStyle(e).gridTemplateColumns))).toEqual(columns);
+   if(await panel.getByRole('button',{name:'移到右侧',exact:true}).isVisible())await panel.getByRole('button',{name:'移到右侧',exact:true}).click();const right=await panel.boundingBox();expect(right.x+right.width).toBeLessThanOrEqual(width);expect(await panel.evaluate(e=>getComputedStyle(e).position)).toBe('fixed');
+   await panel.getByRole('button',{name:'移到左侧',exact:true}).click();const left=await panel.boundingBox();expect(left.x).toBeLessThan(right.x);expect(Math.abs((await main.boundingBox()).width-before.width)).toBeLessThan(1);
+   const handle=panel.getByRole('button',{name:'移动小模浮窗，方向键可调整位置',exact:true});await handle.focus();await handle.press('ArrowRight');expect((await panel.boundingBox()).x).toBeCloseTo(left.x+24,0);
+   await panel.getByRole('button',{name:'关闭小模问答',exact:true}).click();expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1)).toBe(false);
+  }
+ }
+});
+
+for(const {id,title,field,value,scene} of [{id:'knn_c',title:'K近邻分类',field:'邻居数 K',value:'11',scene:'.pp-neighbor-scene'},{id:'ridge',title:'岭回归',field:'正则化强度 α',value:'10',scene:'.pp-coefficient-scene'}]){
+ test('representative lesson '+id+' preserves prediction evidence and transfers to a new context',async({page})=>{
+  test.setTimeout(120000);await page.goto('/#classroom/model-mechanism/'+id);
+  await expect(page.locator('.pp-mechanism-starter')).toBeVisible();await expect(page.getByRole('list',{name:'代表课学习闭环',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'训练机制示例',exact:true}).click();await expect(page.locator(scene)).toBeVisible({timeout:45000});
+  if(id==='ridge')expect(await page.getByRole('slider',{name:field+'调节',exact:true}).getAttribute('min')).toBe('-6');
+  await page.getByRole('textbox',{name:field,exact:true}).fill(value);await expect(page.getByRole('button',{name:'锁定预测并训练B',exact:true})).toBeDisabled();
+  await page.locator('.pp-forecast-inline').getByRole('button',{name:'降低',exact:true}).click();await page.getByRole('button',{name:'锁定预测并训练B',exact:true}).click();
+  const comparison=page.getByRole('region',{name:'机制受控对照',exact:true});await expect(comparison).toBeVisible({timeout:45000});await expect(comparison).toContainText('同一评估群体');await expect(comparison.getByRole('status')).toContainText(/预测与这次实算/);
+  await page.getByRole('button',{name:'和小模聊聊',exact:true}).click();const pet=page.getByRole('dialog',{name:'小模学习助手',exact:true});await pet.getByRole('textbox',{name:'向小模提问',exact:true}).fill('解释当前样本和这次参数');await pet.getByRole('button',{name:'发送给小模',exact:true}).click();await expect(pet.locator('.pp-pet-answer-text').last()).toContainText(title);await expect(pet.locator('.pp-pet-answer-text').last()).toContainText('验证样本');await expect(pet.locator('.pp-pet-answer-text').last()).toContainText('定格A');await pet.getByRole('button',{name:'关闭小模问答',exact:true}).click();
+  await page.getByRole('button',{name:'换个情境验证',exact:true}).click();const quiz=page.getByRole('region',{name:'代表课新情境验证',exact:true});await expect(quiz).toBeVisible({timeout:45000});await expect(quiz.locator('.pp-transfer-readings')).toHaveCount(0);
+  await quiz.getByRole('button',{name:'A更低',exact:true}).click();await quiz.getByRole('button',{name:'锁定新情境判断',exact:true}).click();await expect(quiz.locator('.pp-transfer-readings')).toBeVisible();
+  await quiz.getByRole('button',{name:/^比较同一验证群体/}).click();await quiz.getByRole('button',{name:'保存依据并核验',exact:true}).click();await expect(quiz.getByRole('status')).toBeVisible();
+  await page.reload();await expect(quiz).toContainText('本题首答：A更低');await expect(page.getByRole('textbox',{name:field,exact:true})).toHaveValue(value);
+ });
+}

@@ -2,6 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readClassroomLocation,classroomHash,palettes,readPalette,contextPalette} from '../src/lib/classroom.ts';
 import {mechanismControl,mechanismDataset,mechanismQuestion} from '../src/lib/model-mechanism.ts';
+import {fromSlider,toSlider,sliderDomain,logarithmic} from '../src/lib/parameter-scale.ts';
+import {floatingPosition} from '../src/lib/companion.ts';
+
+test('the movable companion keeps its close controls inside the viewport',()=>{
+ assert.deepEqual(floatingPosition(-100,-100,380,660,1366,900),{x:8,y:76});
+ assert.deepEqual(floatingPosition(3000,3000,380,660,1366,900),{x:978,y:232});
+});
+
+test('positive wide-range parameters retain useful small values on a logarithmic rail',()=>{
+ const alpha={key:'alpha',kind:'number',min:.000001,max:1000};assert.ok(logarithmic(alpha));assert.equal(sliderDomain(alpha).min,-6);assert.equal(sliderDomain(alpha).max,3);
+ assert.equal(fromSlider(alpha,-2),.01);assert.equal(fromSlider(alpha,-1),.1);assert.equal(toSlider(alpha,.01),-2);
+ const k={key:'n_neighbors',kind:'integer',min:1,max:51};assert.ok(!logarithmic(k));assert.equal(sliderDomain(k).step,1);assert.equal(fromSlider(k,7.6),8);assert.equal(fromSlider(k,100),51);
+});
 
 test('each model mechanism has a refreshable identity and retains the atlas palette',()=>{
  for(const id of ['logistic','knn_c','svc','tree_r','poisson'])assert.deepEqual(readClassroomLocation(classroomHash('model-mechanism','explore',null,null,id)),{view:'model-mechanism',section:'explore',model:id});

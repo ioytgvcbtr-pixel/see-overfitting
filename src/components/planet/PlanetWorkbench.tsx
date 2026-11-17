@@ -6,6 +6,7 @@ import {api} from '@/lib/experiment';
 import {buildSpec,example,type Catalog,type Dataset,type Draft,type Job,type Preview,type Field,type Value} from '@/lib/planet';
 import {ModelGlyph,SmallGuide} from './PlanetArt';
 import HelpHint from '../HelpHint';
+import ParameterRail from './ParameterRail';
 import PlanetResults from './PlanetResults';
 
 export const stages=['认识任务','数据体检','清洗方案','划分数据','模型参数','训练验证','对照解释','测试迁移'];
@@ -45,7 +46,7 @@ export default function PlanetWorkbench({catalog,draft,setDraft,step,setStep,run
    options={f.kind==='choice'?f.options!.map(o=>({value:String(o.value),label:o.label})):undefined}
    range={f.kind==='choice'?undefined:`${f.min}～${max}${f.kind==='integer'?' · 整数':''}${f.key==='epsilon'?` · ${targetMeta[0]?.unit||'目标单位'}`:''}`}
    hint={parameterHints[f.key]||'范围是课堂计算约束。只改变这一项，再用实际验证结果判断。'}/>
-   {run?.state==='completed'&&run.spec.model===draft.model&&f.kind!=='choice'&&String(draft.parameters[f.key]??'').trim()!==''&&Number.isFinite(Number(draft.parameters[f.key]))&&<input className="pp-linked-slider" type="range" aria-label={`${f.label}训练后调节`} min={f.min} max={max} step={f.kind==='integer'?1:(max!-f.min!)/1000} value={Number(draft.parameters[f.key])} onChange={e=>put('parameters',{...draft.parameters,[f.key]:e.target.value})}/>}
+   {run?.state==='completed'&&run.spec.model===draft.model&&f.kind!=='choice'&&String(draft.parameters[f.key]??'').trim()!==''&&Number.isFinite(Number(draft.parameters[f.key]))&&<ParameterRail field={{...f,max}} value={draft.parameters[f.key]} suffix="训练后调节" onChange={v=>put('parameters',{...draft.parameters,[f.key]:v})}/>}
   </div>;
  }
  return <div className="pp-workbench"><header className="pp-task-header"><div><span className="pp-breadcrumb">{draft.task==='classification'?'分类港':'回归谷'} / {d.kind}</span><h1>{d.title}</h1><p>把你的选择填进去，再看模型怎样回答。</p></div><div className="pp-task-heading-art"><DatasetScene id={d.id}/></div><HelpHint title="怎样完成这次实验"><p>按步骤决定数据、处理、划分和参数。核心数字留给你填写；问号提供范围与含义。已有结果保留为快照，改配置后需要重新训练。</p></HelpHint></header>
