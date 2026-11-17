@@ -253,8 +253,14 @@ def make_router(connect):
                 elif x.get(k)!=y.get(k):values.append({'field':f,'before':x.get(k),'after':y.get(k)})
             return values
         diff=changes(a['spec'],b['spec']);first,last=ar['validation_error'],br['validation_error']
+        prediction=None
+        expected={'mechanism:lower':'lower','mechanism:higher':'higher','mechanism:same':'same'}.get(b['spec'].get('prediction'))
+        if comparable and len(diff)==1 and b.get('source_id')==a['id'] and expected and first is not None and last is not None:
+            tolerance=1e-8+abs(first)*1e-6
+            observed='same' if abs(last-first)<=tolerance else 'lower' if last<first else 'higher'
+            prediction={'choice':expected,'observed':observed,'correct':expected==observed,'run_id':b['id']}
         return {'comparable':comparable,'changes':diff,'before':first,'after':last,'delta':last-first if comparable and first is not None and last is not None else None,
-            'note':'同一评估群体上的实际变化' if comparable else '评估样本不同，仅并列观察，不直接判断胜负', 'single_change':len(diff)==1}
+            'note':'同一评估群体上的实际变化' if comparable else '评估样本不同，仅并列观察，不直接判断胜负', 'single_change':len(diff)==1,'prediction':prediction}
 
     def candidates(run):
         s=run['spec'];m=models.MODELS[s['model']];options=[];actual=run['result']['parameters']
@@ -343,11 +349,16 @@ def make_router(connect):
     def quiz_public(q):
         v={k:value for k,value in q.items() if not k.startswith('_')}
         if not q.get('decision'):v['reasons']=[]
+        if q.get('blind') and not q.get('decision'):v.pop('observations',None)
         return v
-    def create_quiz(source,plan_id=None):
+    def create_quiz(source,plan_id=None,blind=False):
         d=dataset(source['spec']['dataset']);option=candidates(source)[0]
+        with db() as c:used={json.loads(r['content'])['before_spec']['seed'] for r in c.execute("SELECT content FROM planet_quizzes WHERE json_extract(content,'$.source_id')=?",(source['id'],))}
         for step in range(1,21):
             before=engine.Spec.model_validate(source['spec']);before.seed=(before.seed+step*9973)%1000000;before.split.keep_test=True
+            if before.seed in used:
+                if step==20:raise HTTPException(409,'这份来源的20个新情境已使用，请从新的运行继续。')
+                continue
             if before.split.strategy=='time':before.training_fraction=.75
             after=target_spec({'spec':before.model_dump()},option)
             try:sp=engine.split_rows(d,before,source['_split']['anchor']);engine.prepare(d,before,sp);engine.prepare(d,after,sp);break
@@ -358,17 +369,18 @@ def make_router(connect):
         reasons.insert(reason,'比较同一验证群体的实算误差，把训练表现与模型复杂度另作解释。')
         q={'id':uuid.uuid4().hex,'created_at':now(),'source_id':source['id'],'plan_id':plan_id,'state':'preparing','before_spec':before.model_dump(),'after_spec':after.model_dump(),
             'change':option,'question':'在这组新条件下，哪一组的验证误差更低？','choices':['A更低','B更低','近似相同'],'reasons':reasons,
-            'decision':None,'answer':None,'assisted':bool(plan_id or before.assisted),'_reason':reason}
+            'decision':None,'answer':None,'assisted':bool(plan_id or before.assisted),'blind':blind,'_reason':reason}
         with db() as c:save(c,'planet_quizzes',q)
         job=launch(before,d,sp,'challenge',source,{'before':before.model_dump(),'after':after.model_dump(),'_quiz':q})
         with db() as c:q['job_id']=job['id'];save(c,'planet_quizzes',q)
         return job
 
     @router.post('/runs/{key}/challenge')
-    def challenge(key:str):
+    def challenge(key:str,request:dict=None):
         with db() as c:r=load(c,'planet_runs',key)
         if r['state']!='completed' or r['operation'] not in ('train','decision'):raise HTTPException(409,'先完成训练，再创建新情境。')
-        return create_quiz(r)
+        if request and (set(request)-{'blind'} or type(request.get('blind',False)) is not bool):raise HTTPException(422,'迁移选项不合法。')
+        return create_quiz(r,blind=bool(request and request.get('blind')))
 
     @router.post('/plans/{key}/challenge')
     def ai_challenge(key:str):
@@ -418,7 +430,7 @@ def make_router(connect):
             sessions=[json.loads(r['content']) for r in c.execute('SELECT content FROM planet_sessions')]
             imports=[json.loads(r['content'])['_import'] for r in c.execute('SELECT content FROM planet_imports')] if include_uploads else []
             exposures=[dict(r) for r in c.execute('SELECT source,entity,kind FROM planet_exposure')]
-            quizzes=[{k:v for k,v in json.loads(r['content']).items() if k not in ('_truth','_reason','reasons')} for r in c.execute('SELECT content FROM planet_quizzes')]
+            quizzes=[{k:v for k,v in quiz_public(json.loads(r['content'])).items() if k not in ('_truth','_reason','reasons')} for r in c.execute('SELECT content FROM planet_quizzes')]
         out={'format':'modelplanet-lab','version':1,'created_at':now(),'sessions':sessions,'imports':imports,'exposures':exposures,
             'runs':[{k:r[k] for k in ('id','created_at','spec','dataset_version','source_id') if k in r} for r in runs if r['operation'] in ('train','decision')],
             'quizzes':quizzes,'note':'只保存配置与真实首答；恢复后重新计算指标。自导CSV仅在主动选择时包含。'}
@@ -479,7 +491,7 @@ def make_router(connect):
                 if answer and (not decision or type(answer.get('reason')) is not int or not 0<=answer['reason']<=2):raise ValueError()
                 quizzes.append({'id':q['id'],'created_at':str(q['created_at'])[:40],'source_id':valid_id(q['source_id']),'plan_id':q.get('plan_id'),
                     'before_spec':before.model_dump(),'after_spec':after.model_dump(),'decision':decision,'answer':({'reason':answer['reason'],'submitted_at':str(answer['submitted_at'])[:40]} if answer else None),
-                    'state':'restored','assisted':bool(q.get('assisted')),'reasons':reasons,'_reason':index,'question':'在这组新条件下，哪一组的验证误差更低？','choices':['A更低','B更低','近似相同'],'change':q.get('change',{})})
+                    'state':'restored','assisted':bool(q.get('assisted')),'blind':bool(q.get('blind')),'reasons':reasons,'_reason':index,'question':'在这组新条件下，哪一组的验证误差更低？','choices':['A更低','B更低','近似相同'],'change':q.get('change',{})})
         except (ValueError,KeyError,TypeError,ValidationError):raise HTTPException(422,'备份格式或配置不合法，未写入记录。')
         added=0
         with db() as c:

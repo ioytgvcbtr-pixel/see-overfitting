@@ -103,3 +103,27 @@ def test_builtin_cancel_and_student_upload_removed(client):
         if r['state']=='cancelled':break
         time.sleep(.1)
     assert r['state']=='cancelled'
+
+
+def test_representative_prediction_is_frozen_with_run_and_blind_transfer_hides_outcome(client,tmp_path,monkeypatch):
+    c=client;s=spec_for('iris','knn_c').model_dump();a=done(c,post(c,'/lab/runs',{'spec':s}))
+    changed=copy.deepcopy(s);changed['parameters']['n_neighbors']=11;changed['prediction']='mechanism:lower'
+    b=done(c,post(c,'/lab/runs',{'spec':changed,'source_id':a['id']}))
+    comparison=post(c,'/lab/compare',{'a':a['id'],'b':b['id'],'passed':True,'prediction':'higher'})
+    assert comparison['comparable'] and comparison['single_change'] and comparison['prediction']['choice']=='lower'
+    assert comparison['before']==a['result']['validation_error'] and comparison['after']==b['result']['validation_error']
+    assert comparison['prediction']['run_id']==b['id']
+    assert post(c,'/lab/compare',{'a':a['id'],'b':b['id']})['prediction']==comparison['prediction']
+    assert post(c,'/lab/compare',{'a':b['id'],'b':a['id']})['prediction'] is None
+    job=done(c,post(c,f"/lab/runs/{b['id']}/challenge",{'blind':True}));qid=job['result']['quiz_id']
+    q=c.get('/lab/quizzes/'+qid).json();assert q['blind'] and not q['reasons'] and 'observations' not in q and '_truth' not in q
+    assert 'observations' not in next(q for q in c.get('/lab/quizzes').json() if q['id']==qid)
+    pack=c.get('/lab/backup').json();assert 'observations' not in next(q for q in pack['quizzes'] if q['id']==qid)
+    revealed=post(c,'/lab/quizzes/'+qid+'/decision',{'choice':0});assert revealed['observations'] and revealed['reasons']
+    assert c.post('/lab/quizzes/'+qid+'/decision',json={'choice':1}).status_code==409
+    reason=next(i for i,r in enumerate(revealed['reasons']) if r.startswith('比较同一'))
+    answer=post(c,'/lab/quizzes/'+qid+'/answer',{'reason':reason});assert answer['decision']==revealed['decision']
+    next_job=done(c,post(c,f"/lab/runs/{b['id']}/challenge",{'blind':True}));new=c.get('/lab/quizzes/'+next_job['result']['quiz_id']).json()
+    assert new['before_spec']['seed']!=q['before_spec']['seed'] and 'observations' not in new
+    monkeypatch.setattr(main,'DB_PATH',tmp_path/'blind-restored.sqlite');post(c,'/lab/backup/restore',pack)
+    restored=c.get('/lab/quizzes/'+qid).json();assert restored['blind'] and 'observations' not in restored

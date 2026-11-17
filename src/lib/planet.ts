@@ -29,7 +29,7 @@ export type Final={metrics:Metric;error:number|null;samples:number;independent:b
 export type Job={id:string;state:'queued'|'running'|'completed'|'failed'|'cancelled'|'timeout'|'restored';phase:string;operation:string;spec:Spec;dataset_title:string;created_at:string;source_id?:string;error?:string;result:Result|null;final?:Final;analyses?:Record<string,unknown>;imported?:boolean};
 export type AnalysisJob=Omit<Job,'result'>&{result:unknown};
 export type Plan={id:string;run_id:string;hypothesis:string;expected:string;mode:'online'|'rules';model:string|null;notice:string;target_spec:Spec;change:{label:string;control:string;from_value:Value;to_value:Value};execution_id?:string;execution_state?:string;execution?:{before:number|null;after:number|null;observed:string;comparable:boolean;verdict:string}};
-export type Quiz={id:string;state:string;source_id:string;plan_id?:string;question:string;choices:string[];reasons:string[];before_spec:Spec;after_spec:Spec;change:Plan['change'];assisted:boolean;
+export type Quiz={id:string;state:string;source_id:string;plan_id?:string;question:string;choices:string[];reasons:string[];before_spec:Spec;after_spec:Spec;change:Plan['change'];assisted:boolean;blind?:boolean;
  observations?:{before:number;after:number;before_training:number;after_training:number;seed:number};decision:{choice:number;submitted_at:string}|null;answer:{reason:number;passed?:boolean;correct_choice?:number;correct_reason?:number}|null};
 export type Preview={counts:Record<string,number>;classes:string[][];distributions:Record<string,number[][]>;test_previously_seen_entities:number;training_preview:{id:string;values:Record<string,Value>}[];note:string;selection_offset:number};
 
