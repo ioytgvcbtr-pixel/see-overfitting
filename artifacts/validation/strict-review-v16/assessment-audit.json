@@ -1,0 +1,42 @@
+{
+  "code": "8ebe635",
+  "functional_code": "0c6f081",
+  "scope": "Read-only developer QA snapshot and code review, not student effectiveness research",
+  "assessment_cases": [
+    {
+      "model": "knn_c",
+      "blind": true,
+      "forecast_correct": false,
+      "evidence_choice_correct": true,
+      "combined_passed": false
+    }
+  ],
+  "transfer_reason_lengths": {
+    "training_error_distractor": 26,
+    "complexity_distractor": 25,
+    "correct_reason": 30
+  },
+  "practice_links": {
+    "linear": {
+      "section": "concepts",
+      "panel": "regularization"
+    },
+    "local-models": {
+      "dataset": "seeds",
+      "model": "knn_c"
+    }
+  },
+  "lesson_count": 18,
+  "lessons_with_practice": 13,
+  "reviewed_ui_behaviors": {
+    "probe_after_train_uses_default_inspection": true,
+    "persisted_mechanism_fields": [
+      "run",
+      "anchor",
+      "quiz"
+    ],
+    "neighbor_diagram_limit": 12,
+    "neighbor_selector_uses_all": true,
+    "short_screen_controls_static_at_height": 820
+  }
+}
