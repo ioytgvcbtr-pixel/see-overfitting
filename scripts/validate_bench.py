@@ -35,9 +35,9 @@ def main():
               'hypotheses': ['Identical feature groups never cross splits.', 'Depth changes may improve training while validation can worsen.', 'The winning model may depend on the split; inspect all paired runs.'],
               'contribution': 'Existing estimators transferred into an evidence-driven interactive learning protocol; no novel estimator claim.',
               'records': records}
-    destination = ROOT / 'experiments' / 'improvement' / 'real-data-v1'
+    destination = ROOT / 'artifacts' / 'local'
     destination.mkdir(parents=True, exist_ok=True)
-    (destination / 'results.json').write_text(json.dumps(record, ensure_ascii=False, indent=2)+'\n', encoding='utf-8', newline='\n')
+    (destination / 'bench-validation.json').write_text(json.dumps(record, ensure_ascii=False, indent=2)+'\n', encoding='utf-8', newline='\n')
     print({'paired_runs': len(records), 'elapsed_seconds': record['elapsed_seconds'], 'test_metrics_used': False})
 
 

@@ -31,7 +31,7 @@ def measure(origin, repeats=12):
 if __name__=='__main__':
     p=argparse.ArgumentParser()
     p.add_argument('--origin',default='http://127.0.0.1:8002')
-    p.add_argument('--output',default='artifacts/local/performance-v15.json')
+    p.add_argument('--output',default='artifacts/local/performance.json')
     args=p.parse_args()
     result=measure(args.origin)
     path=Path(args.output);path.parent.mkdir(parents=True,exist_ok=True)

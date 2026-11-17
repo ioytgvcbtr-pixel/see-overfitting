@@ -4,7 +4,7 @@
 
 面向大学生与研究生的交互式机器学习课堂。学生自己决定输入列、清洗方法、训练/验证/测试比例、模型与核心参数，再用真实计算核对这些决定的影响。
 
-![模力星球实际首页](artifacts/screenshots/chibi-home-v18.jpg)
+![模力星球实际首页](artifacts/screenshots/home.jpg)
 
 机制探索、真实数据实验与学习档案共享同一课堂框架。6套配色可跟随课程或按个人喜好固定；Q版星球、星环和课题场景对应分类、回归和机制学习。
 
@@ -14,25 +14,9 @@
 
 设置独立于机制学习。只接入DeepSeek官方API，密钥只写不回显；思考深度可自选none/low/high/max，原xhigh兼容值保留并对应high。还可调等待、预算、字号、配色和宠物动作。
 
-[独立设置与小模验收](docs/VALIDATION_SETTINGS_PET_V13.md) · [在线问答效果](artifacts/screenshots/pet-online-v13.jpg)
-
-[1.4星球向导与整体流程复核](docs/PLANET_GUIDE_REVIEW_V14.md) · [实际验收与截图](docs/VALIDATION_PLANET_GUIDE_V14.md)：知识实践可回原课，继续学习优先未完成课题；课例按任务类型筛选，模型可检索，训练完成可直达结果，操作记录标明实际模型。
-
 ## 从知识到实验
 
-[1.9.1统一课堂入口验收](docs/VALIDATION_UNIFIED_CLASSROOM_V191.md)：完整档案集中操作，三组对照实验同页切换，实验核验证据汇入新版记录。
-
-[1.9.1完整Windows验证](https://github.com/ioytgvcbtr-pixel/see-overfitting/actions/runs/44127405104)：功能快照`1c15379`通过207项后端、55项前端逻辑、31项浏览器检查，以及全新环境安装、类型、生产构建和启动验证。
-
-[1.8 Q版星球插画验收](docs/VALIDATION_CHIBI_ART_V18.md)：7张新生成透明插画覆盖首页、任务、学习航线、四站与岛内标题，按显示尺寸优化加载。
-
-[1.7.1最终质量复核](docs/FINAL_QUALITY_REVIEW_V171.md)：结果标签键盘操作、读图单位与断点、类别纹理、数值表及手机可读性。
-
-[1.7连续实验体验与完整验收](docs/VALIDATION_MODERN_LAB_V17.md)：顶部参数操作、宽画布、观察焦点保持及证据理解检查；包含历史划分路径更正与完整回归。
-
-[1.6悬浮小模与代表课完整验收](docs/VALIDATION_FLOATING_LESSONS_V16.md)：问答打开不压缩内容；小模读取本模型快照；KNN/Ridge支持预测、真实A/B对照和新情境，配套直接调节与统一星球图案。
-
-[1.5三项优化与完整验收](docs/VALIDATION_LEARNING_POLISH_V15.md)：情境检查保留旧首答，17模型各自对应真实机制实验，短屏操作随当前标题保持可达，首页聚焦主要学习入口。
+[当前验收记录](docs/VALIDATION.md) · [完整Windows检查](https://github.com/ioytgvcbtr-pixel/see-overfitting/actions/runs/44127405104)：1.9.1功能快照通过207项后端、55项前端逻辑、31项浏览器检查，以及全新环境安装、类型、生产构建和启动验证。
 
 “学习航线”包含6章18课：认识机器学习、准备数据、模型家族、证据评估、大模型与前沿应用。每课配概念图、小检查、官方资料与练习入口。已读、首次判断和复练分别保存；一课一格，全部完成后绿色满格。
 
@@ -48,8 +32,6 @@
 - **撤销上次重置或导入**：恢复最近一次操作前自动保存的档案。长期保存请另行导出JSON。
 
 恢复会重新核验知识首答，模型记录打开后重新计算指标。API密钥、聊天和外观设置不包含在学习档案中；重置保留已有API设置与科学测试接触历史。新一轮学习需要主动确认重置，刷新或重启不会自动清空。
-
-[1.9学习档案与最终检查](docs/VALIDATION_LEARNING_ARCHIVE_V19.md)
 
 ## 一堂实验的完整航线
 
@@ -75,7 +57,7 @@
 
 内置课例：企鹅物种、票据特征、Iris、Seeds、混凝土强度、葡萄酒评分、Auto MPG两个版本、建筑双目标负荷、共享单车日需求，以及多标签合成样本。支持多目标回归、多标签分类和时间顺序评估；不是把所有表格自动认作适合所有模型。
 
-来源、许可和校验值见[data/planet](data/planet/README.md)与原有[data/public](data/public/manifest.json)。公开快照固定到仓库，核心训练不依赖公网下载。
+来源、许可和校验值见[data/planet](data/planet/README.md)与[data/public](data/public/manifest.json)。公开快照固定到仓库，核心训练不依赖公网下载。
 
 ## 本地启动
 
@@ -102,19 +84,25 @@ API在网页“设置”中配置；留空密钥会保留已有配置。配置�
 
 课堂计算上限为5000行、50个输入特征、展开后500列、单任务约30秒。排队、取消、超时和不收敛如实展示。多次种子的标准差是描述性统计，不作为置信区间；条件切片不冒充全部高维决策边界。
 
-## 设计、实现与验证
+## 项目目录
 
-- [1.6官方对照复评与质量重点](docs/STRICT_REVIEW_MODEL_PLANET_V16.md)
-- [1.5严格复评：内容、交互与视觉短板](docs/STRICT_REVIEW_MODEL_PLANET_V15.md)
-- [1.4官方对照严格评审与改进顺序](docs/STRICT_REVIEW_MODEL_PLANET_V14.md)
-- [1.2学习航线与记录验收](docs/VALIDATION_LEARNING_V12.md)
-- [6章18课设计与资料](docs/LEARNING_PATH_V12.md)
-- [统一课堂与Q版星球验收](docs/VALIDATION_CLASSROOM_V11.md)
-- [完整重定位方案](docs/MODEL_PLANET_REDESIGN.md)
-- [逐项实施与验收](docs/MODEL_PLANET_IMPLEMENTATION.md)
-- [新版实际验证](docs/VALIDATION_MODEL_PLANET.md)
-- [原机制工坊0.16验收](docs/VALIDATION_V16.md)
-- [设计系统](design-system/fitlab/MASTER.md)
-- [AI开发过程](docs/ai-process/README.md)
+| 目录 | 当前用途 |
+|---|---|
+| src | 网页页面、交互组件与样式 |
+| backend | 数值计算、课程、学习档案和DeepSeek接口 |
+| data | 内置数据快照、来源许可和本机学习数据库 |
+| public | 当前品牌标识与Q版星球插画 |
+| scripts | 启动、环境检查、数据更新与开发记录导出 |
+| tests | 后端、前端逻辑及浏览器回归 |
+| docs | 当前验收与完整AI开发过程 |
+| artifacts | 当前界面截图及本机运行产物 |
 
-开发检查：`python -m pytest -q`、`npm run typecheck`、`npm run test:ui`、`npm run build`。Windows CI在新环境安装依赖并执行新旧课堂浏览器回归。Git记录真实迭代，AI记录保留公开指令、回应和工具反馈并脱敏；不导出内部推理或凭据。
+当前目录只维护现行项目；历史版本与阶段性资料可通过Git记录回看。
+
+## 验证与开发记录
+
+- [当前验收](docs/VALIDATION.md)
+- [当前素材与生成提示词](public/illustrations/planet-v18/README.md)
+- [AI开发过程与Prompt链](docs/ai-process/README.md)
+
+开发检查：`python -m pytest -q`、`npm run typecheck`、`npm run test:ui`、`npm run build`。Windows CI在新环境安装依赖，并执行课程、机制与实训的浏览器回归。Git记录真实迭代，AI记录保留公开指令、回应和工具反馈并脱敏；不导出内部推理或凭据。
